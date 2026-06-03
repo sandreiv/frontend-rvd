@@ -1,0 +1,12 @@
+<app-data-table
+ [columns]="columns"
+ [rows]="preloadCalls()"
+ [rowIdentity]="rowIdentity"
+ [enableSelection]="true"
+ [selectedRowKeys]="selectedPreloadCallIds"
+ emptyMessage="No hay convocatorias de precarga."
+ (rowAction)="onTableAction($event)"
+ (toolbarAction)="onToolbarAction($event)"
+ (searchChange)="onSearchRecords($event)"
+ (selectedRowKeysChange)="onSelectedPreloadCallIdsChange($event)"
+/>

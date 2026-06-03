@@ -1,0 +1,66 @@
+<!-- Only render if open -->
+@if (isOpen) {
+  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999 px-4">
+    <!-- Backdrop with blur -->
+    <div class="fixed inset-0 h-full w-full bg-slate-900/40 backdrop-blur-sm transition-all" (click)="onBackdropClick($event)"></div>
+
+    <!-- Modal Content -->
+    <div
+      class="relative w-full max-w-[480px] transform rounded-[2rem] bg-white px-8 py-10 text-center shadow-2xl transition-all dark:bg-slate-800"
+      [class]="className"
+      (click)="onContentClick($event)"
+    >
+      <!-- Close Button -->
+      @if (showCloseButton) {
+        <button
+          (click)="close.emit()"
+          class="absolute right-5 top-5 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-white"
+        >
+          <app-icon name="close" size="sm" />
+        </button>
+      }
+
+      <!-- Icon Section -->
+      <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center">
+        <!-- SVG for the scalloped burst shape from the image -->
+        <svg width="84" height="84" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Light red background shape -->
+          <path d="M30 2L33.7847 8.52882L41.314 7.64917L43.8344 14.6596L50.8448 17.18L49.9652 24.7093L56.494 28.494L56.494 31.506L49.9652 35.2907L50.8448 42.82L43.8344 45.3404L41.314 52.3508L33.7847 51.4712L30 58L26.2153 51.4712L18.686 52.3508L16.1656 45.3404L9.15516 42.82L10.0348 35.2907L3.50604 31.506L3.50604 28.494L10.0348 24.7093L9.15516 17.18L16.1656 14.6596L18.686 7.64917L26.2153 8.52882L30 2Z" fill="#FEF2F2" class="dark:fill-red-900/30" />
+          <!-- Red X icon -->
+          <path d="M38 22L22 38M22 22L38 38" stroke="#DC2626" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-red-500" />
+        </svg>
+      </div>
+
+      <!-- Text Section -->
+      <h3 class="mb-4 text-[28px] font-bold tracking-tight text-slate-800 dark:text-white">
+        {{ title }}
+      </h3>
+      <p class="mb-8 px-2 text-base leading-relaxed text-slate-500 dark:text-slate-400">
+        {{ message }}
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-center gap-4 mt-2">
+        @if(showCancelButton) {
+          <button
+            (click)="close.emit()"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-8 py-3 text-center font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus:ring-offset-slate-900"
+          >
+            {{ cancelButtonText }}
+          </button>
+        }
+        <button
+          (click)="confirm.emit()"
+          class="inline-flex items-center justify-center rounded-lg bg-[#DC2626] px-8 py-3 text-center font-semibold text-white shadow-sm transition-colors hover:bg-[#B91C1C] focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+        >
+          {{ buttonText }}
+        </button>
+      </div>
+
+      <!-- Optional content projection if needed -->
+      <div>
+        <ng-content></ng-content>
+      </div>
+    </div>
+  </div>
+}

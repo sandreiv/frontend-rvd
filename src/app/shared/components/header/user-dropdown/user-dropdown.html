@@ -1,0 +1,26 @@
+<div class="relative">
+  <button
+    type="button"
+    class="flex items-center text-gray-700 dark:text-gray-400">
+    <span class="mr-3">
+      @if (true) {
+        <app-avatar  size="medium" class="shrink-0" />
+      } @else {
+        <app-avatar-text  size="medium" [className]="'shrink-0'" />
+      }
+    </span>
+
+    <span class="mr-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+    </span>
+
+    <app-icon
+      name="chevronDown"
+      size="sm"
+      [classes]="
+        'text-gray-500 dark:text-gray-400 transition-transform duration-200 ' +
+        ('')
+      " />
+  </button>
+
+  
+</div>
