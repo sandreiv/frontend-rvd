@@ -7,7 +7,6 @@ import { PreloadCallItem } from '../../model/preload-call.model';
   selector: 'app-preload-call-table',
   imports: [DataTable],
   templateUrl: './preload-call-table.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PreloadCallTable {
   preloadCalls = input<PreloadCallItem[]>([]);
@@ -21,7 +20,8 @@ export class PreloadCallTable {
   @Output() deleteAllPreloadCall = new EventEmitter<string[]>();
   @Output() selectedPreloadCallIdsChange = new EventEmitter<string[]>();
 
-  readonly rowIdentity = (row: PreloadCallItem): string => String(row.id);
+  readonly rowIdentity = (row: PreloadCallItem, index: number): string =>
+    row.id != null ? String(row.id) : `${row.descripcion}-${index}`;
 
   readonly columns: DataTableColumn<PreloadCallItem>[] = [
     {
@@ -33,20 +33,20 @@ export class PreloadCallTable {
     {
       id: 'fechaInicio',
       header: 'Fecha inicio',
-      cell: (row) => row.fechasConvocatoria?.fechaInicio || '-',
+      cell: (row) => row.fechaInicio || '-',
       formatAsDate: true,
     },
     {
       id: 'fechaFin',
       header: 'Fecha fin',
-      cell: (row) => row.fechasConvocatoria?.fechaFin || '-',
+      cell: (row) => row.fechaFin || '-',
       formatAsDate: true,
     },
     {
-      id: 'personaGeneral',
+      id: 'nombreCompleto',
       header: 'Aprobado por',
-      cell: (row) => row.personaGeneral?.nombre || '-',
-    }
+      cell: (row) => row.nombreCompleto || '-',
+    },
   ];
 
   readonly rowActions: DataTableRowAction<PreloadCallItem>[] = [
@@ -62,15 +62,6 @@ export class PreloadCallTable {
       icon: 'delete',
     },
   ];
-
-  /*readonly inlineIcons: DataTableInlineIcon<PreloadCallItem>[] = [
-    {
-      id: 'file',
-      icon: 'paperClip',
-      tooltip: 'Archivo',
-      visible: (row) => (row.documentacion?.length ?? 0) > 0,
-    },
-  ];*/
 
   onTableAction(event: DataTableActionEvent<PreloadCallItem>): void {
     if (event.actionId === 'edit') {
@@ -97,7 +88,6 @@ export class PreloadCallTable {
     }
 
     if (event.actionId === 'add') {
-      console.log('Agregando nuevo registro de experiencia...');
       this.addPreloadCall.emit();
     }
   }

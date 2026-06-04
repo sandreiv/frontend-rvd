@@ -9,7 +9,7 @@ import { SidebarTheme } from '../../../core/service/sidebar-theme';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, ThemeToggleButton, Icon, UserDropdown],
+  imports: [CommonModule, RouterModule, Icon, UserDropdown],
   templateUrl: './app-header.html',
   styleUrl: './app-header.css',
 })

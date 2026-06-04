@@ -1,35 +1,42 @@
-<app-section-frame
-  title="Convocatoria precarga"
-  description="Administra la convocatoria de precarga."
-  iconName="call"
-  iconVariant="brand"
+<div
+  class="grid gap-4"
+  [class.lg:grid-cols-2]="showPreloadCallForm()"
 >
-  <div>
-
-    <app-preload-call-table
-      [preloadCalls]="preloadCalls()"
-      [selectedPreloadCallIds]="selectedPreloadCallIds()"
-      (selectedPreloadCallIdsChange)="selectedPreloadCallIdsChange($event)"
-      (addPreloadCall)="openPreloadCallForm()"
-      (editPreloadCall)="openReadOnlyPreloadCallForm($event)"
-      (deletePreloadCall)="onDeletePreloadCall($event)"
-      (refreshPreloadCall)="onRefreshPreloadCallList()"
-      (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
-      (selectedPreloadCallIdsChange)="selectedPreloadCallIdsChange($event)"
-    />
+  <div class="min-w-0">
+    <app-section-frame
+      title="Convocatoria precarga"
+      description="Administra la convocatoria de precarga."
+      iconName="call"
+      iconVariant="brand"
+    >
+      <app-preload-call-table
+        [preloadCalls]="preloadCalls()"
+        [selectedPreloadCallIds]="selectedPreloadCallIds()"
+        (selectedPreloadCallIdsChange)="selectedPreloadCallIdsChange($event)"
+        (addPreloadCall)="openPreloadCallForm()"
+        (editPreloadCall)="openReadOnlyPreloadCallForm($event)"
+        (deletePreloadCall)="onDeletePreloadCall($event)"
+        (refreshPreloadCall)="onRefreshPreloadCallList()"
+        (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
+      />
+    </app-section-frame>
   </div>
 
-</app-section-frame>
-
-<!--<app-new-modal
-  [isOpen]="isDeleteModalOpen()"
-  [title]="deleteModalTitle()"
-  [message]="deleteModalMessage()"
-  [buttonText]="deleteModalButtonText()"
-  [showCancelButton]="true"
-  cancelButtonText="No, cancelar"
-  (confirm)="confirmDelete()"
-  (close)="closeDeleteModal()"
->
-</app-new-modal>-->
+  @if (showPreloadCallForm()) {
+    <div class="min-w-0">
+      <app-section-frame
+        title="Formulario de convocatoria precarga"
+        description="Complete los datos de la convocatoria de precarga."
+        iconName="plus"
+        iconVariant="brand"
+      >
+        <app-preload-call-form
+          [mode]="formMode()"
+          [preloadCall]="selectedPreloadCall()"
+          (closeForm)="closePreloadCallForm()"
+        />
+      </app-section-frame>
+    </div>
+  }
+</div>
 

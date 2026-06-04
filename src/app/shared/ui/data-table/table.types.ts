@@ -2,6 +2,10 @@ import { AppIconName } from '../icon/icons';
 
 export type DataTableColumnCellKind = 'text' | 'fileTypeIcon';
 
+export type DataTableSortDirection = 'asc' | 'desc';
+
+export type DataTableSortValue = string | number | Date | null | undefined;
+
 export interface DataTableFileTypeIconClickEvent<T> {
   row: T;
   columnId: string;
@@ -17,8 +21,12 @@ export interface DataTableColumn<T> {
   cellKind?: DataTableColumnCellKind;
   formatAsDate?: boolean;
   formatAsSentence?: boolean;
+  allowHtml?: boolean;
   headerClassName?: string;
   cellClassName?: string;
+
+  sortable?: boolean;
+  sortValue?: (row: T) => DataTableSortValue;
 }
 
 export interface DataTableRowAction<T> {

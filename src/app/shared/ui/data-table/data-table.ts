@@ -1,6 +1,7 @@
 import {
   Component,
   EventEmitter,
+  HostListener,
   Input,
   Output,
   ViewChild,
@@ -18,12 +19,13 @@ import {
   DataTableRowAction,
   DataTableSearchEvent,
   DataTableSelectionChangeEvent,
+  DataTableSortDirection,
+  DataTableSortValue,
   DataTableToolbarActionEvent,
   DataTableToolbarActionId,
 } from './table.types';
 import { getFileExtension, getFileTypeIconPath } from '../../utils/file-type-icon.util';
 import { Icon } from '../icon/icon';
-import { Dropdown } from '../dropdown/dropdown/dropdown';
 import { Item } from '../dropdown/item/item';
 import { Checkbox } from '../../components/form/input/checkbox';
 import { formatSentenceValue } from '../../utils/normalized-text.util';
@@ -32,7 +34,7 @@ import { formatSentenceValue } from '../../utils/normalized-text.util';
   selector: 'app-data-table',
   standalone: true,
   templateUrl: './data-table.html',
-  imports: [Icon, Dropdown, Item, Checkbox],
+  imports: [Icon, Item, Checkbox],
 })
 export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('sentinelElement') sentinelElement?: ElementRef<HTMLDivElement>;
@@ -52,6 +54,7 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
   @Input() searchPredicate?: (row: T, term: string) => boolean;
   @Input() useFixedLayout = false;
   @Input() wrapCellText = false;
+  @Input() embedded = false;
 
   @Input() enableSelection = false;
   @Input() enableBulkActions = false;
@@ -62,7 +65,7 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
   @Input() enableInfiniteScroll = false;
   @Input() blockSize = 10;
   @Input() isLoadingMore = false;
-  @Input() tableMaxHeight = '600px';
+  @Input() tableMaxHeight = '500px';
   @Input() hasMore = true;
   @Input() endOfListMessage = 'Has llegado al final de la lista.';
 
@@ -78,7 +81,13 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
   @Output() loadMore = new EventEmitter<{ blockIndex: number; offset: number }>();
 
   activeRowMenuKey: string | number | null = null;
+  activeRowMenuRow: T | null = null;
+  activeRowMenuRowIndex = -1;
+  rowMenuTop = 0;
+  rowMenuLeft = 0;
   searchTerm = '';
+  activeSortColumnId: string | null = null;
+  activeSortDirection: DataTableSortDirection | null = null;
 
   //Scroll infinito: LP: 30-004-2026
   private intersectionObserver: IntersectionObserver | null = null;
@@ -148,19 +157,44 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
     return this.activeRowMenuKey === rowKey;
   }
 
-  toggleRowMenu(rowKey: string | number): void {
-    console.log('toggleRowMenu clicked for rowKey:', rowKey);
-    console.log('Current activeRowMenuKey:', this.activeRowMenuKey);
-    this.activeRowMenuKey = this.activeRowMenuKey === rowKey ? null : rowKey;
-    console.log('New activeRowMenuKey:', this.activeRowMenuKey);
+  openRowMenu(
+    rowKey: string | number,
+    row: T,
+    rowIndex: number,
+    event: MouseEvent,
+  ): void {
+    event.stopPropagation();
+
+    if (this.activeRowMenuKey === rowKey) {
+      this.closeRowMenu();
+      return;
+    }
+
+    const trigger = event.currentTarget;
+
+    if (!(trigger instanceof HTMLElement)) {
+      return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+    const menuWidth = 160;
+
+    this.activeRowMenuKey = rowKey;
+    this.activeRowMenuRow = row;
+    this.activeRowMenuRowIndex = rowIndex;
+    this.rowMenuTop = rect.bottom + 4;
+    this.rowMenuLeft = Math.max(8, rect.right - menuWidth);
   }
 
-  closeRowMenu(rowKey?: string | number): void {
-    console.log('closeRowMenu called with:', rowKey);
-    if (rowKey === undefined || this.activeRowMenuKey === rowKey) {
-      this.activeRowMenuKey = null;
-      console.log('Row menu closed.');
-    }
+  closeRowMenu(): void {
+    this.activeRowMenuKey = null;
+    this.activeRowMenuRow = null;
+    this.activeRowMenuRowIndex = -1;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeRowMenu();
   }
 
   onToolbarAction(actionId: DataTableToolbarActionId): void {
@@ -180,13 +214,74 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
     this.emitSearchChange();
   }
 
-  filteredRows(): T[] {
-    const searchTerm = this.normalizedSearchTerm;
-    if (!searchTerm) {
-      return this.rows;
+  toggleSort(column: DataTableColumn<T>): void {
+    if (!this.isColumnSortable(column)) {
+      return;
     }
 
-    return this.rows.filter((row) => this.matchesSearch(row, searchTerm));
+    if (this.activeSortColumnId !== column.id) {
+      this.activeSortColumnId = column.id;
+      this.activeSortDirection = 'asc';
+      return;
+    }
+
+    if (this.activeSortDirection === 'asc') {
+      this.activeSortDirection = 'desc';
+      return;
+    }
+
+    this.activeSortColumnId = null;
+    this.activeSortDirection = null;
+  }
+
+  isColumnSortable(column: DataTableColumn<T>): boolean {
+    return column.sortable !== false;
+  }
+
+  isColumnSorted(column: DataTableColumn<T>): boolean {
+    return this.activeSortColumnId === column.id && this.activeSortDirection !== null;
+  }
+
+  isColumnSortedAsc(column: DataTableColumn<T>): boolean {
+    return this.activeSortColumnId === column.id && this.activeSortDirection === 'asc';
+  }
+
+  isColumnSortedDesc(column: DataTableColumn<T>): boolean {
+    return this.activeSortColumnId === column.id && this.activeSortDirection === 'desc';
+  }
+
+  sortAriaLabel(column: DataTableColumn<T>): string {
+    if (!this.isColumnSorted(column)) {
+      return `Ordenar por ${column.header} ascendente`;
+    }
+
+    if (this.activeSortDirection === 'asc') {
+      return `Ordenar por ${column.header} descendente`;
+    }
+
+    return `Quitar ordenamiento por ${column.header}`;
+  }
+
+  ariaSort(column: DataTableColumn<T>): 'ascending' | 'descending' | 'none' {
+    if (this.isColumnSortedAsc(column)) {
+      return 'ascending';
+    }
+
+    if (this.isColumnSortedDesc(column)) {
+      return 'descending';
+    }
+
+    return 'none';
+  }
+
+  filteredRows(): T[] {
+    const searchTerm = this.normalizedSearchTerm;
+
+    const visibleRows = searchTerm
+      ? this.rows.filter((row) => this.matchesSearch(row, searchTerm))
+      : this.rows;
+
+    return this.sortRows(visibleRows);
   }
 
   canDelete(): boolean {
@@ -278,6 +373,138 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
     return this.columns.some((column) =>
       this.resolveCell(column, row).toLowerCase().includes(searchTerm),
     );
+  }
+
+  private sortRows(rows: T[]): T[] {
+    if (!this.activeSortColumnId || !this.activeSortDirection) {
+      return rows;
+    }
+
+    const column = this.columns.find((item) => item.id === this.activeSortColumnId);
+
+    if (!column) {
+      return rows;
+    }
+
+    const direction = this.activeSortDirection === 'asc' ? 1 : -1;
+
+    return [...rows].sort((leftRow, rightRow) => {
+      const result = this.compareRowsByColumn(leftRow, rightRow, column);
+      return result * direction;
+    });
+  }
+
+  private compareRowsByColumn(
+    leftRow: T,
+    rightRow: T,
+    column: DataTableColumn<T>,
+  ): number {
+    const leftValue = this.normalizeSortValue(this.resolveSortValue(column, leftRow), column);
+    const rightValue = this.normalizeSortValue(this.resolveSortValue(column, rightRow), column);
+
+    const leftEmpty = leftValue === null;
+    const rightEmpty = rightValue === null;
+
+    if (leftEmpty && rightEmpty) {
+      return 0;
+    }
+
+    if (leftEmpty) {
+      return 1;
+    }
+
+    if (rightEmpty) {
+      return -1;
+    }
+
+    if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+      return leftValue - rightValue;
+    }
+
+    return String(leftValue).localeCompare(String(rightValue), 'es', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  }
+
+  private resolveSortValue(column: DataTableColumn<T>, row: T): DataTableSortValue {
+    if (column.sortValue) {
+      return column.sortValue(row);
+    }
+
+    return column.cell(row);
+  }
+
+  private normalizeSortValue(
+    value: DataTableSortValue,
+    column: DataTableColumn<T>,
+  ): string | number | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value.getTime();
+    }
+
+    if (typeof value === 'number') {
+      return Number.isNaN(value) ? null : value;
+    }
+
+    const normalized = String(value).trim();
+
+    if (!normalized || normalized === '-') {
+      return null;
+    }
+
+    if (column.formatAsDate) {
+      const timestamp = this.parseDateValue(normalized);
+      return timestamp ?? normalized.toLowerCase();
+    }
+
+    const numericValue = this.parseNumberValue(normalized);
+
+    if (numericValue !== null) {
+      return numericValue;
+    }
+
+    return normalized.toLowerCase();
+  }
+
+  private parseNumberValue(value: string): number | null {
+    const normalized = value
+      .replace(/\s/g, '')
+      .replace(/\$/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
+      return null;
+    }
+
+    const numericValue = Number(normalized);
+    return Number.isNaN(numericValue) ? null : numericValue;
+  }
+
+  private parseDateValue(value: string): number | null {
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return Number.isNaN(date.getTime()) ? null : date.getTime();
+    }
+
+    const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+    if (slashMatch) {
+      const [, day, month, year] = slashMatch;
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return Number.isNaN(date.getTime()) ? null : date.getTime();
+    }
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.getTime();
   }
 
   private formatCellValue(value: string, column: DataTableColumn<T>): string {

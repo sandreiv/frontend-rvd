@@ -1,36 +1,56 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, input, OnDestroy, OnInit, Output, signal } from '@angular/core';
-import { SectionFrame } from "../../../../../shared/ui/section-frame/section-frame";
-import { PreloadCallItem } from '../../model/preload-call.model';
-import { DataTableColumn } from '../../../../../shared/ui/data-table/table.types';
-import { PreloadCallTable } from "../../components/preload-call-table/preload-call-table";
-import { ToastService } from '../../../../../core/service/toastService';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { BreadcrumbTitle } from '../../../../../core/service/breadcrumb-title';
+import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
+import { PreloadCallForm } from '../../components/preload-call-form/preload-call-form';
+import { PreloadCallTable } from '../../components/preload-call-table/preload-call-table';
+import { PreloadCallService } from '../../data/preload-call.service';
+import { PreloadCallItem } from '../../model/preload-call.model';
+
+const PRELOAD_CALL_LOAD_ERROR = 'No fue posible cargar las convocatorias de precarga.';
 
 @Component({
   selector: 'app-preload-call',
-  imports: [SectionFrame, PreloadCallTable],
+  imports: [SectionFrame, PreloadCallTable, PreloadCallForm],
   templateUrl: './preload-call.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PreloadCall implements OnInit, OnDestroy{
+export class PreloadCall implements OnInit, OnDestroy {
+  private readonly preloadCallService = inject(PreloadCallService);
+  private readonly breadcrumbTitleService = inject(BreadcrumbTitle);
 
-  readonly breadcrumbTitleService = inject(BreadcrumbTitle);
-  private readonly toastService = inject(ToastService);
+  readonly preloadCallsResource = rxResource({
+    stream: () => this.preloadCallService.getPreloadCallList(),
+    defaultValue: [] as PreloadCallItem[],
+  });
 
-  readonly preloadCalls = signal<PreloadCallItem[]>([]);
+  readonly preloadCalls = computed(
+    () => this.preloadCallsResource.value(),
+  );
+  readonly isLoading = computed(
+    () => this.preloadCallsResource.isLoading(),
+  );
+  readonly errorMessage = computed(() =>
+    this.preloadCallsResource.error() ? PRELOAD_CALL_LOAD_ERROR : null,
+  );
+
   readonly selectedPreloadCallIds = signal<string[]>([]);
   readonly selectedPreloadCall = signal<PreloadCallItem | null>(null);
-  readonly showPreloadCallForm = signal<boolean>(false);
-  successMessage = signal<string | null>(null);
-  errorMessage = signal<string | null>(null);
+  readonly showPreloadCallForm = signal(false);
+  readonly isSaving = signal(false);
+  readonly successMessage = signal<string | null>(null);
+  readonly formMode = signal<'create' | 'edit' | 'read'>('create');
 
-  formMode = signal<'create' | 'edit' | 'read'>('create');
-
-
-
-  async ngOnInit(): Promise<void> {
-    this.breadcrumbTitleService.setPageTitle('Experiencia');
-    //await this.loadPersonalInfo();
+  ngOnInit(): void {
+    this.breadcrumbTitleService.setPageTitle('Convocatoria precarga');
   }
 
   ngOnDestroy(): void {
@@ -43,35 +63,32 @@ export class PreloadCall implements OnInit, OnDestroy{
     this.showPreloadCallForm.set(true);
   }
 
+  closePreloadCallForm(): void {
+    this.showPreloadCallForm.set(false);
+    this.selectedPreloadCall.set(null);
+    this.formMode.set('create');
+  }
+
   selectedPreloadCallIdsChange(ids: string[]): void {
     this.selectedPreloadCallIds.set(ids);
   }
 
   openReadOnlyPreloadCallForm(preloadCall: PreloadCallItem): void {
-    /*this.experienceService.getExperienceById(experience.id).subscribe((response) => {
-      console.log('Experience by id:', response);
-      this.selectedExperience.set(response);
-      this.formMode.set('edit');
-      this.showExperienceForm.set(true);
-    });*/
+    this.selectedPreloadCall.set(preloadCall);
+    this.formMode.set('edit');
+    this.showPreloadCallForm.set(true);
   }
 
   onDeletePreloadCall(preloadCall: PreloadCallItem): void {
-    /*this.experienceToDelete.set(experience);
-    this.isDeleteModalOpen.set(true);
-    this.openSingleDeleteModal(experience);*/
+    console.log('Eliminar convocatoria:', preloadCall);
   }
 
-  async onRefreshPreloadCallList(): Promise<void> {
-    console.log('Refrescando lista de experiencias...');
-
+  onRefreshPreloadCallList(): void {
     this.successMessage.set(null);
-    this.errorMessage.set(null);
-    //await this.loadPersonalInfo();
+    this.preloadCallsResource.reload();
   }
 
   onDeleteAllPreloadCall(ids: string[]): void {
-    //this.openBulkDeleteModal(ids);
+    console.log('Eliminar convocatorias:', ids);
   }
-
 }
