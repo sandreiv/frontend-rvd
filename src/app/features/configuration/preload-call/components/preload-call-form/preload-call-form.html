@@ -1,4 +1,4 @@
-<form [formGroup]="form" class="flex flex-col gap-4">
+<form [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="onSubmit($event)">
   <div
     class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white dark:divide-white/5 dark:border-white/5 dark:bg-white/3"
   >
@@ -67,6 +67,28 @@
         <app-input-field
           formControlName="descripcion"
           placeholder="Ingrese la descripción de la convocatoria"
+        />
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <app-label>Periodo</app-label>
+        <app-select
+          formControlName="periodoUniversidad"
+          [options]="universityPeriodOptions()"
+          placeholder="Seleccione el periodo"
+          searchPlaceholder="Buscar periodo..."
+          emptyText="No se encontraron periodos"
+        />
+      </div>
+      <div>
+        <app-label>Nivel Educativo</app-label>
+        <app-select
+          formControlName="nivelEducativo"
+          [options]="educationalLevelOptions()"
+          placeholder="Seleccione el nivel educativo"
+          searchPlaceholder="Buscar nivel educativo..."
+          emptyText="No se encontraron niveles educativos"
         />
       </div>
     </div>
@@ -158,15 +180,23 @@
   </app-collapsible-section>
   </div>
 
-  <div class="flex justify-end gap-3 pt-1">
+  <div class="flex flex-col gap-3 pt-1">
+    @if (saveError()) {
+      <p class="text-end text-sm text-error-500">{{ saveError() }}</p>
+    }
+    <div class="flex justify-end gap-3">
     <app-button type="button" variant="outline" (btnClick)="closeForm.emit()">
       Cancelar
     </app-button>
     @if (!isReadOnly()) {
-      <app-button type="submit" [disabled]="form.invalid">
-        Guardar
+      <app-button
+        type="submit"
+        [disabled]="form.invalid || isSaving()"
+      >
+        {{ isSaving() ? 'Guardando...' : 'Guardar' }}
       </app-button>
     }
+    </div>
   </div>
 </form>
 

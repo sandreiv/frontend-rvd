@@ -20,14 +20,25 @@ export class PreloadCallTable {
   @Output() deleteAllPreloadCall = new EventEmitter<string[]>();
   @Output() selectedPreloadCallIdsChange = new EventEmitter<string[]>();
 
-  readonly rowIdentity = (row: PreloadCallItem, index: number): string =>
-    row.id != null ? String(row.id) : `${row.descripcion}-${index}`;
+  readonly rowIdentity = (row: PreloadCallItem): string => String(row.id);
 
   readonly columns: DataTableColumn<PreloadCallItem>[] = [
     {
       id: 'descripcion',
       header: 'Descripción',
       cell: (row) => row.descripcion || '-',
+      formatAsSentence: true,
+    },
+    {
+      id: 'periodoUniversidad',
+      header: 'Periodo universidad',
+      cell: (row) => row.periodoUniversidad || '-',
+      formatAsSentence: true,
+    },
+    {
+      id: 'nivelEducativo',
+      header: 'Nivel educativo',
+      cell: (row) => row.nivelEducativo || '-',
       formatAsSentence: true,
     },
     {
@@ -65,7 +76,6 @@ export class PreloadCallTable {
 
   onTableAction(event: DataTableActionEvent<PreloadCallItem>): void {
     if (event.actionId === 'edit') {
-      console.log('Editando registro:', event);
       this.editPreloadCall.emit(event.row);
       return;
     }
@@ -93,7 +103,6 @@ export class PreloadCallTable {
   }
 
   onSearchRecords(event: DataTableSearchEvent<PreloadCallItem>): void {
-    //this.searchRecords.emit({ term: event.searchTerm, rows: event.rows });
   }
 
   onSelectedPreloadCallIdsChange(keys: Array<string | number>): void {

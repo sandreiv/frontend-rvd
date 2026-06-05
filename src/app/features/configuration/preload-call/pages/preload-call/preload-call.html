@@ -12,9 +12,9 @@
       <app-preload-call-table
         [preloadCalls]="preloadCalls()"
         [selectedPreloadCallIds]="selectedPreloadCallIds()"
-        (selectedPreloadCallIdsChange)="selectedPreloadCallIdsChange($event)"
+        (selectedPreloadCallIdsChange)="onSelectedPreloadCallIdsChange($event)"
         (addPreloadCall)="openPreloadCallForm()"
-        (editPreloadCall)="openReadOnlyPreloadCallForm($event)"
+        (editPreloadCall)="openEditPreloadCallForm($event)"
         (deletePreloadCall)="onDeletePreloadCall($event)"
         (refreshPreloadCall)="onRefreshPreloadCallList()"
         (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
@@ -25,18 +25,21 @@
   @if (showPreloadCallForm()) {
     <div class="min-w-0">
       <app-section-frame
-        title="Formulario de convocatoria precarga"
+        [title]="formMode() === 'edit'
+          ? 'Editar convocatoria precarga'
+          : 'Formulario de convocatoria precarga'"
         description="Complete los datos de la convocatoria de precarga."
         iconName="plus"
         iconVariant="brand"
       >
         <app-preload-call-form
-          [mode]="formMode()"
           [preloadCall]="selectedPreloadCall()"
+          [mode]="formMode()"
+          [isSaving]="isSaving()"
           (closeForm)="closePreloadCallForm()"
+          (submitPreloadCall)="onSubmitPreloadCall($event)"
         />
       </app-section-frame>
     </div>
   }
 </div>
-

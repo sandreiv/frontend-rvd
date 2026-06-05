@@ -8,14 +8,17 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { BreadcrumbTitle } from '../../../../../core/service/breadcrumb-title';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
 import { PreloadCallForm } from '../../components/preload-call-form/preload-call-form';
 import { PreloadCallTable } from '../../components/preload-call-table/preload-call-table';
 import { PreloadCallService } from '../../data/preload-call.service';
-import { PreloadCallItem } from '../../model/preload-call.model';
-
-const PRELOAD_CALL_LOAD_ERROR = 'No fue posible cargar las convocatorias de precarga.';
+import {
+  PreloadCallDetailResponse,
+  PreloadCallItem,
+} from '../../model/preload-call.model';
+import { PreloadCallSaveRequest } from '../../model/preload-call-save.model';
 
 @Component({
   selector: 'app-preload-call',
@@ -32,18 +35,12 @@ export class PreloadCall implements OnInit, OnDestroy {
     defaultValue: [] as PreloadCallItem[],
   });
 
-  readonly preloadCalls = computed(
-    () => this.preloadCallsResource.value(),
-  );
-  readonly isLoading = computed(
-    () => this.preloadCallsResource.isLoading(),
-  );
-  readonly errorMessage = computed(() =>
-    this.preloadCallsResource.error() ? PRELOAD_CALL_LOAD_ERROR : null,
-  );
+  readonly preloadCalls = computed(() => this.preloadCallsResource.value());
+  readonly isLoading = computed(() => this.preloadCallsResource.isLoading());
 
   readonly selectedPreloadCallIds = signal<string[]>([]);
-  readonly selectedPreloadCall = signal<PreloadCallItem | null>(null);
+  readonly selectedPreloadCall =
+    signal<PreloadCallDetailResponse | null>(null);
   readonly showPreloadCallForm = signal(false);
   readonly isSaving = signal(false);
   readonly successMessage = signal<string | null>(null);
@@ -69,14 +66,36 @@ export class PreloadCall implements OnInit, OnDestroy {
     this.formMode.set('create');
   }
 
-  selectedPreloadCallIdsChange(ids: string[]): void {
-    this.selectedPreloadCallIds.set(ids);
+  openEditPreloadCallForm(preloadCall: PreloadCallItem): void {
+    if (!preloadCall?.id) {
+      return;
+    }
+
+    this.preloadCallService
+      .getPreloadCallDetails(preloadCall.id)
+      .subscribe((response) => {
+        this.selectedPreloadCall.set({ ...response, id: preloadCall.id });
+        this.formMode.set('edit');
+        this.showPreloadCallForm.set(true);
+      });
   }
 
-  openReadOnlyPreloadCallForm(preloadCall: PreloadCallItem): void {
-    this.selectedPreloadCall.set(preloadCall);
-    this.formMode.set('edit');
-    this.showPreloadCallForm.set(true);
+  async onSubmitPreloadCall(payload: PreloadCallSaveRequest): Promise<void> {
+    this.isSaving.set(true);
+    this.successMessage.set(null);
+
+    try {
+      await firstValueFrom(this.preloadCallService.savePreloadCall(payload));
+      this.successMessage.set('Convocatoria guardada correctamente.');
+      this.preloadCallsResource.reload();
+      this.closePreloadCallForm();
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  onSelectedPreloadCallIdsChange(ids: string[]): void {
+    this.selectedPreloadCallIds.set(ids);
   }
 
   onDeletePreloadCall(preloadCall: PreloadCallItem): void {

@@ -1,12 +1,18 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
 import {
+  EducationalLevelItem,
   ModalityItem,
+  normalizePreloadCallListItem,
   PersonaAutorizaConvocatoriaItem,
+  PreloadCallDetailResponse,
   PreloadCallItem,
+  PreloadCallListApiItem,
   SearchGeneralPersonParams,
+  UniversityPeriodItem,
 } from '../model/preload-call.model';
+import { PreloadCallSaveRequest } from '../model/preload-call-save.model';
 
 @Injectable({
   providedIn: 'root',
@@ -16,14 +22,18 @@ export class PreloadCallService {
   private readonly endpoint = '/configuration/preload-call';
 
   getPreloadCallList(): Observable<PreloadCallItem[]> {
-    return this.webRequestService.get<PreloadCallItem[]>(
-      `${this.endpoint}/list`,
-    );
+    return this.webRequestService
+      .get<PreloadCallListApiItem[]>(`${this.endpoint}/list`)
+      .pipe(
+        map((items) =>
+          items
+            .map((item) => normalizePreloadCallListItem(item))
+            .filter((item): item is PreloadCallItem => item != null),
+        ),
+      );
   }
 
-  searchGeneralPerson(
-    params: SearchGeneralPersonParams,
-  ): Observable<PersonaAutorizaConvocatoriaItem[]> {
+  searchGeneralPerson(params: SearchGeneralPersonParams): Observable<PersonaAutorizaConvocatoriaItem[]> {
     const query: Record<string, string> = {};
     const documento = params.documento?.trim();
     const nombre = params.nombre?.trim();
@@ -44,6 +54,30 @@ export class PreloadCallService {
   getModalities(): Observable<ModalityItem[]> {
     return this.webRequestService.get<ModalityItem[]>(
       `${this.endpoint}/list-modality`,
+    );
+  }
+  getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
+    return this.webRequestService.get<UniversityPeriodItem[]>(
+      `${this.endpoint}/list-university-period`,
+    );
+  }
+
+  getEducationalLevels(): Observable<EducationalLevelItem[]> {
+    return this.webRequestService.get<EducationalLevelItem[]>(
+      `${this.endpoint}/list-educational-level`,
+    );
+  }
+
+  savePreloadCall(payload: PreloadCallSaveRequest): Observable<PreloadCallItem> {
+    return this.webRequestService.post<PreloadCallItem>(
+      `${this.endpoint}/save`,
+      payload,
+    );
+  }
+
+  getPreloadCallDetails(id: number): Observable<PreloadCallDetailResponse> {
+    return this.webRequestService.get<PreloadCallDetailResponse>(
+      `${this.endpoint}/detail/${id}`,
     );
   }
 }

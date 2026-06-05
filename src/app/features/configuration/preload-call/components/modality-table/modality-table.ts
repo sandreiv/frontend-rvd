@@ -42,6 +42,11 @@ export class ModalityTable {
         row.diasVacaciones != null ? String(row.diasVacaciones) : '-',
     },
     {
+      id: 'semanas',
+      header: 'Semanas',
+      cell: (row) => row.semanas != null ? String(row.semanas) : '-',
+    },
+    {
       id: 'fechaInicio',
       header: 'Fecha inicio',
       cell: (row) => row.fechaInicio || '-',
