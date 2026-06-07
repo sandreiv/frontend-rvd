@@ -6,27 +6,34 @@ import {
 import {
   provideHttpClient,
   withFetch,
-  withInterceptorsFromDi,
-  HTTP_INTERCEPTORS,
+  withInterceptors,
 } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideHotToastConfig } from '@ngxpert/hot-toast';
 
 import { routes } from './app.routes';
 import { APP_CONFIG } from './core/config/app-config.token';
 import { environment } from '../environments/environment';
-import { HttpErrorInterceptor } from './core/interceptors/http-error.interceptor';
+import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
+import { TOAST_POSITION } from './core/config/toast-style.config';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideAnimations(),
+    provideHotToastConfig({
+      position: TOAST_POSITION,
+      dismissible: true,
+      duration: 4000,
+      visibleToasts: 5,
+      theme: 'material',
+    }),
     provideHttpClient(
       withFetch(),
-      withInterceptorsFromDi()
+      withInterceptors([httpErrorInterceptor]),
     ),
-    { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
     provideRouter(routes),
     { provide: APP_CONFIG, useValue: environment },
   ],

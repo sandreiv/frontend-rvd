@@ -27,6 +27,7 @@ import { buildPreloadCallSavePayload } from '../../model/build-preload-call-save
 import { PreloadCallSaveRequest } from '../../model/preload-call-save.model';
 import {
   EducationalLevelItem,
+  FechaFormMeta,
   ModalityFormItem,
   PersonaAutorizaConvocatoriaItem,
   PreloadCallDetailResponse,
@@ -70,9 +71,17 @@ export class PreloadCallForm implements OnInit {
 
   readonly isReadOnly = computed(() => this.mode() === 'read');
 
+  readonly submitButtonLabel = computed(() => {
+    if (this.isSaving()) {
+      return this.mode() === 'edit' ? 'Actualizando...' : 'Guardando...';
+    }
+    return this.mode() === 'edit' ? 'Actualizar' : 'Guardar';
+  });
+
   readonly searchModalOpen = signal(false);
   readonly modalityModalOpen = signal(false);
   readonly searchResults = signal<PersonaAutorizaConvocatoriaItem[]>([]);
+  readonly fechasMeta = signal<FechaFormMeta[]>([]);
   readonly modalities = signal<ModalityFormItem[]>([]);
   readonly isSearching = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -130,17 +139,19 @@ export class PreloadCallForm implements OnInit {
         return;
       }
 
-      if (this.lastSyncedDetailId === detail.id) {
+      const detailId = detail.convocatoria.id ?? null;
+      if (this.lastSyncedDetailId === detailId) {
         return;
       }
 
-      this.lastSyncedDetailId = detail.id ?? null;
+      this.lastSyncedDetailId = detailId;
       this.syncFormFromDetail(detail);
     });
   }
 
   private resetFormState(): void {
     this.form.reset();
+    this.fechasMeta.set([]);
     this.modalities.set([]);
     this.saveError.set(null);
     this.searchError.set(null);
@@ -150,6 +161,8 @@ export class PreloadCallForm implements OnInit {
     const cnv = detail.fechas.find((fecha) => fecha.codigo === 'CNV');
     const cti = detail.fechas.find((fecha) => fecha.codigo === 'CTI');
     const isu = detail.fechas.find((fecha) => fecha.codigo === 'ISU');
+
+    this.fechasMeta.set(this.mapDetailFechasMeta(detail));
 
     this.form.patchValue({
       nombre: detail.convocatoria.nombre,
@@ -168,27 +181,35 @@ export class PreloadCallForm implements OnInit {
       fechaFinIsu: this.toDateOnly(isu?.fechaFin),
     });
 
-    this.modalities.set(this.mapDetailModalities(detail));
+    this.modalities.set(this.mapDetailModalityRows(detail));
   }
 
-  private mapDetailModalities(
+  private mapDetailFechasMeta(
+    detail: PreloadCallDetailResponse,
+  ): FechaFormMeta[] {
+    return detail.fechas.map(({ codigo, id }) => ({ codigo, id }));
+  }
+
+  private mapDetailModalityRows(
     detail: PreloadCallDetailResponse,
   ): ModalityFormItem[] {
-    return detail.modalidades.map((item) => {
-      const tipoModalidad = String(item.idModalidadContratacion);
+    return detail.convocatoriaTipoContratacion.flatMap((cotc) => {
+      const tipoModalidad = String(cotc.idModalidadContratacion);
       const label =
         this.modalitySelectOptions().find((opt) => opt.value === tipoModalidad)
           ?.label ?? tipoModalidad;
 
-      return {
+      return cotc.fechas.map((fecha) => ({
         id: crypto.randomUUID(),
+        cotcId: cotc.id,
+        fechaId: fecha.id,
         tipoModalidad,
         tipoModalidadLabel: label,
-        diasVacaciones: item.vacaciones,
-        fechaInicio: this.toDateOnly(item.fechaInicio),
-        fechaFin: this.toDateOnly(item.fechaFin),
-        semanas: Number(item.semanas),
-      };
+        diasVacaciones: fecha.vacaciones,
+        fechaInicio: this.toDateOnly(fecha.fechaInicio),
+        fechaFin: this.toDateOnly(fecha.fechaFin),
+        semanas: Number(fecha.semanas),
+      }));
     });
   }
 
@@ -343,6 +364,7 @@ export class PreloadCallForm implements OnInit {
     }
 
     const payload = buildPreloadCallSavePayload({
+      convocatoriaId: this.preloadCall()?.convocatoria?.id,
       nombre: value.nombre ?? '',
       descripcion: value.descripcion ?? '',
       idPersonaNaturalGeneral: idPersona,
@@ -356,7 +378,8 @@ export class PreloadCallForm implements OnInit {
       fechaFinCtei: value.fechaFinCtei ?? '',
       fechaInicioIsu: value.fechaInicioIsu ?? '',
       fechaFinIsu: value.fechaFinIsu ?? '',
-      modalidades: this.modalities(),
+      fechasMeta: this.fechasMeta(),
+      modalityRows: this.modalities(),
     });
 
     this.saveError.set(null);

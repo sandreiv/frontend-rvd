@@ -32,7 +32,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "src/styles.css",
+              "@ngxpert/hot-toast/styles.css",
+              "@ngxpert/hot-toast/themes/material.css"
+            ]
           },
           "configurations": {
             "production": {

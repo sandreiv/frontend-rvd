@@ -67,7 +67,7 @@ export class NotificationService {
    * Limpiar todas las notificaciones
    */
   clearAll(): void {
-    this.toast.toasts.set([]);
+    this.toast.clearAll();
   }
 
   /**

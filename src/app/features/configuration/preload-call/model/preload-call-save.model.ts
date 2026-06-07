@@ -1,5 +1,6 @@
 import {
   EducationalLevelItem,
+  FechaFormMeta,
   ModalityFormItem,
   UniversityPeriodItem,
 } from './preload-call.model';
@@ -7,10 +8,11 @@ import {
 export interface PreloadCallSaveRequest {
   convocatoria: PreloadCallSaveConvocatoria;
   fechas: PreloadCallSaveFecha[];
-  modalidades: PreloadCallSaveModality[];
+  convocatoriaTipoContratacion: PreloadCallSaveCotc[];
 }
 
 export interface PreloadCallSaveConvocatoria {
+  id?: number;
   nombre: string;
   descripcion: string;
   autoriza: PreloadCallSaveAutoriza;
@@ -38,20 +40,28 @@ export interface PreloadCallSaveNivelEducativo {
 export type PreloadCallFechaCodigo = 'CNV' | 'CTI' | 'ISU';
 
 export interface PreloadCallSaveFecha {
+  id?: number | null;
   codigo: PreloadCallFechaCodigo;
   fechaInicio: string;
   fechaFin: string;
 }
 
-export interface PreloadCallSaveModality {
+export interface PreloadCallSaveCotc {
+  id?: number | null;
   idModalidadContratacion: number;
+  fechas: PreloadCallSaveCotcFecha[];
+}
+
+export interface PreloadCallSaveCotcFecha {
+  id?: number | null;
   vacaciones: number;
-  semanas: number;
   fechaInicio: string;
   fechaFin: string;
+  semanas: number;
 }
 
 export interface BuildPreloadCallSavePayloadParams {
+  convocatoriaId?: number;
   nombre: string;
   descripcion: string;
   idPersonaNaturalGeneral: number;
@@ -65,5 +75,31 @@ export interface BuildPreloadCallSavePayloadParams {
   fechaFinCtei: string;
   fechaInicioIsu: string;
   fechaFinIsu: string;
-  modalidades: ModalityFormItem[];
+  fechasMeta: FechaFormMeta[];
+  modalityRows: ModalityFormItem[];
+}
+
+export interface PreloadCallDeleteRequest {
+  convocatoria: PreloadCallDeleteConvocatoria;
+  fechas: PreloadCallDeleteFecha[];
+  convocatoriaTipoContratacion: PreloadCallDeleteCotc[];
+}
+
+export interface PreloadCallDeleteConvocatoria {
+  id?: number;
+}
+
+
+export interface PreloadCallDeleteFecha {
+  id?: number | null;
+}
+
+export interface PreloadCallDeleteCotc {
+  id?: number | null;
+  fechas: PreloadCallDeleteCotcFecha[];
+}
+
+export interface PreloadCallDeleteCotcFecha {
+  id?: number | null;
+
 }

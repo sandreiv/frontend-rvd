@@ -12,7 +12,7 @@ import {
   SearchGeneralPersonParams,
   UniversityPeriodItem,
 } from '../model/preload-call.model';
-import { PreloadCallSaveRequest } from '../model/preload-call-save.model';
+import { PreloadCallDeleteRequest, PreloadCallSaveRequest } from '../model/preload-call-save.model';
 
 @Injectable({
   providedIn: 'root',
@@ -80,4 +80,28 @@ export class PreloadCallService {
       `${this.endpoint}/detail/${id}`,
     );
   }
+
+  updatePreloadCall(id: number, payload: PreloadCallSaveRequest): Observable<PreloadCallItem> {
+    return this.webRequestService.put<PreloadCallItem>(
+      `${this.endpoint}/update/${id}`,
+      payload,
+    );
+  }
+
+  deletePreloadCall(id: number, payload: PreloadCallDeleteRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/delete/${id}`,
+      payload,
+    );
+  }
+
+  bulkDeletePreloadCall(payload: PreloadCallDeleteRequest[]): Observable<void> {
+    console.log('payload', payload);
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/delete-bulk`,
+      payload,
+    );
+  }
+
+
 }

@@ -58,15 +58,15 @@ export function normalizePreloadCallListItem(
   };
 }
 
-/** Respuesta de GET /configuration/preload-call/details/{id} */
+/** Respuesta de GET /configuration/preload-call/detail/{id} */
 export interface PreloadCallDetailResponse {
-  id?: number;
   convocatoria: PreloadCallDetailConvocatoria;
   fechas: PreloadCallDetailFecha[];
-  modalidades: PreloadCallDetailModality[];
+  convocatoriaTipoContratacion: PreloadCallDetailCotc[];
 }
 
 export interface PreloadCallDetailConvocatoria {
+  id?: number;
   nombre: string;
   descripcion: string;
   autoriza: PersonaAutorizaConvocatoriaItem;
@@ -75,26 +75,24 @@ export interface PreloadCallDetailConvocatoria {
 }
 
 export interface PreloadCallDetailFecha {
+  id?: number;
   codigo: 'CNV' | 'CTI' | 'ISU';
   fechaInicio: string;
   fechaFin: string;
 }
 
-export interface PreloadCallDetailModality {
+export interface PreloadCallDetailCotc {
+  id: number;
   idModalidadContratacion: number;
-  vacaciones: number;
-  semanas: number | string;
-  fechaInicio: string;
-  fechaFin: string;
+  fechas: PreloadCallDetailCotcFecha[];
 }
 
-export interface PreloadCallFormValue {
-  descripcion: string;
+export interface PreloadCallDetailCotcFecha {
+  id: number;
+  vacaciones: number;
   fechaInicio: string;
   fechaFin: string;
-  estadoConvocatoria: string;
-  documentoIdentidad: string;
-  nombreCompleto: string;
+  semanas: number | string;
 }
 
 export interface PersonaAutorizaConvocatoriaItem {
@@ -111,12 +109,19 @@ export interface SearchGeneralPersonParams {
 
 export interface ModalityFormItem {
   id: string;
+  cotcId?: number;
+  fechaId?: number;
   tipoModalidad: string;
   tipoModalidadLabel: string;
   fechaInicio: string;
   fechaFin: string;
   diasVacaciones: number | null;
   semanas: number | null;
+}
+
+export interface FechaFormMeta {
+  codigo: 'CNV' | 'CTI' | 'ISU';
+  id?: number;
 }
 
 /** Respuesta de GET /configuration/preload-call/list-modality */
@@ -140,45 +145,4 @@ export interface EducationalLevelItem {
   id: number;
   descripcion: string;
 }
-export interface fechasConvocatoriaItem{
-  id: number;
-  fechaInicio: string;
-  fechaFin: string;
-  semanas: number;
-  onceMeses: number;
-  vacaciones: number;
-  codigo: string;
-  convocatoria: PreloadCallItem;
-  tipoContratacion: TipoContratacionItem;
-}
-
-export interface TipoActividadItem{
-  id: number;
-  idPadre: number;
-  nombre: string;
-  descripcion: string;
-  orden: number;
-  estado: string;
-  codigo: string;
-  componente: string;
-}
-
-export interface TipoContratacionItem{
-  id:number;
-  convocatoria: PreloadCallItem;
-  modalidadContratacion: ModalidadContratacionItem;
-}
-
-export interface ModalidadContratacionItem{
-  id: number;
-  nombre: string;
-  descripcion: string;
-  porcentajeMaximoAnticipo: number;
-  porcentajeMinimoAnticipo: number;
-  instructivo: string;
-  estado: string;
-  sigla: string;
-  idClaseModalidad: number;
-}
-
 

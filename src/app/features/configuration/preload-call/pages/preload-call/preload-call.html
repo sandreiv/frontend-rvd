@@ -43,3 +43,14 @@
     </div>
   }
 </div>
+
+<app-new-modal
+  [isOpen]="isDeleteModalOpen()"
+  [title]="deleteModalTitle()"
+  [message]="deleteModalMessage()"
+  [buttonText]="deleteModalButtonText()"
+  [showCancelButton]="true"
+  cancelButtonText="No, cancelar"
+  (confirm)="confirmDelete()"
+  (close)="closeDeleteModal()"
+/>
