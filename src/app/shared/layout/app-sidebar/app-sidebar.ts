@@ -28,6 +28,11 @@ export class AppSidebar {
       name: 'Convocatoria precarga',
       path: '/rvd/convocatoria-precarga',
     },
+    {
+      icon: 'paperAirplane',
+      name: 'Precarga docente',
+      path: '/rvd/precarga-docente',
+    },
   ];
   // Others nav items
   othersItems: NavItem[] = [];

@@ -45,7 +45,7 @@ function resolveCotcGroupKey(item: ModalityFormItem): string {
 function mapCotcFecha(row: ModalityFormItem): PreloadCallSaveCotcFecha {
   return {
     id: row.fechaId ?? null,
-    vacaciones: row.diasVacaciones ?? 0,
+    vacaciones: row.diasVacaciones ?? null,
     fechaInicio: row.fechaInicio,
     fechaFin: row.fechaFin,
     semanas: row.semanas ?? 0,

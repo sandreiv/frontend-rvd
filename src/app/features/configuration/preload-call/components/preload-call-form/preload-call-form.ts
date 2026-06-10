@@ -80,6 +80,7 @@ export class PreloadCallForm implements OnInit {
 
   readonly searchModalOpen = signal(false);
   readonly modalityModalOpen = signal(false);
+  readonly editingModality = signal<ModalityFormItem | null>(null);
   readonly searchResults = signal<PersonaAutorizaConvocatoriaItem[]>([]);
   readonly fechasMeta = signal<FechaFormMeta[]>([]);
   readonly modalities = signal<ModalityFormItem[]>([]);
@@ -269,15 +270,35 @@ export class PreloadCallForm implements OnInit {
   }
 
   openModalityModal(): void {
+    this.editingModality.set(null);
+    this.modalityModalOpen.set(true);
+  }
+
+  openEditModality(item: ModalityFormItem): void {
+    if (!item?.id) {
+      return;
+    }
+
+    this.editingModality.set(item);
     this.modalityModalOpen.set(true);
   }
 
   closeModalityModal(): void {
     this.modalityModalOpen.set(false);
+    this.editingModality.set(null);
   }
 
   onModalitySaved(item: ModalityFormItem): void {
-    this.modalities.update((items) => [...items, item]);
+    const editing = this.editingModality();
+
+    if (editing) {
+      this.modalities.update((items) =>
+        items.map((row) => (row.id === editing.id ? item : row)),
+      );
+    } else {
+      this.modalities.update((items) => [...items, item]);
+    }
+
     this.closeModalityModal();
   }
 

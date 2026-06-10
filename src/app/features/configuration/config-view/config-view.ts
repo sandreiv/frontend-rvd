@@ -25,6 +25,11 @@ export class ConfigView {
       icon: 'call',
       path: 'convocatoria-precarga',
     },
+    {
+      label: 'Precarga docente',
+      icon: 'paperAirplane',
+      path: 'precarga-docente',
+    },
   ];
 }
 

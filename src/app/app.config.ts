@@ -16,7 +16,7 @@ import { routes } from './app.routes';
 import { APP_CONFIG } from './core/config/app-config.token';
 import { environment } from '../environments/environment';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
-import { TOAST_POSITION } from './core/config/toast-style.config';
+import { TOAST_POSITION } from './shared/ui/toast/config/toast-style.config';
 
 export const appConfig: ApplicationConfig = {
   providers: [

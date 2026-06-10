@@ -3,7 +3,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
 import {
   buildToastOptions,
   getToastIconName,
-} from '../config/toast-style.config';
+} from '../../shared/ui/toast/config/toast-style.config';
 import { ToastIconComponent } from '../../shared/ui/toast/toast-icon/toast-icon';
 import { ToastMessageComponent } from '../../shared/ui/toast/toast-message/toast-message';
 import { Toast } from '../../shared/ui/toast/toas.model';

@@ -16,7 +16,7 @@ export type CollapsibleSectionVariant = 'card' | 'plain';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CollapsibleSection {
-  title = input.required<string>();
+  title = input('');
   expanded = model(true);
   disabled = input(false);
   variant = input<CollapsibleSectionVariant>('card');

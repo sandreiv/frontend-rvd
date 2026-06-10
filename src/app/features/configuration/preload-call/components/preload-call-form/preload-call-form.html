@@ -176,6 +176,7 @@
       [readonly]="isReadOnly()"
       (addModality)="openModalityModal()"
       (deleteModality)="onDeleteModality($event)"
+      (editModality)="openEditModality($event)"
     />
   </app-collapsible-section>
   </div>
@@ -211,6 +212,7 @@
 <app-modality-form-modal
   [isOpen]="modalityModalOpen()"
   [modalityOptions]="modalitySelectOptions()"
+  [editingItem]="editingModality()"
   (close)="closeModalityModal()"
   (saved)="onModalitySaved($event)"
 />

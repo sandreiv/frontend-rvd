@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -48,9 +49,18 @@ export class ModalityFormModal {
 
   readonly isOpen = input(false);
   readonly modalityOptions = input<Option[]>([]);
+  readonly editingItem = input<ModalityFormItem | null>(null);
 
   readonly close = output<void>();
   readonly saved = output<ModalityFormItem>();
+
+  readonly isEditMode = computed(() => this.editingItem() != null);
+  readonly modalTitle = computed(() =>
+    this.isEditMode() ? 'Editar modalidad' : 'Agregar modalidad',
+  );
+  readonly saveButtonLabel = computed(() =>
+    this.isEditMode() ? 'Actualizar' : 'Agregar',
+  );
 
   readonly form = this.fb.group({
     tipoModalidad: ['', Validators.required],
@@ -62,10 +72,30 @@ export class ModalityFormModal {
 
   constructor() {
     effect(() => {
-      if (!this.isOpen()) {
+      const open = this.isOpen();
+      const item = this.editingItem();
+
+      if (!open) {
         this.form.reset();
         this.semanasManuallyEdited = false;
+        return;
       }
+
+      if (!item) {
+        this.form.reset();
+        this.semanasManuallyEdited = false;
+        return;
+      }
+
+      this.semanasManuallyEdited = true;
+      this.form.patchValue({
+        tipoModalidad: item.tipoModalidad,
+        diasVacaciones:
+          item.diasVacaciones != null ? String(item.diasVacaciones) : '',
+        fechaInicio: item.fechaInicio,
+        fechaFin: item.fechaFin,
+        semanas: item.semanas != null ? String(item.semanas) : '',
+      });
     });
 
     merge(
@@ -97,8 +127,12 @@ export class ModalityFormModal {
     const semanas =
       semanasRaw === '' || semanasRaw == null ? null : Number(semanasRaw);
 
+    const editing = this.editingItem();
+
     this.saved.emit({
-      id: crypto.randomUUID(),
+      id: editing?.id ?? '',
+      cotcId: editing?.cotcId,
+      fechaId: editing?.fechaId,
       tipoModalidad,
       tipoModalidadLabel: label,
       diasVacaciones,

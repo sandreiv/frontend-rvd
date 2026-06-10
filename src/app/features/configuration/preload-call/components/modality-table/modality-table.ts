@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   input,
+  Output,
   output,
 } from '@angular/core';
 import { DataTable } from '../../../../../shared/ui/data-table/data-table';
@@ -25,6 +27,9 @@ export class ModalityTable {
 
   addModality = output<void>();
   deleteModality = output<ModalityFormItem>();
+
+  @Output() editModality = new EventEmitter<ModalityFormItem>();
+
 
   readonly rowIdentity = (row: ModalityFormItem): string => row.id;
 
@@ -62,6 +67,11 @@ export class ModalityTable {
 
   readonly rowActions: DataTableRowAction<ModalityFormItem>[] = [
     {
+      id: 'edit',
+      label: 'Editar',
+      icon: 'pencil',
+    },
+    {
       id: 'delete',
       label: 'Eliminar',
       className: 'text-error-600 border-error-300 hover:bg-error-50 text-red-500',
@@ -73,6 +83,12 @@ export class ModalityTable {
     if (event.actionId === 'delete') {
       this.deleteModality.emit(event.row);
     }
+
+    if (event.actionId === 'edit') {
+      this.editModality.emit(event.row);
+      return;
+    }
+
   }
 
   onToolbarAction(event: DataTableToolbarActionEvent<ModalityFormItem>): void {

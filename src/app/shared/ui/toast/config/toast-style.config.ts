@@ -1,8 +1,8 @@
 import { ToastOptions } from '@ngxpert/hot-toast';
-import { AppIconName } from '../../shared/ui/icon/icons';
-import { Toast } from '../../shared/ui/toast/toas.model';
+import { AppIconName } from '../../icon/icons';
+import { Toast } from '../toas.model';
 
-export const TOAST_POSITION = 'top-center' as const;
+export const TOAST_POSITION = 'top-right' as const;
 
 const TOAST_ICONS: Record<Toast['type'], AppIconName> = {
   success: 'toastSuccess',

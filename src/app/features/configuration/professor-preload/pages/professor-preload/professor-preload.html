@@ -1,0 +1,44 @@
+<div
+  class="grid gap-4"
+>
+  <div class="min-w-0">
+    <app-section-frame
+      title="Convocatoria precarga"
+      description="Administra la convocatoria de precarga."
+      iconName="call"
+      iconVariant="brand"
+    >
+      <!--<app-preload-call-table
+        [preloadCalls]="preloadCalls()"
+        [selectedPreloadCallIds]="selectedPreloadCallIds()"
+        (selectedPreloadCallIdsChange)="onSelectedPreloadCallIdsChange($event)"
+        (addPreloadCall)="openPreloadCallForm()"
+        (editPreloadCall)="openEditPreloadCallForm($event)"
+        (deletePreloadCall)="onDeletePreloadCall($event)"
+        (refreshPreloadCall)="onRefreshPreloadCallList()"
+        (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
+      />-->
+      <app-coordination-table />
+    </app-section-frame>
+  </div>
+
+  <!--@if (showPreloadCallForm()) {
+    <div class="min-w-0">
+      <app-section-frame
+        title="Preasignación de horas académicas"
+        description="Complete los datos de la convocatoria de precarga."
+        iconName="plus"
+        iconVariant="brand"
+      >
+        <app-preload-call-form
+          [preloadCall]="selectedPreloadCall()"
+          [mode]="formMode()"
+          [isSaving]="isSaving()"
+          (closeForm)="closePreloadCallForm()"
+          (submitPreloadCall)="onSubmitPreloadCall($event)"
+        />
+      </app-section-frame>
+    </div>
+  }-->
+</div>
+

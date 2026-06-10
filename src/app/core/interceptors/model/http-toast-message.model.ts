@@ -19,9 +19,7 @@ interface EndpointToastRule {
 }
 
 /**
- * Reglas por endpoint. La primera coincidencia gana.
- * Agrega aquí mensajes personalizados cuando el método HTTP
- * no refleje la operación real (ej. POST para eliminar).
+ * Reglas de mensaje personalizado
  */
 const ENDPOINT_TOAST_RULES: EndpointToastRule[] = [
   {
@@ -104,9 +102,7 @@ const SUCCESS_BY_METHOD: Partial<Record<string, HttpToastMessage>> = {
   },
 };
 
-const ERROR_BY_STATUS: Partial<
-  Record<number, HttpToastMessage>
-> = {
+const ERROR_BY_STATUS: Partial<Record<number, HttpToastMessage>> = {
   400: {
     title: 'Solicitud inválida',
     message: 'La solicitud contiene datos inválidos',
