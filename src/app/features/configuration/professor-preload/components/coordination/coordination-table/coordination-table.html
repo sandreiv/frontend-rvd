@@ -1,0 +1,24 @@
+<app-data-table
+  [columns]="columns"
+  [rows]="coordinations()"
+  [rowIdentity]="rowIdentity"
+  [showAddButton]="false"
+  [showDeleteButton]="false"
+  [enableSelection]="true"
+  [selectedRowKeys]="selectedCoordinationIds()"
+  [emptyMessage]="emptyMessage()"
+  (toolbarAction)="onToolbarAction($event)"
+  (searchChange)="onSearchRecords($event)"
+  (selectedRowKeysChange)="onSelectedCoordinationIdsChange($event)"
+/>
+
+<div class="mt-4 flex justify-end">
+  <app-button
+    type="button"
+    size="sm"
+    [disabled]="selectedCoordinationIds().length === 0"
+    (btnClick)="onStartPreassignment()"
+  >
+    Iniciar preasignación
+  </app-button>
+</div>

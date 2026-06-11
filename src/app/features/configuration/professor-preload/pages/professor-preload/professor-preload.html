@@ -1,44 +1,54 @@
-<div
-  class="grid gap-4"
->
+<div class="grid gap-4">
   <div class="min-w-0">
-    <app-section-frame
-      title="Convocatoria precarga"
-      description="Administra la convocatoria de precarga."
-      iconName="call"
-      iconVariant="brand"
-    >
-      <!--<app-preload-call-table
-        [preloadCalls]="preloadCalls()"
-        [selectedPreloadCallIds]="selectedPreloadCallIds()"
-        (selectedPreloadCallIdsChange)="onSelectedPreloadCallIdsChange($event)"
-        (addPreloadCall)="openPreloadCallForm()"
-        (editPreloadCall)="openEditPreloadCallForm($event)"
-        (deletePreloadCall)="onDeletePreloadCall($event)"
-        (refreshPreloadCall)="onRefreshPreloadCallList()"
-        (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
-      />-->
-      <app-coordination-table />
-    </app-section-frame>
-  </div>
-
-  <!--@if (showPreloadCallForm()) {
-    <div class="min-w-0">
+    @if (!showCoordinationDetail()) {
       <app-section-frame
-        title="Preasignación de horas académicas"
-        description="Complete los datos de la convocatoria de precarga."
-        iconName="plus"
+        title="Precarga docente"
+        description="Administra la precarga docente."
+        iconName="paperAirplane"
         iconVariant="brand"
       >
-        <app-preload-call-form
-          [preloadCall]="selectedPreloadCall()"
-          [mode]="formMode()"
-          [isSaving]="isSaving()"
-          (closeForm)="closePreloadCallForm()"
-          (submitPreloadCall)="onSubmitPreloadCall($event)"
+        <div
+          sectionFrameHeaderActions
+          class="flex w-full items-center gap-2 sm:w-auto"
+        >
+          <div class="min-w-0 flex-1 sm:min-w-[16rem] sm:max-w-sm">
+            <app-select
+              [options]="preloadCallOptions()"
+              [value]="selectedPreloadCallId()"
+              [disabled]="isLoadingPreloadCalls()"
+              placeholder="Seleccione la convocatoria"
+              searchPlaceholder="Buscar convocatoria..."
+              emptyText="No hay convocatorias activas"
+              (valueChange)="onPreloadCallChange($event)"
+            />
+          </div>
+
+          <app-button
+            type="button"
+            size="sm"
+            className="h-11 shrink-0 whitespace-nowrap"
+            [disabled]="isLoadingPreloadCalls() || isLoadingCoordinations()"
+            (btnClick)="onApplyCoordinationFilter()"
+          >
+            Filtrar
+          </app-button>
+        </div>
+
+        <app-coordination-table
+          [coordinations]="coordinations()"
+          [(selectedCoordinationIds)]="selectedCoordinationIds"
+          [emptyMessage]="hasAppliedFilter()
+            ? 'No hay coordinaciones para mostrar.'
+            : 'Seleccione un criterio y pulse Filtrar.'"
+          (startPreassignment)="onStartPreassignment($event)"
+          (refreshCoordination)="onRefreshCoordinations()"
         />
       </app-section-frame>
-    </div>
-  }-->
+    } @else if (selectedCoordination(); as coordination) {
+      <app-coordination-detail
+        [coordination]="coordination"
+        (back)="onBackToCoordinationList()"
+      />
+    }
+  </div>
 </div>
-

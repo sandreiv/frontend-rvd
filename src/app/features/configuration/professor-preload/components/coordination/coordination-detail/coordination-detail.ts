@@ -1,9 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  input,
+  output,
   signal,
 } from '@angular/core';
-import { Icon } from '../../../../../shared/ui/icon/icon';
+import { Button } from '../../../../../../shared/ui/button/button';
+import { Icon } from '../../../../../../shared/ui/icon/icon';
+import { CoordinationItem } from '../../../model/coordination.model';
 
 type ProfessorAssignmentStatus = 'incomplete' | 'complete' | 'unassigned';
 
@@ -76,12 +80,13 @@ const PROFESSOR_PRELOAD_MOCK: ProfessorPreloadTeacher[] = [
 
 @Component({
   selector: 'app-coordination-detail',
-  imports: [Icon],
+  imports: [Button, Icon],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-
 export class CoordinationDetail {
+  coordination = input.required<CoordinationItem>();
+  back = output<void>();
 
   readonly teachers = signal(PROFESSOR_PRELOAD_MOCK);
 
