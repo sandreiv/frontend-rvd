@@ -10,6 +10,17 @@ export interface CoordinationUniversityPeriod {
   periodo: string;
 }
 
+export interface CoordinationPreloadCallApi {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  estado?: string;
+  nivelEducativo?: CoordinationLookupItem | null;
+  periodoUniversidad?: CoordinationUniversityPeriod | null;
+}
+
+import { PreloadCargaApi } from './preload-carga.model';
+
 export interface CoordinationApiItem {
   id: number;
   nombre: string;
@@ -20,10 +31,8 @@ export interface CoordinationApiItem {
   unidadArea: CoordinationLookupItem;
   metodologia: CoordinationLookupItem | null;
   modalidad: CoordinationLookupItem | null;
-  nivelEducativo: CoordinationLookupItem | null;
-  periodoUniversidad: CoordinationUniversityPeriod | null;
-  estadoCarga: CoordinationLookupItem | null;
-  idConvocatoria: number | null;
+  convocatoria: CoordinationPreloadCallApi | null;
+  carga: PreloadCargaApi | null;
 }
 
 export interface CoordinationItem {
@@ -40,6 +49,7 @@ export interface CoordinationItem {
   periodoUniversidad: string;
   estadoCarga: string;
   idConvocatoria: number | null;
+  convocatoriaNombre: string;
 }
 
 export const UNASSIGNED_PRELOAD_CALL_FILTER = 'none';
@@ -77,6 +87,33 @@ function formatAcademicFlag(value: string | null | undefined): string {
   return value?.trim() ?? '';
 }
 
+function resolveEstadoCarga(
+  carga: PreloadCargaApi | null | undefined,
+): string {
+  if (!carga?.estadoCarga) {
+    return '';
+  }
+
+  return (
+    resolveLookupLabel(carga.estadoCarga, 'descripcion') ||
+    resolveLookupLabel(carga.estadoCarga, 'nombre')
+  );
+}
+
+function resolveConvocatoriaNombre(
+  convocatoria: CoordinationPreloadCallApi | null | undefined,
+): string {
+  if (!convocatoria) {
+    return '';
+  }
+
+  return (
+    convocatoria.nombre?.trim() ||
+    convocatoria.descripcion?.trim() ||
+    ''
+  );
+}
+
 export function normalizeCoordinationItem(
   item: CoordinationApiItem,
 ): CoordinationItem {
@@ -90,9 +127,15 @@ export function normalizeCoordinationItem(
     unidadArea: resolveLookupLabel(item.unidadArea),
     metodologia: resolveLookupLabel(item.metodologia, 'descripcion'),
     modalidad: resolveLookupLabel(item.modalidad, 'descripcion'),
-    nivelEducativo: resolveLookupLabel(item.nivelEducativo, 'descripcion'),
-    periodoUniversidad: formatUniversityPeriod(item.periodoUniversidad),
-    estadoCarga: resolveLookupLabel(item.estadoCarga, 'descripcion'),
-    idConvocatoria: item.idConvocatoria ?? null,
+    nivelEducativo: resolveLookupLabel(
+      item.convocatoria?.nivelEducativo,
+      'descripcion',
+    ),
+    periodoUniversidad: formatUniversityPeriod(
+      item.convocatoria?.periodoUniversidad,
+    ),
+    estadoCarga: resolveEstadoCarga(item.carga),
+    idConvocatoria: item.convocatoria?.id ?? null,
+    convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
   };
 }

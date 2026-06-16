@@ -2,8 +2,8 @@
   <div class="min-w-0">
     @if (!showCoordinationDetail()) {
       <app-section-frame
-        title="Precarga docente"
-        description="Administra la precarga docente."
+        title="Coordinaciones"
+        description="Administra las coordinaciones de la precarga docente."
         iconName="paperAirplane"
         iconVariant="brand"
       >
@@ -48,6 +48,7 @@
       <app-coordination-detail
         [coordination]="coordination"
         (back)="onBackToCoordinationList()"
+        (coordinationUpdated)="onCoordinationUpdated($event)"
       />
     }
   </div>

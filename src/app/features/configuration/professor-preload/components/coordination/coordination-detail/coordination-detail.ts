@@ -8,6 +8,7 @@ import {
 import { Button } from '../../../../../../shared/ui/button/button';
 import { Icon } from '../../../../../../shared/ui/icon/icon';
 import { CoordinationItem } from '../../../model/coordination.model';
+import { CoordinationPreloadCallModal } from '../coordination-preload-call-modal/coordination-preload-call-modal';
 
 type ProfessorAssignmentStatus = 'incomplete' | 'complete' | 'unassigned';
 
@@ -80,14 +81,17 @@ const PROFESSOR_PRELOAD_MOCK: ProfessorPreloadTeacher[] = [
 
 @Component({
   selector: 'app-coordination-detail',
-  imports: [Button, Icon],
+  imports: [Button, Icon, CoordinationPreloadCallModal],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoordinationDetail {
   coordination = input.required<CoordinationItem>();
-  back = output<void>();
 
+  back = output<void>();
+  coordinationUpdated = output<CoordinationItem>();
+
+  readonly isAssignModalOpen = signal(false);
   readonly teachers = signal(PROFESSOR_PRELOAD_MOCK);
 
   readonly categorySummary = {
@@ -95,6 +99,19 @@ export class CoordinationDetail {
     totalCount: 8,
     totalHours: 51,
   };
+
+  openAssignModal(): void {
+    this.isAssignModalOpen.set(true);
+  }
+
+  closeAssignModal(): void {
+    this.isAssignModalOpen.set(false);
+  }
+
+  onPreloadCallAssigned(updated: CoordinationItem): void {
+    this.coordinationUpdated.emit(updated);
+    this.closeAssignModal();
+  }
 
   statusLabel(status: ProfessorAssignmentStatus): string {
     const labels: Record<ProfessorAssignmentStatus, string> = {

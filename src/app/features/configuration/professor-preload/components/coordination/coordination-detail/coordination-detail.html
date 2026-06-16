@@ -30,7 +30,7 @@
             Período de trabajo
           </h3>
   
-          <span
+          <!--<span
             class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400"
           >
             <span
@@ -38,7 +38,7 @@
               aria-hidden="true"
             ></span>
             Activo
-          </span>
+          </span> -->
         </div>
   
         <div
@@ -121,11 +121,21 @@
               >
                 Convocatoria
               </p>
-              <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90">
-                @if (coordination().idConvocatoria) {
-                  Convocatoria {{ coordination().idConvocatoria }}
+              <p
+                class="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white/90"
+              >
+                @if (coordination().convocatoriaNombre) {
+                  {{ coordination().convocatoriaNombre }}
                 } @else {
-                  Sin convocatoria asignada
+                  <span>Sin convocatoria asignada</span>
+                  <button
+                    type="button"
+                    aria-label="Asignar convocatoria a la coordinación"
+                    class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 dark:bg-white/10 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-white/5"
+                    (click)="openAssignModal()"
+                  >
+                    <app-icon name="plus" size="sm" />
+                  </button>
                 }
               </p>
             </span>
@@ -356,4 +366,10 @@
       </section>
     </div>
   </div>
-  
+
+<app-coordination-preload-call-modal
+  [isOpen]="isAssignModalOpen()"
+  [coordination]="coordination()"
+  (close)="closeAssignModal()"
+  (saved)="onPreloadCallAssigned($event)"
+/>

@@ -16,7 +16,7 @@ import {
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
 import { CoordinationDetail } from '../../components/coordination/coordination-detail/coordination-detail';
 import { CoordinationTable } from '../../components/coordination/coordination-table/coordination-table';
-import { ProfessorPreloadService } from '../../data/professor-preload';
+import { CoordinationService } from '../../data/coordination.service';
 import {
   CoordinationItem,
   UNASSIGNED_PRELOAD_CALL_FILTER,
@@ -36,10 +36,10 @@ import { PreloadCallItem } from '../../../preload-call/model/preload-call.model'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfessorPreload implements OnInit {
-  private readonly professorPreloadService = inject(ProfessorPreloadService);
+  private readonly coordinationService = inject(CoordinationService);
 
   readonly activePreloadCallsResource = rxResource({
-    stream: () => this.professorPreloadService.getActivePreloadCall(),
+    stream: () => this.coordinationService.getActivePreloadCall(),
     defaultValue: [] as PreloadCallItem[],
   });
 
@@ -61,7 +61,7 @@ export class ProfessorPreload implements OnInit {
           ? undefined
           : Number(filterId);
 
-      return this.professorPreloadService.getCoordinations(idConvocatoria);
+      return this.coordinationService.getCoordinations(idConvocatoria);
     },
     defaultValue: [] as CoordinationItem[],
   });
@@ -116,5 +116,9 @@ export class ProfessorPreload implements OnInit {
 
   onBackToCoordinationList(): void {
     this.showCoordinationDetail.set(false);
+  }
+
+  onCoordinationUpdated(updated: CoordinationItem): void {
+    this.selectedCoordination.set(updated);
   }
 }
