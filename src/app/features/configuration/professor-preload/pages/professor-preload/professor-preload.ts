@@ -14,14 +14,14 @@ import {
   type Option as SelectOption,
 } from '../../../../../shared/components/form/select/select';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
-import { CoordinationDetail } from '../../components/coordination/coordination-detail/coordination-detail';
-import { CoordinationTable } from '../../components/coordination/coordination-table/coordination-table';
+import { CoordinationDetail } from '../../components/coordination-detail/coordination-detail';
+import { CoordinationTable } from '../../components/coordination-table/coordination-table';
 import { CoordinationService } from '../../data/coordination.service';
 import {
   CoordinationItem,
+  CoordinationPreloadCallApi,
   UNASSIGNED_PRELOAD_CALL_FILTER,
 } from '../../model/coordination.model';
-import { PreloadCallItem } from '../../../preload-call/model/preload-call.model';
 
 @Component({
   selector: 'app-professor-preload',
@@ -40,7 +40,7 @@ export class ProfessorPreload implements OnInit {
 
   readonly activePreloadCallsResource = rxResource({
     stream: () => this.coordinationService.getActivePreloadCall(),
-    defaultValue: [] as PreloadCallItem[],
+    defaultValue: [] as CoordinationPreloadCallApi[],
   });
 
   readonly selectedPreloadCallId = signal(UNASSIGNED_PRELOAD_CALL_FILTER);
@@ -73,7 +73,7 @@ export class ProfessorPreload implements OnInit {
     },
     ...this.activePreloadCallsResource.value().map((item) => ({
       value: String(item.id),
-      label: item.descripcion,
+      label: item.nombre,
     })),
   ]);
 

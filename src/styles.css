@@ -5,6 +5,8 @@ layer(base);
 
 @import "tailwindcss";
 
+@import "@angular/cdk/overlay-prebuilt.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {
@@ -139,6 +141,85 @@ layer(base);
   --color-theme-pink-500: #91C256;
 
   --color-theme-purple-500: #7a5af8;
+
+  /*NUEVOS COLORES*/
+  --color-lime-25: #f8fcf2;
+  --color-lime-50: #f4faeb;
+  --color-lime-100: #e4f2cc;
+  --color-lime-200: #d4ebad;
+  --color-lime-300: #c3e38c;
+  --color-lime-400: #afd966;
+  --color-lime-500: #79C000;
+  --color-lime-600: #66a100;
+  --color-lime-700: #497300;
+  --color-lime-800: #365600;
+  --color-lime-900: #243a00;
+  --color-lime-950: #182600;
+
+  --color-gold-25: #fdfbf2;
+  --color-gold-50: #fcf8eb;
+  --color-gold-100: #f8eecc;
+  --color-gold-200: #f3e4ad;
+  --color-gold-300: #eed98c;
+  --color-gold-400: #e9cc66;
+  --color-gold-500: #DAAA00;
+  --color-gold-600: #b78f00;
+  --color-gold-700: #836600;
+  --color-gold-800: #624d00;
+  --color-gold-900: #413300;
+  --color-gold-950: #2c2200;
+
+  --color-tangerine-25: #fffaf4;
+  --color-tangerine-50: #fef6ed;
+  --color-tangerine-100: #fde9d2;
+  --color-tangerine-200: #fcdcb7;
+  --color-tangerine-300: #fbce9a;
+  --color-tangerine-400: #fabe78;
+  --color-tangerine-500: #F7931E;
+  --color-tangerine-600: #d07c19;
+  --color-tangerine-700: #945812;
+  --color-tangerine-800: #6f420e;
+  --color-tangerine-900: #4a2c09;
+  --color-tangerine-950: #311d06;
+
+  --color-graphite-25: #f6f6f6;
+  --color-graphite-50: #f1f1f1;
+  --color-graphite-100: #dbdbdb;
+  --color-graphite-200: #c6c6c6;
+  --color-graphite-300: #afafaf;
+  --color-graphite-400: #949494;
+  --color-graphite-500: #4d4d4d;
+  --color-graphite-600: #414141;
+  --color-graphite-700: #2e2e2e;
+  --color-graphite-800: #232323;
+  --color-graphite-900: #171717;
+  --color-graphite-950: #0f0f0f;
+
+  --color-moss-25: #fafcf7;
+  --color-moss-50: #f6faf2;
+  --color-moss-100: #e9f3dd;
+  --color-moss-200: #dcebc9;
+  --color-moss-300: #cee4b3;
+  --color-moss-400: #bdda9a;
+  --color-moss-500: #91C256;
+  --color-moss-600: #7aa348;
+  --color-moss-700: #577434;
+  --color-moss-800: #415727;
+  --color-moss-900: #2c3a1a;
+  --color-moss-950: #1d2711;
+
+  --color-teal-25: #f2faf9;
+  --color-teal-50: #ebf7f6;
+  --color-teal-100: #cceae8;
+  --color-teal-200: #addeda;
+  --color-teal-300: #8cd1cb;
+  --color-teal-400: #66c1ba;
+  --color-teal-500: #00988C;
+  --color-teal-600: #008076;
+  --color-teal-700: #005b54;
+  --color-teal-800: #00443f;
+  --color-teal-900: #002e2a;
+  --color-teal-950: #001e1c;
 
   --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),
   0px 2px 4px -2px rgba(16, 24, 40, 0.06);

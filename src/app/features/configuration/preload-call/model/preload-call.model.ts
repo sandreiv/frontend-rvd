@@ -1,5 +1,6 @@
 export interface PreloadCallItem {
   id: number;
+  nombre: string;
   descripcion: string;
   fechaInicio: string;
   fechaFin: string;
@@ -12,6 +13,7 @@ export interface PreloadCallItem {
 export interface PreloadCallListApiItem {
   id?: number | string;
   idConvocatoria?: number | string;
+  nombre: string;
   descripcion: string;
   fechaInicio: string;
   fechaFin: string;
@@ -49,6 +51,7 @@ export function normalizePreloadCallListItem(
 
   return {
     id,
+    nombre: item.nombre ?? '',
     descripcion: item.descripcion ?? '',
     fechaInicio: item.fechaInicio ?? '',
     fechaFin: item.fechaFin ?? '',

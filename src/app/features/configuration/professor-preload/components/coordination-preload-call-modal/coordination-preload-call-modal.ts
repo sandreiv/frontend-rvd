@@ -10,15 +10,18 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { finalize, map, switchMap } from 'rxjs';
-import { Label } from '../../../../../../shared/components/form/label/label';
+import { Label } from '../../../../../shared/components/form/label/label';
 import {
   Select,
   type Option,
-} from '../../../../../../shared/components/form/select/select';
-import { Button } from '../../../../../../shared/ui/button/button';
-import { Modal } from '../../../../../../shared/ui/modal/modal';
-import { CoordinationService } from '../../../data/coordination.service';
-import { CoordinationItem } from '../../../model/coordination.model';
+} from '../../../../../shared/components/form/select/select';
+import { Button } from '../../../../../shared/ui/button/button';
+import { Modal } from '../../../../../shared/ui/modal/modal';
+import { CoordinationService } from '../../data/coordination.service';
+import {
+  CoordinationItem,
+  CoordinationPreloadCallApi,
+} from '../../model/coordination.model';
 
 @Component({
   selector: 'app-coordination-preload-call-modal',
@@ -41,13 +44,13 @@ export class CoordinationPreloadCallModal {
 
   readonly activePreloadCallsResource = rxResource({
     stream: () => this.coordinationService.getActivePreloadCall(),
-    defaultValue: [],
+    defaultValue: [] as CoordinationPreloadCallApi[],
   });
 
   readonly preloadCallOptions = computed<Option[]>(() =>
     this.activePreloadCallsResource.value().map((item) => ({
       value: String(item.id),
-      label: item.descripcion,
+      label: item.nombre,
     })),
   );
 

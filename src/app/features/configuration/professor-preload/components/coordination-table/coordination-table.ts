@@ -6,14 +6,14 @@ import {
   model,
   Output,
 } from '@angular/core';
-import { Button } from '../../../../../../shared/ui/button/button';
-import { DataTable } from '../../../../../../shared/ui/data-table/data-table';
+import { Button } from '../../../../../shared/ui/button/button';
+import { DataTable } from '../../../../../shared/ui/data-table/data-table';
 import {
   DataTableColumn,
   DataTableSearchEvent,
   DataTableToolbarActionEvent,
-} from '../../../../../../shared/ui/data-table/table.types';
-import { CoordinationItem } from '../../../model/coordination.model';
+} from '../../../../../shared/ui/data-table/table.types';
+import { CoordinationItem } from '../../model/coordination.model';
 
 @Component({
   selector: 'app-coordination-table',
@@ -49,11 +49,6 @@ export class CoordinationTable {
       header: 'Coordinación',
       cell: (row) => row.descripcion || row.nombre || '-',
       formatAsSentence: true,
-    },
-    {
-      id: 'codigo',
-      header: 'Código',
-      cell: (row) => row.codigo || '-',
     },
     {
       id: 'esAcademica',

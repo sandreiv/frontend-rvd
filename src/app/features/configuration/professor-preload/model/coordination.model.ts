@@ -1,3 +1,5 @@
+import { PreloadCargaApi } from './preload-carga.model';
+
 export interface CoordinationLookupItem {
   id: number;
   nombre?: string;
@@ -10,6 +12,11 @@ export interface CoordinationUniversityPeriod {
   periodo: string;
 }
 
+export interface CoordinationContractModality {
+  id: number;
+  nombre: string;
+}
+
 export interface CoordinationPreloadCallApi {
   id: number;
   nombre: string;
@@ -17,9 +24,8 @@ export interface CoordinationPreloadCallApi {
   estado?: string;
   nivelEducativo?: CoordinationLookupItem | null;
   periodoUniversidad?: CoordinationUniversityPeriod | null;
+  modalidadesContratacion?: CoordinationContractModality[];
 }
-
-import { PreloadCargaApi } from './preload-carga.model';
 
 export interface CoordinationApiItem {
   id: number;
@@ -50,6 +56,7 @@ export interface CoordinationItem {
   estadoCarga: string;
   idConvocatoria: number | null;
   convocatoriaNombre: string;
+  modalidadesContratacion: CoordinationContractModality[];
 }
 
 export const UNASSIGNED_PRELOAD_CALL_FILTER = 'none';
@@ -137,5 +144,22 @@ export function normalizeCoordinationItem(
     estadoCarga: resolveEstadoCarga(item.carga),
     idConvocatoria: item.convocatoria?.id ?? null,
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
+    modalidadesContratacion:
+      item.convocatoria?.modalidadesContratacion ?? [],
   };
+
+  
+}
+
+export interface CareerProfessor {
+  idPersonaGeneral: number;
+  nombreCompleto: string;
+  estado: string;
+}
+
+export interface ProfessorSearchResult {
+  id: number;
+  documentoIdentidad: string;
+  nombreCompleto: string;
+  categoriaCatedratico: CoordinationLookupItem | null;
 }
