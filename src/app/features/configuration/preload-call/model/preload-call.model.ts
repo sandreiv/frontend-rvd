@@ -108,6 +108,7 @@ export interface PersonaAutorizaConvocatoriaItem {
 export interface SearchGeneralPersonParams {
   nombre?: string;
   documento?: string;
+  idModalidadContratacion?: number;
 }
 
 export interface ModalityFormItem {

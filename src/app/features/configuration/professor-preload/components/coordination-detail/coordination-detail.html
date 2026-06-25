@@ -434,6 +434,8 @@
 />
 <app-professor-add-modal
   [isOpen]="isProfessorAddModalOpen()"
+  [coordinationId]="coordination().id"
+  [anioUniversidad]="coordination().anioUniversidad"
   [contractModality]="selectedContractModality()"
   (close)="closeProfessorAddModal()"
 />

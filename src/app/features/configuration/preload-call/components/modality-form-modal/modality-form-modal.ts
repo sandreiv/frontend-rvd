@@ -122,10 +122,8 @@ export class ModalityFormModal {
         ?.label ?? tipoModalidad;
     const diasRaw = this.form.controls.diasVacaciones.value;
     const semanasRaw = this.form.controls.semanas.value;
-    const diasVacaciones =
-      diasRaw === '' || diasRaw == null ? null : Number(diasRaw);
-    const semanas =
-      semanasRaw === '' || semanasRaw == null ? null : Number(semanasRaw);
+    const diasVacaciones = diasRaw === '' || diasRaw == null ? null : Number(diasRaw);
+    const semanas = semanasRaw === '' || semanasRaw == null ? null : Number(semanasRaw);
 
     const editing = this.editingItem();
 

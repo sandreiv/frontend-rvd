@@ -53,10 +53,18 @@ export interface CoordinationItem {
   modalidad: string;
   nivelEducativo: string;
   periodoUniversidad: string;
+  anioUniversidad: number | null;
   estadoCarga: string;
   idConvocatoria: number | null;
   convocatoriaNombre: string;
   modalidadesContratacion: CoordinationContractModality[];
+}
+
+export interface ValuePointsPreload {
+  valorHora: string;
+  valorPunto: string;
+  puntosDocente: string;
+  asignacionSalarial: string;
 }
 
 export const UNASSIGNED_PRELOAD_CALL_FILTER = 'none';
@@ -141,6 +149,7 @@ export function normalizeCoordinationItem(
     periodoUniversidad: formatUniversityPeriod(
       item.convocatoria?.periodoUniversidad,
     ),
+    anioUniversidad: item.convocatoria?.periodoUniversidad?.anio ?? null,
     estadoCarga: resolveEstadoCarga(item.carga),
     idConvocatoria: item.convocatoria?.id ?? null,
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
@@ -157,9 +166,37 @@ export interface CareerProfessor {
   estado: string;
 }
 
+export interface ProfessorEscalafon {
+  id: number;
+  idCategoriaCatedratico: number;
+  idModalidadContratacion: number;
+  idPersonaGeneral: number;
+  puntos: string;
+}
+
 export interface ProfessorSearchResult {
   id: number;
   documentoIdentidad: string;
   nombreCompleto: string;
   categoriaCatedratico: CoordinationLookupItem | null;
+  escalafon: ProfessorEscalafon | null;
+}
+
+export interface WorkDate {
+  id: number;
+  fechaInicio: string;
+  fechaFin: string;
+  semanas: string | null;
+  vacaciones: string | null;
+  rangoHoras: string | null;
+}
+
+export interface GetWorkDatesParams {
+  idCoordinacion: number;
+  idModalidadContratacion: number;
+}
+
+export interface CategoriaCatedratico {
+  id: number;
+  descripcion: string;
 }
