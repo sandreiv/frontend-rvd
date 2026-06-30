@@ -1,0 +1,212 @@
+<section
+  class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
+>
+  @if (hasAnyModality()) {
+    <app-tab-bar
+      [items]="modalityTabs()"
+      [selectedId]="selectedContractModalityId()"
+      (selectedIdChange)="onContractModalityChange($event)"
+    />
+  } @else {
+    <p
+      class="border-b border-gray-200 pb-3 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+    >
+      Asigne una convocatoria para ver las modalidades de contratación.
+    </p>
+  }
+
+  @if (hasAnyModality()) {
+    <div class="mt-4">
+      @if (!isPlantaSelected()) {
+        <app-button
+          type="button"
+          size="sm"
+          className="h-11 shrink-0 whitespace-nowrap"
+          (click)="onProfessorAddModalOpen()"
+        >
+          <app-icon name="plus" size="sm" />
+          Agregar docente
+        </app-button>
+      }
+
+      @if (isPlantaSelected()) {
+        @if (careerProfessors().length) {
+          <div
+            class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            @for (
+              professor of careerProfessors();
+              track professor.idPersonaGeneral
+            ) {
+              <article
+                class="flex items-start justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 transition hover:border-gray-300 hover:shadow-theme-xs dark:border-white/5 dark:bg-white/3 dark:hover:border-white/10"
+              >
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="truncate text-sm font-semibold text-gray-900 dark:text-white/90"
+                  >
+                    {{ professor.nombreCompleto }}
+                  </p>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    @let careerBadge = careerStatusBadge(professor);
+                    <span [class]="careerBadge.badgeClass">
+                      <span
+                        [class]="careerBadge.dotClass"
+                        aria-hidden="true"
+                      ></span>
+                      {{ careerBadge.label }}
+                    </span>
+
+                    @let managementBadge = managementStatusBadge(professor);
+                    <span [class]="managementBadge.badgeClass">
+                      <span
+                        [class]="managementBadge.dotClass"
+                        aria-hidden="true"
+                      ></span>
+                      {{ managementBadge.label }}
+                    </span>
+                  </div>
+                </div>
+
+                @let careerMenuKeyValue = careerMenuKey(professor);
+                <button
+                  #professorMenuBtn
+                  type="button"
+                  class="dropdown-toggle inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                  [class.bg-gray-100]="openMenuKey() === careerMenuKeyValue"
+                  [class.dark:bg-white/10]="openMenuKey() === careerMenuKeyValue"
+                  [attr.aria-label]="'Acciones para ' + professor.nombreCompleto"
+                  [attr.aria-expanded]="openMenuKey() === careerMenuKeyValue"
+                  (click)="toggleProfessorMenu(careerMenuKeyValue)"
+                >
+                  <app-icon name="ellipsisVertical" size="sm" />
+                </button>
+
+                <app-dropdown
+                  [isOpen]="openMenuKey() === careerMenuKeyValue"
+                  [anchor]="professorMenuBtn"
+                  className="w-48 p-2"
+                  (close)="closeProfessorMenu()"
+                >
+                  @for (action of professorActions; track action.id) {
+                    <app-item
+                      (itemClick)="onProfessorAction(action.id, professor)"
+                    >
+                      <span
+                        class="inline-flex items-center gap-2"
+                        [class]="action.className ?? ''"
+                      >
+                        <app-icon [name]="action.icon" size="xs" />
+                        {{ action.label }}
+                      </span>
+                    </app-item>
+                  }
+                </app-dropdown>
+              </article>
+            }
+          </div>
+        } @else {
+          <p
+            class="mt-4 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+          >
+            No hay docentes de planta para esta coordinación.
+          </p>
+        }
+      } @else {
+        @if (modalityProfessors().length) {
+          <div
+            class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            @for (row of modalityProfessorRows(); track row.rowKey) {
+              @let professor = row.professor;
+              <article
+                class="flex items-start justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 transition hover:border-gray-300 hover:shadow-theme-xs dark:border-white/5 dark:bg-white/3 dark:hover:border-white/10"
+              >
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="truncate text-sm font-semibold text-gray-900 dark:text-white/90"
+                  >
+                    {{ row.displayName }}
+                  </p>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    @let modalityBadge = modalityStatusBadge(professor);
+                    <span [class]="modalityBadge.badgeClass">
+                      <span
+                        [class]="modalityBadge.dotClass"
+                        aria-hidden="true"
+                      ></span>
+                      {{ modalityBadge.label }}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  #modalityMenuBtn
+                  type="button"
+                  class="dropdown-toggle inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                  [class.bg-gray-100]="openMenuKey() === row.menuKey"
+                  [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
+                  [attr.aria-label]="'Acciones para ' + row.displayName"
+                  [attr.aria-expanded]="openMenuKey() === row.menuKey"
+                  (click)="toggleProfessorMenu(row.menuKey)"
+                >
+                  <app-icon name="ellipsisVertical" size="sm" />
+                </button>
+
+                <app-dropdown
+                  [isOpen]="openMenuKey() === row.menuKey"
+                  [anchor]="modalityMenuBtn"
+                  className="w-48 p-2"
+                  (close)="closeProfessorMenu()"
+                >
+                  @for (action of professorActions; track action.id) {
+                    <app-item
+                      (itemClick)="
+                        onModalityProfessorAction(action.id, professor)
+                      "
+                    >
+                      <span
+                        class="inline-flex items-center gap-2"
+                        [class]="action.className ?? ''"
+                      >
+                        <app-icon [name]="action.icon" size="xs" />
+                        {{ action.label }}
+                      </span>
+                    </app-item>
+                  }
+                </app-dropdown>
+              </article>
+            }
+          </div>
+        } @else {
+          <p
+            class="mt-4 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+          >
+            No hay docentes de
+            <span class="font-medium text-gray-700 dark:text-gray-300">
+              {{ selectedContractModality()?.nombre }}
+            </span>
+            para esta coordinación.
+          </p>
+        }
+      }
+    </div>
+  }
+</section>
+
+<app-professor-add-modal
+  [isOpen]="isProfessorAddModalOpen()"
+  [coordinationId]="coordination().id"
+  [idCarga]="coordination().idCarga"
+  [anioUniversidad]="coordination().anioUniversidad"
+  [contractModality]="selectedContractModality()"
+  [mode]="professorModalMode()"
+  [editingProfessor]="editingModalityProfessor()"
+  (close)="closeProfessorAddModal()"
+  (saved)="onProfessorSaved()"
+/>
+
+<app-professor-activities-modal
+  [isOpen]="isActivitiesModalOpen()"
+  (close)="closeActivitiesModal()"
+/>

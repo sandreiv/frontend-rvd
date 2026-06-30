@@ -55,6 +55,7 @@ export interface CoordinationItem {
   periodoUniversidad: string;
   anioUniversidad: number | null;
   estadoCarga: string;
+  idCarga: number | null;
   idConvocatoria: number | null;
   convocatoriaNombre: string;
   modalidadesContratacion: CoordinationContractModality[];
@@ -151,6 +152,7 @@ export function normalizeCoordinationItem(
     ),
     anioUniversidad: item.convocatoria?.periodoUniversidad?.anio ?? null,
     estadoCarga: resolveEstadoCarga(item.carga),
+    idCarga: item.carga?.id ?? null,
     idConvocatoria: item.convocatoria?.id ?? null,
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
     modalidadesContratacion:
@@ -164,6 +166,28 @@ export interface CareerProfessor {
   idPersonaGeneral: number;
   nombreCompleto: string;
   estado: string;
+}
+
+export interface ModalityProfessor {
+  idCargaDocente: number;
+  idPersonaGeneral: number | null;
+  nombreCompleto: string | null;
+  estado: string;
+  idModalidadContratacion: number;
+  idCategoriaCatedratico: number;
+  idCarga: number;
+  idFechasConvocatoria: number;
+  fechaConvocatoriaCodigo: string | null;
+  fechaInicio: string;
+  fechaFin: string;
+  valorContrato: string | null;
+  valorPrestaciones: string | null;
+  asignacionSalarial: string | null;
+  totalContrato: string | null;
+  valorHora: string | null;
+  puntos: string | null;
+  valorPunto: string | null;
+  semanas: string | null;
 }
 
 export interface ProfessorEscalafon {

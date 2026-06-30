@@ -4,7 +4,7 @@
  [rowActions]="rowActions"
  [rowIdentity]="rowIdentity"
  [enableSelection]="true"
- [selectedRowKeys]="selectedPreloadCallIds"
+ [selectedRowKeys]="selectedPreloadCallIds()"
  emptyMessage="No hay convocatorias de precarga."
  (rowAction)="onTableAction($event)"
  (toolbarAction)="onToolbarAction($event)"

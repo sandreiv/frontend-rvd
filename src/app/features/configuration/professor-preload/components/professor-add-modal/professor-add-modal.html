@@ -9,36 +9,38 @@
     </span>
     <div>
       <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
-        Agregar nuevo docente
+        {{ modalTitle() }}
       </h3>
       <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-        Agregar un docente nuevo a la precarga.
+        {{ modalSubtitle() }}
       </p>
     </div>
   </div>
 
   <div class="space-y-6 border-t border-gray-200 px-6 py-6 sm:px-8 dark:border-white/10">
-    <section class="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 lg:p-6">
-      <div class="flex items-center justify-between gap-3">
-        <label class="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            [checked]="isProfessorActive()"
-            (change)="isProfessorActive.set(!isProfessorActive())"
-            class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
-          />
-          <span class="text-sm font-medium text-gray-800 dark:text-white/90">
-            Definir docente
-          </span>
-          <app-icon
-            name="infoCircle"
-            size="xs"
-            classes="text-gray-400 cursor-help"
-            appTooltip="Esta opción permite definir el docente a contratar"
-          />
-        </label>
-      </div>
-    </section>
+    @if (!isEditMode()) {
+      <section class="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 lg:p-6">
+        <div class="flex items-center justify-between gap-3">
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              [checked]="isProfessorActive()"
+              (change)="isProfessorActive.set(!isProfessorActive())"
+              class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
+            />
+            <span class="text-sm font-medium text-gray-800 dark:text-white/90">
+              Definir docente
+            </span>
+            <app-icon
+              name="infoCircle"
+              size="xs"
+              classes="text-gray-400 cursor-help"
+              appTooltip="Esta opción permite definir el docente a contratar"
+            />
+          </label>
+        </div>
+      </section>
+    }
 
     <section class="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 lg:p-6">
       <div class="-mx-5 mb-4 flex items-center gap-2 border-b border-gray-200 px-5 pb-4 lg:-mx-6 lg:px-6 dark:border-white/10">
@@ -47,7 +49,7 @@
           Selección de docente
         </h4>
       </div>
-      @if (isOpen() && isProfessorActive()) {
+      @if (isOpen() && isProfessorActive() && !isEditMode()) {
         <div class="mb-4">
             <app-label>Buscar docente</app-label>
             <app-typeahead-select
@@ -73,7 +75,9 @@
       <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/5">
         <p class="mb-4 text-sm font-medium text-gray-700 dark:text-gray-300">
           Detalle de asignación
-          @if (selectedProfessor(); as professor) {
+          @if (isEditMode()) {
+            <span class="text-gray-400">· {{ editingDisplayName() }}</span>
+          } @else if (selectedProfessor(); as professor) {
             <span class="text-gray-400">
               · {{ professor.nombreCompleto }} · {{ professor.documentoIdentidad }}
             </span>
@@ -135,8 +139,8 @@
     <app-button type="button" variant="outline" (btnClick)="close.emit()">
       Cancelar
     </app-button>
-    <app-button type="button">
-      Guardar detalle de precarga
+    <app-button type="button" [disabled]="isSaving()" (btnClick)="onSubmit()">
+      {{ saveButtonLabel() }}
     </app-button>
   </div>
 </app-modal>

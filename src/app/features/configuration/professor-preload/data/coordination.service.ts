@@ -7,12 +7,14 @@ import {
   CoordinationApiItem,
   CoordinationItem,
   CoordinationPreloadCallApi,
+  ModalityProfessor,
   ProfessorSearchResult,
   ValuePointsPreload,
   WorkDate,
   normalizeCoordinationItem,
 } from '../model/coordination.model';
 import { SavePreloadRequest } from '../model/save-preload.model';
+import { AddProfessorRequest } from '../model/add-professor.model';
 import { SearchGeneralPersonParams } from '../../preload-call/model/preload-call.model';
 
 @Injectable({
@@ -72,6 +74,13 @@ export class CoordinationService {
     );
   }
 
+  listProfessorsByModality(idCoordinacion: number, idModalidadContratacion: number,): Observable<ModalityProfessor[]> {
+    return this.webRequestService.get<ModalityProfessor[]>(
+      `${this.endpoint}/list-professors-modality`,
+      { idCoordinacion, idModalidadContratacion },
+    );
+  }
+
   getWorkDates(idCoordinacion: number, idModalidadContratacion: number): Observable<WorkDate[]> {
     const query = {
       idCoordinacion: idCoordinacion,
@@ -94,11 +103,33 @@ export class CoordinationService {
     );
   }
 
-  getCategoriaCatedratico(): Observable<CategoriaCatedratico[]> {
+  getCategoriaCatedratico(idModalidadContratacion: number,): Observable<CategoriaCatedratico[]> {
     return this.webRequestService.get<CategoriaCatedratico[]>(
       `${this.endpoint}/professor-category`,
+      { idModalidadContratacion },
     );
   }
+
+  addProfessor(request: AddProfessorRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/add-professor`,
+      request,
+    );
+  }
+
+  deleteProfessor(idCargaDocente: number): Observable<void> {
+    return this.webRequestService.delete<void>(
+      `${this.endpoint}/delete-professor/${idCargaDocente}`,
+    );
+  }
+
+  updateProfessor( idCargaDocente: number, request: AddProfessorRequest): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/update-professor/${idCargaDocente}`,
+      request,
+    );
+  }
+
 
 }
 

@@ -10,6 +10,7 @@ import {
   OnChanges,
   OnDestroy,
   Renderer2,
+  signal,
   SimpleChanges,
   ViewChild,
   Output,
@@ -40,10 +41,10 @@ export class Dropdown implements AfterViewInit, OnChanges, OnDestroy {
     }
   }
 
-  top = 0;
-  left = 0;
-  isPositioned = false;
-  placement: 'top' | 'bottom' = 'bottom';
+  readonly top = signal(0);
+  readonly left = signal(0);
+  readonly isPositioned = signal(false);
+  readonly placement = signal<'top' | 'bottom'>('bottom');
 
   private dropdownRef?: ElementRef<HTMLDivElement>;
   private isAttachedToBody = false;
@@ -80,13 +81,13 @@ export class Dropdown implements AfterViewInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen']) {
       if (this.isOpen) {
-        this.isPositioned = false;
+        this.isPositioned.set(false);
         this.repositionAttempts = 0;
         this.queueReposition();
         return;
       }
 
-      this.isPositioned = false;
+      this.isPositioned.set(false);
       this.repositionAttempts = 0;
       this.detachFromBody();
     }
@@ -136,20 +137,21 @@ export class Dropdown implements AfterViewInit, OnChanges, OnDestroy {
     const gap = Math.max(0, this.gap);
 
     let top = triggerRect.bottom + gap;
-    this.placement = 'bottom';
+    let placement: 'top' | 'bottom' = 'bottom';
 
     if (top + menuRect.height > viewportHeight - gap) {
       top = Math.max(triggerRect.top - menuRect.height - gap, gap);
-      this.placement = 'top';
+      placement = 'top';
     }
 
     const preferredLeft = triggerRect.right - menuRect.width;
     const maxLeft = Math.max(gap, viewportWidth - menuRect.width - gap);
     const left = Math.min(Math.max(preferredLeft, gap), maxLeft);
 
-    this.top = top;
-    this.left = left;
-    this.isPositioned = true;
+    this.top.set(top);
+    this.left.set(left);
+    this.placement.set(placement);
+    this.isPositioned.set(true);
   }
 
   private attachToBody(): void {

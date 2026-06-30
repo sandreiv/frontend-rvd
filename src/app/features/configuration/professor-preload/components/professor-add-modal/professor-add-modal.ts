@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -38,11 +39,13 @@ import { CoordinationService } from '../../data/coordination.service';
 import {
   CategoriaCatedratico,
   CoordinationContractModality,
+  ModalityProfessor,
   ProfessorSearchResult,
   ValuePointsPreload,
   WorkDate,
 } from '../../model/coordination.model';
 import {
+  ContractValues,
   PROFESSOR_FIELDS,
   ProfessorFieldConfig,
   computeContractValues,
@@ -51,6 +54,7 @@ import {
   formatWorkDateRange,
   resolveModalityKind,
 } from '../../model/professor-form.config';
+import { AddProfessorRequest } from '../../model/add-professor.model';
 import { SearchGeneralPersonParams } from '../../../preload-call/model/preload-call.model';
 
 @Component({
@@ -71,16 +75,49 @@ import { SearchGeneralPersonParams } from '../../../preload-call/model/preload-c
 })
 export class ProfessorAddModal {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   isOpen = input(false);
   coordinationId = input<number | null>(null);
+  idCarga = input<number | null>(null);
   anioUniversidad = input<number | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
+  mode = input<'create' | 'edit'>('create');
+  editingProfessor = input<ModalityProfessor | null>(null);
   close = output<void>();
+  saved = output<void>();
+
+  readonly isEditMode = computed(() => this.mode() === 'edit');
+
+  readonly modalTitle = computed(() =>
+    this.isEditMode() ? 'Ver detalle preasignación' : 'Agregar nuevo docente',
+  );
+
+  readonly modalSubtitle = computed(() =>
+    this.isEditMode()
+      ? 'Consulta y actualiza la preasignación del docente.'
+      : 'Agregar un docente nuevo a la precarga.',
+  );
+
+  readonly saveButtonLabel = computed(() =>
+    this.isEditMode() ? 'Actualizar' : 'Guardar detalle de precarga',
+  );
+
+  readonly editingDisplayName = computed(() => {
+    const editing = this.editingProfessor();
+    if (!editing) {
+      return '';
+    }
+    if (editing.idPersonaGeneral == null) {
+      return 'NN';
+    }
+    return editing.nombreCompleto?.trim() || 'NN';
+  });
 
   readonly isProfessorActive = signal(true);
   readonly searchResults = signal<ProfessorSearchResult[]>([]);
   readonly isSearching = signal(false);
+  readonly isSaving = signal(false);
   readonly selectedProfessor = signal<ProfessorSearchResult | null>(null);
   readonly selectedWorkDate = signal<WorkDate | null>(null);
   readonly selectedCategoriaId = signal<number | null>(null);
@@ -111,11 +148,14 @@ export class ProfessorAddModal {
 
   readonly modalityKind = computed(() => resolveModalityKind(this.contractModality()?.nombre),);
 
-  readonly effectiveCategoriaId = computed(() =>
-    this.isProfessorActive()
+  readonly effectiveCategoriaId = computed(() => {
+    if (this.isEditMode() && this.isProfessorActive()) {
+      return this.editingProfessor()?.idCategoriaCatedratico ?? null;
+    }
+    return this.isProfessorActive()
       ? this.selectedProfessor()?.categoriaCatedratico?.id ?? null
-      : this.selectedCategoriaId(),
-  );
+      : this.selectedCategoriaId();
+  });
 
   private readonly workDatesResource = rxResource({
     params: () => {
@@ -145,6 +185,9 @@ export class ProfessorAddModal {
 
   private readonly valuePointsResource = rxResource<ValuePointsPreload,{ anio: number; idCategoriaCatedratico: number, idPersonaGeneral: number | null } | undefined>({
     params: () => {
+      if (this.isEditMode() && this.isProfessorActive()) {
+        return undefined;
+      }
       const anio = this.anioUniversidad();
       const idCategoriaCatedratico = this.effectiveCategoriaId();
       if (anio == null || idCategoriaCatedratico == null) {
@@ -162,8 +205,18 @@ export class ProfessorAddModal {
   });
 
   private readonly categoriasResource = rxResource({
-    params: () => (this.isOpen() && !this.isProfessorActive() ? {} : undefined),
-    stream: () => this.coordinationService.getCategoriaCatedratico(),
+    params: () => {
+      const modalityId = this.contractModality()?.id;
+      const needsCatalog = !this.isProfessorActive() || this.isEditMode();
+      if (!this.isOpen() || !needsCatalog || modalityId == null) {
+        return undefined;
+      }
+      return { idModalidadContratacion: modalityId };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getCategoriaCatedratico(
+        params.idModalidadContratacion,
+      ),
     defaultValue: [] as CategoriaCatedratico[],
   });
 
@@ -175,6 +228,10 @@ export class ProfessorAddModal {
   );
 
   readonly asignacionSalarialNum = computed<number | null>(() => {
+    if (this.isEditMode() && this.isProfessorActive()) {
+      const stored = Number(this.editingProfessor()?.asignacionSalarial);
+      return Number.isNaN(stored) ? null : stored;
+    }
     const values = this.valuePointsResource.value() as
       | ValuePointsPreload
       | undefined;
@@ -191,6 +248,22 @@ export class ProfessorAddModal {
       return null;
     }
     return valorPunto * puntos;
+  });
+
+  readonly contractValues = computed<ContractValues | null>(() => {
+    if (this.modalityKind() !== 'tiempoCompletoOcasional') {
+      return null;
+    }
+    const asignacion = this.asignacionSalarialNum();
+    const workDate = this.selectedWorkDate();
+    if (asignacion == null || !workDate) {
+      return null;
+    }
+    const cantidadDias = diffInDays(workDate.fechaInicio, workDate.fechaFin);
+    if (cantidadDias <= 0) {
+      return null;
+    }
+    return computeContractValues(asignacion, cantidadDias);
   });
 
   readonly professorForm = signal<FormGroup>(new FormGroup({}));
@@ -211,16 +284,38 @@ export class ProfessorAddModal {
     effect(() => {
       this.isOpen();
       this.contractModality();
+      const editing = this.editingProfessor();
       untracked(() => {
-        this.isProfessorActive.set(true);
+        this.isProfessorActive.set(
+          editing ? editing.idPersonaGeneral != null : true,
+        );
         this.clearSelectionState();
         this.professorForm().reset();
       });
     });
 
     effect(() => {
+      const editing = this.editingProfessor();
+      const open = this.isOpen();
+      const form = this.professorForm();
+      const dates = this.workDates();
+      const categorias = this.categoriasResource.value();
+      if (!open || !editing) {
+        return;
+      }
+      untracked(() =>
+        this.prefillFromEditing(editing, form, dates, categorias),
+      );
+    });
+
+    effect(() => {
       this.isProfessorActive();
-      untracked(() => this.clearSelectionState());
+      untracked(() => {
+        if (this.isEditMode()) {
+          return;
+        }
+        this.clearSelectionState();
+      });
     });
 
     effect(() => {
@@ -267,25 +362,17 @@ export class ProfessorAddModal {
       }
 
       const asignacionSalarial = this.asignacionSalarialNum();
-      if (asignacionSalarial == null) {
+      if (asignacionSalarial != null) {
+        this.professorForm().patchValue({
+          asignacionSalarial: formatCurrencyCOP(asignacionSalarial),
+        });
+      }
+
+      const result = this.contractValues();
+      if (!result) {
         return;
       }
 
-      this.professorForm().patchValue({
-        asignacionSalarial: formatCurrencyCOP(asignacionSalarial),
-      });
-
-      const workDate = this.selectedWorkDate();
-      if (!workDate) {
-        return;
-      }
-
-      const cantidadDias = diffInDays(workDate.fechaInicio, workDate.fechaFin);
-      if (cantidadDias <= 0) {
-        return;
-      }
-
-      const result = computeContractValues(asignacionSalarial, cantidadDias);
       this.professorForm().patchValue({
         valorContrato: formatCurrencyCOP(result.valorContrato),
         valorPrestaciones: formatCurrencyCOP(result.valorPrestaciones),
@@ -353,6 +440,91 @@ export class ProfessorAddModal {
     this.searchResults.set([]);
   }
 
+  private prefillFromEditing(
+    editing: ModalityProfessor,
+    form: FormGroup,
+    dates: WorkDate[],
+    categorias: CategoriaCatedratico[],
+  ): void {
+    const workDate =
+      dates.find((item) => item.id === editing.idFechasConvocatoria) ?? null;
+    if (workDate) {
+      this.selectedWorkDate.set(workDate);
+    }
+
+    if (editing.idPersonaGeneral != null) {
+      this.prefillActiveProfessor(editing, form, workDate, categorias);
+    } else {
+      this.prefillNnProfessor(editing, form, workDate);
+    }
+  }
+
+  private prefillNnProfessor(
+    editing: ModalityProfessor,
+    form: FormGroup,
+    workDate: WorkDate | null,
+  ): void {
+    this.selectedCategoriaId.set(editing.idCategoriaCatedratico);
+    const puntos = editing.puntos != null ? Number(editing.puntos) : null;
+    this.manualNumeroPuntos.set(
+      puntos == null || Number.isNaN(puntos) ? null : puntos,
+    );
+
+    form.patchValue({
+      categoriaCatedratico: String(editing.idCategoriaCatedratico),
+      numeroPuntos: editing.puntos ?? '',
+      fechaLabor: String(editing.idFechasConvocatoria),
+    });
+    this.patchWorkDateFields(form, workDate);
+  }
+
+  private prefillActiveProfessor(
+    editing: ModalityProfessor,
+    form: FormGroup,
+    workDate: WorkDate | null,
+    categorias: CategoriaCatedratico[],
+  ): void {
+    const categoria = categorias.find(
+      (item) => item.id === editing.idCategoriaCatedratico,
+    );
+
+    form.patchValue({
+      categoriaCatedratico:
+        categoria?.descripcion ?? String(editing.idCategoriaCatedratico),
+      fechaLabor: String(editing.idFechasConvocatoria),
+    });
+    this.patchWorkDateFields(form, workDate);
+
+    if (this.modalityKind() === 'catedra') {
+      form.patchValue({ valorHora: formatCurrencyCOP(editing.valorHora) });
+      return;
+    }
+
+    form.patchValue({
+      numeroPuntos: editing.puntos ?? '',
+      valorPunto: formatCurrencyCOP(editing.valorPunto),
+      asignacionSalarial: formatCurrencyCOP(editing.asignacionSalarial),
+      valorContrato: formatCurrencyCOP(editing.valorContrato),
+      valorPrestaciones: formatCurrencyCOP(editing.valorPrestaciones),
+      totalContrato: formatCurrencyCOP(editing.totalContrato),
+    });
+  }
+
+  private patchWorkDateFields(
+    form: FormGroup,
+    workDate: WorkDate | null,
+  ): void {
+    if (!workDate) {
+      return;
+    }
+
+    form.patchValue({
+      semanas: workDate.semanas ?? '',
+      vacaciones: workDate.vacaciones ?? '',
+      horasSemanales: workDate.rangoHoras ?? '',
+    });
+  }
+
   onNumeroPuntosChange(value: string | number): void {
     const puntos = Number(value);
     this.manualNumeroPuntos.set(
@@ -368,6 +540,172 @@ export class ProfessorAddModal {
     this.professorForm().patchValue({
       categoriaCatedratico: descripcion,
     });
+  }
+
+  onSubmit(): void {
+    if (this.isSaving()) {
+      return;
+    }
+
+    const form = this.professorForm();
+    const payload = this.buildPayload();
+    if (form.invalid || !payload) {
+      form.markAllAsTouched();
+      return;
+    }
+
+    this.isSaving.set(true);
+    const editingId = this.editingProfessor()?.idCargaDocente;
+    const request$ =
+      this.isEditMode() && editingId != null
+        ? this.coordinationService.updateProfessor(editingId, payload)
+        : this.coordinationService.addProfessor(payload);
+
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.saved.emit();
+        this.close.emit();
+      },
+      error: () => this.isSaving.set(false),
+    });
+  }
+
+  private buildPayload(): AddProfessorRequest | null {
+    if (this.isEditMode() && this.isProfessorActive()) {
+      return this.buildStoredPayload();
+    }
+
+    const idCarga = this.idCarga();
+    const idModalidadContratacion = this.contractModality()?.id;
+    const idCategoriaCatedratico = this.effectiveCategoriaId();
+    const workDate = this.selectedWorkDate();
+    if (
+      idCarga == null ||
+      idModalidadContratacion == null ||
+      idCategoriaCatedratico == null ||
+      !workDate
+    ) {
+      return null;
+    }
+
+    const base: AddProfessorRequest = {
+      ...this.editPayloadId(),
+      idCarga,
+      idPersonaGeneral:
+        this.selectedProfessor()?.escalafon?.idPersonaGeneral ?? null,
+      idModalidadContratacion,
+      idCategoriaCatedratico,
+      fechasConvocatoria: {
+        id: workDate.id,
+        fechaInicio: workDate.fechaInicio,
+        fechaFin: workDate.fechaFin,
+      },
+      semanas: workDate.semanas ?? '',
+    };
+
+    if (this.modalityKind() === 'catedra') {
+      return {
+        ...base,
+        valorPunto: this.valorPuntoString(),
+        valorHora: this.valorHoraString(),
+      };
+    }
+
+    const contract = this.contractValues();
+    return {
+      ...base,
+      puntos: this.puntosString(),
+      valorPunto: this.valorPuntoString(),
+      asignacionSalarial: this.toAmount(this.asignacionSalarialNum()),
+      valorContrato: this.toAmount(contract?.valorContrato),
+      valorPrestaciones: this.toAmount(contract?.valorPrestaciones),
+      totalContrato: this.toAmount(contract?.totalContrato),
+    };
+  }
+
+  private buildStoredPayload(): AddProfessorRequest | null {
+    const editing = this.editingProfessor();
+    const idCarga = this.idCarga();
+    if (!editing || idCarga == null) {
+      return null;
+    }
+
+    const workDate = this.selectedWorkDate();
+    const base: AddProfessorRequest = {
+      idCargaDocente: editing.idCargaDocente,
+      idCarga,
+      idPersonaGeneral: editing.idPersonaGeneral,
+      idModalidadContratacion: editing.idModalidadContratacion,
+      idCategoriaCatedratico: editing.idCategoriaCatedratico,
+      fechasConvocatoria: {
+        id: workDate?.id ?? editing.idFechasConvocatoria,
+        fechaInicio: workDate?.fechaInicio ?? editing.fechaInicio,
+        fechaFin: workDate?.fechaFin ?? editing.fechaFin,
+      },
+      semanas: String(workDate?.semanas ?? editing.semanas ?? ''),
+    };
+
+    if (this.modalityKind() === 'catedra') {
+      return {
+        ...base,
+        valorPunto: editing.valorPunto ?? '',
+        valorHora: editing.valorHora ?? '',
+      };
+    }
+
+    const contract = this.contractValues();
+    return {
+      ...base,
+      puntos: editing.puntos ?? '',
+      valorPunto: editing.valorPunto ?? '',
+      asignacionSalarial: editing.asignacionSalarial ?? '',
+      valorContrato: contract
+        ? this.toAmount(contract.valorContrato)
+        : editing.valorContrato ?? '',
+      valorPrestaciones: contract
+        ? this.toAmount(contract.valorPrestaciones)
+        : editing.valorPrestaciones ?? '',
+      totalContrato: contract
+        ? this.toAmount(contract.totalContrato)
+        : editing.totalContrato ?? '',
+    };
+  }
+
+  private editPayloadId(): { idCargaDocente?: number } {
+    const editing = this.editingProfessor();
+    return this.isEditMode() && editing
+      ? { idCargaDocente: editing.idCargaDocente }
+      : {};
+  }
+
+  private valorPuntoString(): string {
+    const values = this.valuePointsResource.value() as
+      | ValuePointsPreload
+      | undefined;
+    return this.toAmount(values ? Number(values.valorPunto) : null);
+  }
+
+  private puntosString(): string {
+    if (this.isProfessorActive()) {
+      const values = this.valuePointsResource.value() as
+        | ValuePointsPreload
+        | undefined;
+      return values?.puntosDocente ?? '';
+    }
+    const puntos = this.manualNumeroPuntos();
+    return puntos == null ? '' : String(puntos);
+  }
+
+  private valorHoraString(): string {
+    const values = this.valuePointsResource.value() as
+      | ValuePointsPreload
+      | undefined;
+    return this.toAmount(values ? Number(values.valorHora) : null);
+  }
+
+  private toAmount(value: number | null | undefined): string {
+    return value == null || Number.isNaN(value) ? '' : value.toFixed(2);
   }
 
   private buildSearchParams(term: string): SearchGeneralPersonParams {

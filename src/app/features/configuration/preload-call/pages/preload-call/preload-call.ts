@@ -20,7 +20,10 @@ import {
   PreloadCallItem,
 } from '../../model/preload-call.model';
 import { buildPreloadCallDeletePayload } from '../../model/build-preload-call-delete-payload.function';
-import { PreloadCallSaveRequest } from '../../model/preload-call-save.model';
+import {
+  PreloadCallDeleteRequest,
+  PreloadCallSaveRequest,
+} from '../../model/preload-call-save.model';
 
 @Component({
   selector: 'app-preload-call',
@@ -45,7 +48,6 @@ export class PreloadCall implements OnInit, OnDestroy {
     signal<PreloadCallDetailResponse | null>(null);
   readonly showPreloadCallForm = signal(false);
   readonly isSaving = signal(false);
-  readonly successMessage = signal<string | null>(null);
   readonly formMode = signal<'create' | 'edit' | 'read'>('create');
 
   readonly isDeleteModalOpen = signal(false);
@@ -93,24 +95,23 @@ export class PreloadCall implements OnInit, OnDestroy {
     this.formMode.set('create');
   }
 
-  openEditPreloadCallForm(preloadCall: PreloadCallItem): void {
+  async openEditPreloadCallForm(preloadCall: PreloadCallItem): Promise<void> {
     if (!preloadCall?.id) {
       return;
     }
 
-    this.preloadCallService
-      .getPreloadCallDetails(preloadCall.id)
-      .subscribe((response) => {
-        this.selectedPreloadCall.set(response);
-        this.formMode.set('edit');
-        this.showPreloadCallForm.set(true);
-      });
+    const response = await firstValueFrom(
+      this.preloadCallService.getPreloadCallDetails(preloadCall.id),
+    );
+
+    this.selectedPreloadCall.set(response);
+    this.formMode.set('edit');
+    this.showPreloadCallForm.set(true);
   }
 
   async onSubmitPreloadCall(payload: PreloadCallSaveRequest): Promise<void> {
     const mode = this.formMode();
     this.isSaving.set(true);
-    this.successMessage.set(null);
 
     try {
       if (mode === 'edit') {
@@ -123,15 +124,12 @@ export class PreloadCall implements OnInit, OnDestroy {
         await firstValueFrom(
           this.preloadCallService.updatePreloadCall(id, payload),
         );
-        console.log('Convocatoria seleccionada', id)
-        console.log('Convocatoria actualizada', payload);
+
         
-        this.successMessage.set('Convocatoria actualizada correctamente.');
       } else {
         await firstValueFrom(
           this.preloadCallService.savePreloadCall(payload),
         );
-        this.successMessage.set('Convocatoria guardada correctamente.');
       }
 
       this.preloadCallsResource.reload();
@@ -152,7 +150,6 @@ export class PreloadCall implements OnInit, OnDestroy {
   }
 
   onRefreshPreloadCallList(): void {
-    this.successMessage.set(null);
     this.preloadCallsResource.reload();
   }
 
@@ -187,6 +184,10 @@ export class PreloadCall implements OnInit, OnDestroy {
       return;
     }
 
+    this.resetDeleteModalState();
+  }
+
+  private resetDeleteModalState(): void {
     this.isDeleteModalOpen.set(false);
     this.preloadCallToDelete.set(null);
     this.idsToDelete.set([]);
@@ -198,21 +199,16 @@ export class PreloadCall implements OnInit, OnDestroy {
     }
 
     this.isDeleting.set(true);
-    this.successMessage.set(null);
 
     try {
       if (this.deleteMode() === 'single') {
         await this.deletePreloadCallById(this.preloadCallToDelete()?.id);
       } else {
-        console.log('idsToDelete', this.idsToDelete());
+
         await this.bulkDeletePreloadCalls(this.idsToDelete());
       }
-
-      this.successMessage.set('Convocatoria(s) eliminada(s) correctamente.');
       this.preloadCallsResource.reload();
-      this.isDeleteModalOpen.set(false);
-      this.preloadCallToDelete.set(null);
-      this.idsToDelete.set([]);
+      this.resetDeleteModalState();
     } catch (error) {
       console.error('Error eliminando convocatoria:', error);
     } finally {
@@ -225,10 +221,7 @@ export class PreloadCall implements OnInit, OnDestroy {
       return;
     }
 
-    const detail = await firstValueFrom(
-      this.preloadCallService.getPreloadCallDetails(id),
-    );
-    const payload = buildPreloadCallDeletePayload(detail);
+    const payload = await this.buildDeletePayload(id);
 
     await firstValueFrom(
       this.preloadCallService.deletePreloadCall(id, payload),
@@ -237,22 +230,24 @@ export class PreloadCall implements OnInit, OnDestroy {
     this.afterPreloadCallDeleted(id);
   }
 
+  private async buildDeletePayload(
+    id: number,
+  ): Promise<PreloadCallDeleteRequest> {
+    const detail = await firstValueFrom(
+      this.preloadCallService.getPreloadCallDetails(id),
+    );
+
+    return buildPreloadCallDeletePayload(detail);
+  }
+
   private async bulkDeletePreloadCalls(ids: string[]): Promise<void> {
     const payloads = await Promise.all(
-      ids.map(async (idStr) => {
-        const id = Number(idStr);
-        const detail = await firstValueFrom(
-          this.preloadCallService.getPreloadCallDetails(id),
-        );
-        return buildPreloadCallDeletePayload(detail);
-      }),
+      ids.map((idStr) => this.buildDeletePayload(Number(idStr))),
     );
 
     await firstValueFrom(
       this.preloadCallService.bulkDeletePreloadCall(payloads),
     );
-
-    console.log('payloads', payloads);
 
     ids.forEach((idStr) => this.afterPreloadCallDeleted(Number(idStr)));
     this.selectedPreloadCallIds.set([]);

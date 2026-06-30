@@ -1,0 +1,28 @@
+<app-modal
+  [isOpen]="isOpen()"
+  className="mx-4 w-full max-w-4xl p-0"
+  (close)="close.emit()"
+>
+    <div class="flex items-start gap-3 px-6 py-6 sm:px-8">
+        <span class="inline-flex size-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+            <app-icon name="plus" size="sm" />
+        </span>
+        <div>
+            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
+              Agregar actividades
+            </h3>
+            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              Agrega las actividades que el docente realizará en la coordinación
+            </p>
+          </div>
+    </div>
+    <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10">
+        <app-button type="button" variant="outline" (btnClick)="close.emit()">
+            Cancelar
+        </app-button>
+        <app-button type="button" [disabled]="isSaving()" (btnClick)="onSubmit()">
+            Guardar
+        </app-button>
+    </div>
+
+</app-modal>

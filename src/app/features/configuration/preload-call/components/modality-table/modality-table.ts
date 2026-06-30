@@ -1,9 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
   input,
-  Output,
   output,
 } from '@angular/core';
 import { DataTable } from '../../../../../shared/ui/data-table/data-table';
@@ -27,9 +25,7 @@ export class ModalityTable {
 
   addModality = output<void>();
   deleteModality = output<ModalityFormItem>();
-
-  @Output() editModality = new EventEmitter<ModalityFormItem>();
-
+  editModality = output<ModalityFormItem>();
 
   readonly rowIdentity = (row: ModalityFormItem): string => row.id;
 

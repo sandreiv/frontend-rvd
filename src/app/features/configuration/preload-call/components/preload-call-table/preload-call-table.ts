@@ -1,24 +1,35 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Input, Output } from '@angular/core';
-import { DataTable } from "../../../../../shared/ui/data-table/data-table";
-import { DataTableActionEvent, DataTableColumn, DataTableInlineIcon, DataTableRowAction, DataTableSearchEvent, DataTableToolbarActionEvent } from '../../../../../shared/ui/data-table/table.types';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  output,
+} from '@angular/core';
+import { DataTable } from '../../../../../shared/ui/data-table/data-table';
+import {
+  DataTableActionEvent,
+  DataTableColumn,
+  DataTableRowAction,
+  DataTableSearchEvent,
+  DataTableToolbarActionEvent,
+} from '../../../../../shared/ui/data-table/table.types';
 import { PreloadCallItem } from '../../model/preload-call.model';
 
 @Component({
   selector: 'app-preload-call-table',
   imports: [DataTable],
   templateUrl: './preload-call-table.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PreloadCallTable {
-  preloadCalls = input<PreloadCallItem[]>([]);
+  readonly preloadCalls = input<PreloadCallItem[]>([]);
+  readonly selectedPreloadCallIds = input<string[]>([]);
 
-  @Input() selectedPreloadCallIds: string[] = [];
-
-  @Output() addPreloadCall = new EventEmitter<void>();
-  @Output() editPreloadCall = new EventEmitter<PreloadCallItem>();
-  @Output() deletePreloadCall = new EventEmitter<PreloadCallItem>();
-  @Output() refreshPreloadCall = new EventEmitter<void>();
-  @Output() deleteAllPreloadCall = new EventEmitter<string[]>();
-  @Output() selectedPreloadCallIdsChange = new EventEmitter<string[]>();
+  readonly addPreloadCall = output<void>();
+  readonly editPreloadCall = output<PreloadCallItem>();
+  readonly deletePreloadCall = output<PreloadCallItem>();
+  readonly refreshPreloadCall = output<void>();
+  readonly deleteAllPreloadCall = output<string[]>();
+  readonly selectedPreloadCallIdsChange = output<string[]>();
 
   readonly rowIdentity = (row: PreloadCallItem): string => String(row.id);
 
@@ -81,7 +92,6 @@ export class PreloadCallTable {
     }
 
     if (event.actionId === 'delete') {
-      console.log('Eliminando registro:', event);
       this.deletePreloadCall.emit(event.row);
     }
   }

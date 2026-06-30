@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -9,8 +10,9 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
@@ -29,6 +31,7 @@ import {
   EducationalLevelItem,
   FechaFormMeta,
   ModalityFormItem,
+  ModalityItem,
   PersonaAutorizaConvocatoriaItem,
   PreloadCallDetailResponse,
   UniversityPeriodItem,
@@ -58,9 +61,12 @@ import { PreloadCallPersonSearchModal } from '../preload-call-person-search-moda
 export class PreloadCallForm implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly preloadCallService = inject(PreloadCallService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private universityPeriods: UniversityPeriodItem[] = [];
-  private educationalLevels: EducationalLevelItem[] = [];
+  private readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
+  private readonly educationalLevels = signal<EducationalLevelItem[]>([]);
+  private readonly modalityCatalog = signal<ModalityItem[]>([]);
+  private readonly catalogsLoaded = signal(false);
   private lastSyncedDetailId: number | null = null;
 
   readonly mode = input<'create' | 'edit' | 'read'>('create');
@@ -91,9 +97,26 @@ export class PreloadCallForm implements OnInit {
   readonly callInfoSectionExpanded = signal(false);
   readonly modalitySectionExpanded = signal(false);
 
-  readonly universityPeriodOptions = signal<SelectOption[]>([]);
-  readonly educationalLevelOptions = signal<SelectOption[]>([]);
-  readonly modalitySelectOptions = signal<SelectOption[]>([]);
+  readonly universityPeriodOptions = computed<SelectOption[]>(() =>
+    this.universityPeriods().map((item) => ({
+      value: String(item.id),
+      label: `${item.anio} - ${item.periodo}`,
+    })),
+  );
+
+  readonly educationalLevelOptions = computed<SelectOption[]>(() =>
+    this.educationalLevels().map((item) => ({
+      value: String(item.id),
+      label: formatSentenceValue(item.descripcion),
+    })),
+  );
+
+  readonly modalitySelectOptions = computed<SelectOption[]>(() =>
+    this.modalityCatalog().map((item) => ({
+      value: String(item.id),
+      label: formatSentenceValue(item.nombre),
+    })),
+  );
 
   readonly form = this.fb.group({
     idPersonaNaturalGeneral: [null as number | null],
@@ -123,10 +146,6 @@ export class PreloadCallForm implements OnInit {
     effect(() => {
       const detail = this.preloadCall();
       const isCreateMode = this.mode() === 'create';
-      const catalogsReady =
-        this.universityPeriodOptions().length > 0 &&
-        this.educationalLevelOptions().length > 0 &&
-        this.modalitySelectOptions().length > 0;
 
       if (!detail) {
         this.lastSyncedDetailId = null;
@@ -136,7 +155,7 @@ export class PreloadCallForm implements OnInit {
         return;
       }
 
-      if (!catalogsReady) {
+      if (!this.catalogsLoaded()) {
         return;
       }
 
@@ -223,50 +242,22 @@ export class PreloadCallForm implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getUniversityPeriods();
-    this.getEducationalLevels();
-    this.getModalities();
+    this.loadCatalogs();
   }
 
-  getUniversityPeriods(): void {
-    this.preloadCallService.getUniversityPeriod().subscribe({
-      next: (lista) => {
-        this.universityPeriods = lista;
-        this.universityPeriodOptions.set(
-          lista.map((item) => ({
-            value: String(item.id),
-            label: `${item.anio} - ${item.periodo}`,
-          })),
-        );
-      },
-    });
-  }
-
-  getEducationalLevels(): void {
-    this.preloadCallService.getEducationalLevels().subscribe({
-      next: (lista) => {
-        this.educationalLevels = lista;
-        this.educationalLevelOptions.set(
-          lista.map((item) => ({
-            value: String(item.id),
-            label: formatSentenceValue(item.descripcion),
-          })),
-        );
-      },
-    });
-  }
-
-  getModalities(): void {
-    this.preloadCallService.getModalities().subscribe({
-      next: (lista) => {
-        this.modalitySelectOptions.set(
-          lista.map((item) => ({
-            value: String(item.id),
-            label: formatSentenceValue(item.nombre),
-          })),
-        );
-      },
-    });
+  private loadCatalogs(): void {
+    forkJoin({
+      periods: this.preloadCallService.getUniversityPeriod(),
+      levels: this.preloadCallService.getEducationalLevels(),
+      modalities: this.preloadCallService.getModalities(),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ periods, levels, modalities }) => {
+        this.universityPeriods.set(periods);
+        this.educationalLevels.set(levels);
+        this.modalityCatalog.set(modalities);
+        this.catalogsLoaded.set(true);
+      });
   }
 
   openModalityModal(): void {
@@ -372,10 +363,10 @@ export class PreloadCallForm implements OnInit {
     }
 
     const value = this.form.getRawValue();
-    const periodo = this.universityPeriods.find(
+    const periodo = this.universityPeriods().find(
       (item) => String(item.id) === value.periodoUniversidad,
     );
-    const nivelEducativo = this.educationalLevels.find(
+    const nivelEducativo = this.educationalLevels().find(
       (item) => String(item.id) === value.nivelEducativo,
     );
 

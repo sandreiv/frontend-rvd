@@ -172,8 +172,7 @@ export class ModalityFormModal {
       return null;
     }
 
-    const diffDays =
-      Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1;
+    const diffDays = Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1;
     const weeks = diffDays / 7;
     const fraction = weeks % 1;
     const whole = Math.floor(weeks);
