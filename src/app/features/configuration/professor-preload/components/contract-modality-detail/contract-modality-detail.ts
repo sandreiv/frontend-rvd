@@ -120,11 +120,22 @@ export class ContractModalityDetail {
   readonly isActivitiesModalOpen = signal(false);
   readonly professorModalMode = signal<'create' | 'edit'>('create');
   readonly editingModalityProfessor = signal<ModalityProfessor | null>(null);
+  readonly activitiesProfessor = signal<ModalityProfessor | null>(null);
   readonly openMenuKey = signal<string | null>(null);
 
-  readonly professorActions: ProfessorMenuAction[] = [
+  readonly modalityProfessorActions: ProfessorMenuAction[] = [
     { id: 'detalle', label: 'Ver detalle preasignación', icon: 'userCircle' },
     { id: 'actividades', label: 'Agregar actividades', icon: 'plus' },
+    {
+      id: 'eliminar',
+      label: 'Eliminar',
+      icon: 'delete',
+      className: 'text-error-600 dark:text-error-400',
+    },
+  ];
+
+  readonly careerProfessorActions: ProfessorMenuAction[] = [
+    { id: 'detalle', label: 'Ver detalle preasignación', icon: 'userCircle' },
     {
       id: 'eliminar',
       label: 'Eliminar',
@@ -357,11 +368,8 @@ export class ContractModalityDetail {
 
   onProfessorAction(actionId: string, professor: CareerProfessor): void {
     this.closeProfessorMenu();
-
-    if (actionId === 'actividades') {
-      this.openActivitiesModal();
-    }
     void professor;
+    void actionId;
   }
 
   onModalityProfessorAction(
@@ -376,7 +384,7 @@ export class ContractModalityDetail {
     }
 
     if (actionId === 'actividades') {
-      this.openActivitiesModal();
+      this.openActivitiesModal(professor);
       return;
     }
 
@@ -385,12 +393,18 @@ export class ContractModalityDetail {
     }
   }
 
-  openActivitiesModal(): void {
+  openActivitiesModal(professor: ModalityProfessor): void {
+    this.activitiesProfessor.set(professor);
     this.isActivitiesModalOpen.set(true);
   }
 
   closeActivitiesModal(): void {
     this.isActivitiesModalOpen.set(false);
+    this.activitiesProfessor.set(null);
+  }
+
+  onActivitiesSaved(): void {
+    this.modalityProfessorsResource.reload();
   }
 
   private openProfessorDetail(professor: ModalityProfessor): void {

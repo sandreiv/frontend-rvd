@@ -1,0 +1,147 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { Label } from '../../../../../../../shared/components/form/label/label';
+import {
+  Option,
+  Select,
+} from '../../../../../../../shared/components/form/select/select';
+import { InputField } from '../../../../../../../shared/components/form/input/input-field';
+import { Button } from '../../../../../../../shared/ui/button/button';
+import { Icon } from '../../../../../../../shared/ui/icon/icon';
+import { CoordinationService } from '../../../../data/coordination.service';
+import { CRITERIA_ACTIVITY_FIELDS } from '../../../../model/professor-activities.config';
+import {
+  TipoActividad,
+  TipoActividadCriterio,
+} from '../../../../model/professor-activities.model';
+import { SimpleActivity } from '../../../../model/professor-activities-modal.models';
+
+@Component({
+  selector: 'app-criteria-activity-card',
+  imports: [
+    ReactiveFormsModule,
+    Label,
+    Select,
+    InputField,
+    Button,
+    Icon,
+  ],
+  templateUrl: './criteria-activity-card.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class CriteriaActivityCard {
+  private readonly coordinationService = inject(CoordinationService);
+
+  tipoActividad = input<TipoActividad | null>(null);
+  addFormOpen = input(false);
+  activities = input<SimpleActivity[]>([]);
+
+  addFormOpenChange = output<boolean>();
+  activitiesChange = output<SimpleActivity[]>();
+
+  readonly formFields = CRITERIA_ACTIVITY_FIELDS;
+
+  readonly form = new FormGroup({
+    idCriterio: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    horasDedicacion: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
+  });
+
+  private readonly criteriaResource = rxResource({
+    params: () => {
+      const idTipoActividad = this.tipoActividad()?.id;
+      if (idTipoActividad == null) {
+        return undefined;
+      }
+      return { idTipoActividad };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.listCriteria(params.idTipoActividad),
+    defaultValue: [] as TipoActividadCriterio[],
+  });
+
+  readonly criteriaOptions = computed<Option[]>(() =>
+    this.criteriaResource.value().map((item) => ({
+      value: String(item.id),
+      label: item.nombre,
+    })),
+  );
+
+  toggleAddForm(): void {
+    this.addFormOpenChange.emit(!this.addFormOpen());
+  }
+
+  cancelAddForm(): void {
+    this.resetForm();
+    this.addFormOpenChange.emit(false);
+  }
+
+  onAddActivity(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const activity = this.buildActivityRow();
+    if (!activity) {
+      return;
+    }
+
+    this.activitiesChange.emit([...this.activities(), activity]);
+    this.resetForm();
+    this.addFormOpenChange.emit(false);
+  }
+
+  removeActivity(activityId: string): void {
+    this.activitiesChange.emit(
+      this.activities().filter((item) => item.id !== activityId),
+    );
+  }
+
+  private buildActivityRow(): SimpleActivity | null {
+    const criterio = this.findSelectedCriteria();
+    const horas = this.form.controls.horasDedicacion.value;
+
+    if (!criterio || horas == null) {
+      return null;
+    }
+
+    return {
+      id: `criteria-${Date.now()}`,
+      actividad: criterio.nombre,
+      horasDedicacion: horas,
+      idTipoActividadHija: criterio.id,
+    };
+  }
+
+  private findSelectedCriteria(): TipoActividadCriterio | undefined {
+    const id = this.form.controls.idCriterio.value;
+    return this.criteriaResource
+      .value()
+      .find((item) => String(item.id) === id);
+  }
+
+  private resetForm(): void {
+    this.form.reset({
+      idCriterio: '',
+      horasDedicacion: null,
+    });
+  }
+}

@@ -16,6 +16,16 @@ import {
 import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
 import { SearchGeneralPersonParams } from '../../preload-call/model/preload-call.model';
+import {
+  GrupoMateria,
+  MateriaAcademica,
+  ProgramaAcademico,
+  TipoActividad,
+  TipoActividadCriterio,
+  UnidadRegional,
+} from '../model/professor-activities.model';
+import { ProyectoDocenteDto } from '../model/professor-projects.model';
+import { SaveActivityDistributionRequest } from '../model/save-activity-distribution.model';
 
 @Injectable({
   providedIn: 'root',
@@ -130,6 +140,68 @@ export class CoordinationService {
     );
   }
 
+  listCriteria(idTipoActividad: number): Observable<TipoActividadCriterio[]> {
+    return this.webRequestService.get<TipoActividadCriterio[]>(
+      `${this.endpoint}/list-criteria`,
+      { idTipoActividad },
+    );
+  }
 
+  listRegionalUnits(idCoordinacion: number): Observable<UnidadRegional[]> {
+    return this.webRequestService.get<UnidadRegional[]>(
+      `${this.endpoint}/list-regional-unit`,
+      { idCoordinacion },
+    );
+  }
+
+  listPrograms(idUnidadRegional: number, idNivelEducativo: number): Observable<ProgramaAcademico[]> {
+    return this.webRequestService.get<ProgramaAcademico[]>(
+      `${this.endpoint}/list-program`,
+      { idUnidadRegional, idNivelEducativo },
+    );
+  }
+
+  listSubjects(idPrograma: number, idCoordinacion: number): Observable<MateriaAcademica[]> {
+    return this.webRequestService.get<MateriaAcademica[]>(
+      `${this.endpoint}/list-subject`,
+      { idPrograma, idCoordinacion },
+    );
+  }
+
+  listSubjectGroups(codigoMateria: string): Observable<GrupoMateria[]> {
+    return this.webRequestService.get<GrupoMateria[]>(
+      `${this.endpoint}/list-subject-group`,
+      { codigoMateria },
+    );
+  }
+
+  listProjectsProfessor(idPersonaGeneral: number): Observable<ProyectoDocenteDto[]> {
+    return this.webRequestService.get<ProyectoDocenteDto[]>(
+      `${this.endpoint}/list-projects-professor`,
+      { idPersonaGeneral },
+    );
+  }
+
+  listActivityTypes(): Observable<TipoActividad[]> {
+    return this.webRequestService.get<TipoActividad[]>(
+      `${this.endpoint}/list-activity-types`,
+    );
+  }
+
+  saveActivityDistribution(
+    request: SaveActivityDistributionRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-activity-distribution`,
+      request,
+    );
+  }
+
+  /*listProfessorActivities(idCargaDocente: number,): Observable<ProfessorActivitiesResponseApi> {
+    return this.webRequestService.get<ProfessorActivitiesResponseApi>(
+      `${this.endpoint}/list-professor-activities`,
+      { idCargaDocente },
+    );
+  }*/
 }
 

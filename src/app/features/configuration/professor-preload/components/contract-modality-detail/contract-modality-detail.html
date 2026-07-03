@@ -88,7 +88,7 @@
                   className="w-48 p-2"
                   (close)="closeProfessorMenu()"
                 >
-                  @for (action of professorActions; track action.id) {
+                  @for (action of careerProfessorActions; track action.id) {
                     <app-item
                       (itemClick)="onProfessorAction(action.id, professor)"
                     >
@@ -159,7 +159,7 @@
                   className="w-48 p-2"
                   (close)="closeProfessorMenu()"
                 >
-                  @for (action of professorActions; track action.id) {
+                  @for (action of modalityProfessorActions; track action.id) {
                     <app-item
                       (itemClick)="
                         onModalityProfessorAction(action.id, professor)
@@ -208,5 +208,9 @@
 
 <app-professor-activities-modal
   [isOpen]="isActivitiesModalOpen()"
+  [professor]="activitiesProfessor()"
+  [contractModality]="selectedContractModality()"
+  [coordination]="coordination()"
   (close)="closeActivitiesModal()"
+  (saved)="onActivitiesSaved()"
 />

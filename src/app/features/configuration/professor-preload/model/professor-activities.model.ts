@@ -1,0 +1,43 @@
+export interface TipoActividad {
+  id: number;
+  idPadre: number | null;
+  nombre: string;
+  descripcion: string;
+  orden: string;
+  codigo: string;
+}
+
+export interface TipoActividadCriterio {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface UnidadRegional {
+  id: number;
+  nombre: string;
+}
+
+export interface ProgramaAcademico {
+  id: number;
+  nombre: string;
+}
+
+export interface MateriaAcademica {
+  codigoMateria: string;
+  nombre: string;
+  horasPracticas: number;
+  horasTeoricas: number;
+  horasTeoricoPracticas: number | null;
+  periodo: number;
+  ponderacionAcademica: number;
+  horasDirectas: number;
+  capacidad: number | null;
+  tieneGrupo: boolean;
+}
+
+export interface GrupoMateria {
+  id: number;
+  nombre: string;
+  capacidad: number;
+}

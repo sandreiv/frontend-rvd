@@ -1,28 +1,162 @@
 <app-modal
   [isOpen]="isOpen()"
-  className="mx-4 w-full max-w-4xl p-0"
+  className="mx-4 w-full max-w-5xl p-0"
   (close)="close.emit()"
 >
-    <div class="flex items-start gap-3 px-6 py-6 sm:px-8">
-        <span class="inline-flex size-10 items-center justify-center rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-            <app-icon name="plus" size="sm" />
-        </span>
-        <div>
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
-              Agregar actividades
-            </h3>
-            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-              Agrega las actividades que el docente realizará en la coordinación
-            </p>
-          </div>
+  <header class="px-6 pb-5 pt-6 sm:px-8 sm:pt-8">
+    <div class="flex items-start gap-3 pr-10">
+      <span
+        class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+      >
+        <app-icon name="academicCap" size="sm" />
+      </span>
+      <div class="min-w-0">
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
+          Agregar actividades del docente
+        </h3>
+        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          Distribuye la carga académica, administrativa, de investigación
+          e interacción social.
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span
+            class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            Docente · {{ professorDisplayName() }}
+          </span>
+          <span
+            class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            {{ contractModalityLabel() }}
+          </span>
+          <span
+            class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            Coordinación · {{ coordinationLabel() }}
+          </span>
+          @if (periodLabel()) {
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            >
+              <app-icon name="calendar" size="xs" />
+              {{ periodLabel() }}
+            </span>
+          }
+        </div>
+      </div>
     </div>
-    <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10">
-        <app-button type="button" variant="outline" (btnClick)="close.emit()">
-            Cancelar
-        </app-button>
-        <app-button type="button" [disabled]="isSaving()" (btnClick)="onSubmit()">
-            Guardar
-        </app-button>
-    </div>
+  </header>
 
+  <div
+    class="max-h-[calc(100vh-16rem)] flex flex-col gap-4 overflow-y-auto border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10"
+  >
+    @if (!visibleActivityItems().length) {
+      <p
+        class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+      >
+        No hay categorías de actividades disponibles para esta modalidad
+        de contratación.
+      </p>
+    }
+
+    @for (item of visibleActivityItems(); track item.codigo) {
+      @let hours = categoryHours()[item.codigo];
+
+      <app-collapsible-section
+        class="block"
+        [expanded]="isCategoryExpanded(item.codigo)"
+        (expandedChange)="onCategoryExpandedChange(item.codigo, $event)"
+        contentClassName="flex flex-col gap-4"
+      >
+        <div
+          collapsibleSectionHeader
+          class="flex min-w-0 flex-1 items-center gap-3"
+        >
+          <span
+            class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl"
+            [class]="item.iconBgClass"
+          >
+            <app-icon
+              [name]="item.icon"
+              size="sm"
+              [classes]="item.iconColorClass"
+            />
+          </span>
+          <div class="min-w-0">
+            <h4
+              class="text-sm font-semibold text-gray-900 dark:text-white/90"
+            >
+              {{ item.tipoActividad?.nombre ?? '' }}
+            </h4>
+          </div>
+        </div>
+
+        <div collapsibleSectionActions class="flex items-center">
+          <span
+            class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            {{ hoursLabel(hours) }}
+          </span>
+        </div>
+
+        @switch (item.formType) {
+          @case ('direct') {
+            @if (directActivityContext(); as context) {
+              <app-direct-activity-card
+                [tipoActividad]="item.tipoActividad ?? null"
+                [idCoordinacion]="context.idCoordinacion"
+                [idNivelEducativo]="context.idNivelEducativo"
+                [addFormOpen]="isAddFormOpen(item.codigo)"
+                [activities]="actividadesFAD()"
+                (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
+                (activitiesChange)="actividadesFAD.set($event)"
+              />
+            }
+          }
+          @case ('criteria') {
+            <app-criteria-activity-card
+              [tipoActividad]="item.tipoActividad ?? null"
+              [addFormOpen]="isAddFormOpen(item.codigo)"
+              [activities]="criteriaActivitiesForCodigo(item.codigo)"
+              (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
+              (activitiesChange)="setCriteriaActivitiesForCodigo(item.codigo, $event)"
+            />
+          }
+          @case ('project') {
+            <app-project-activity-card
+              [tipoActividad]="item.tipoActividad ?? null"
+              [projectRows]="projectHierarchyRowsForCodigo(item.codigo)"
+              [associatedRows]="associatedProjectsForCodigo(item.codigo)"
+              [isLoading]="professorProjectsResource.isLoading()"
+              (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
+            />
+          }
+        }
+      </app-collapsible-section>
+    }
+  </div>
+
+  <footer
+    class="flex flex-col gap-4 border-t border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 dark:border-white/10"
+  >
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+      Total de horas asignadas:
+      <span class="font-semibold text-gray-900 dark:text-white/90">
+        {{ totalAssignedHours() }} h / {{ weeklyHoursLimit() }} h
+      </span>
+      semanales
+    </p>
+    <div class="flex justify-end gap-3">
+      <app-button type="button" variant="outline" (btnClick)="close.emit()">
+        Cancelar
+      </app-button>
+      <app-button
+        type="button"
+        [disabled]="isSaving() || !canSaveDistribution()"
+        (btnClick)="onSubmit()"
+      >
+        Guardar distribución
+      </app-button>
+    </div>
+  </footer>
 </app-modal>

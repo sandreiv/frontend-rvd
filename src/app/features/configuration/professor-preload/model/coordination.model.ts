@@ -57,6 +57,7 @@ export interface CoordinationItem {
   estadoCarga: string;
   idCarga: number | null;
   idConvocatoria: number | null;
+  idNivelEducativo: number | null;
   convocatoriaNombre: string;
   modalidadesContratacion: CoordinationContractModality[];
 }
@@ -154,6 +155,7 @@ export function normalizeCoordinationItem(
     estadoCarga: resolveEstadoCarga(item.carga),
     idCarga: item.carga?.id ?? null,
     idConvocatoria: item.convocatoria?.id ?? null,
+    idNivelEducativo: item.convocatoria?.nivelEducativo?.id ?? null,
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
     modalidadesContratacion:
       item.convocatoria?.modalidadesContratacion ?? [],

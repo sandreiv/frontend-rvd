@@ -19,7 +19,19 @@ import { formatSentenceValue } from '../../../utils/normalized-text.util';
 export interface Option {
   value: string;
   label: string;
+  group?: string;
+  disabled?: boolean;
 }
+
+type NormalizedOption = Option & {
+  label: string;
+  group?: string;
+  disabled?: boolean;
+};
+
+type SelectPanelItem =
+  | { type: 'group'; key: string; label: string }
+  | { type: 'option'; key: string; option: NormalizedOption };
 
 @Component({
   selector: 'app-select',
@@ -61,20 +73,23 @@ export class Select implements ControlValueAccessor {
   openUp = signal(false);
   panelStyles = signal<Record<string, string>>({});
 
-  normalizedOptions = computed(() =>
+  normalizedOptions = computed((): NormalizedOption[] =>
     this.options().map((option) => ({
       ...option,
       label: formatSentenceValue(option.label),
+      group: option.group?.trim() || undefined,
     })),
   );
 
   selectedLabel = computed(() => {
     const v = this.value();
-    if (!v) return '';
+    if (!v) {
+      return '';
+    }
     return this.normalizedOptions().find((o) => o.value === v)?.label ?? '';
   });
 
-  filteredOptions = computed(() => {
+  filteredOptions = computed((): NormalizedOption[] => {
     const q = this.query().trim().toLocaleLowerCase('es-CO');
     const opts = this.normalizedOptions();
 
@@ -82,7 +97,41 @@ export class Select implements ControlValueAccessor {
       return opts;
     }
 
-    return opts.filter((o) => o.label.toLocaleLowerCase('es-CO').includes(q));
+    return opts.filter((option) => {
+      const labelMatch = option.label
+        .toLocaleLowerCase('es-CO')
+        .includes(q);
+      const groupMatch =
+        option.group?.toLocaleLowerCase('es-CO').includes(q) ?? false;
+      return labelMatch || groupMatch;
+    });
+  });
+
+  panelItems = computed((): SelectPanelItem[] => {
+    const items: SelectPanelItem[] = [];
+    let lastGroup: string | undefined;
+
+    for (const option of this.filteredOptions()) {
+      const group = option.group;
+      if (group && group !== lastGroup) {
+        items.push({
+          type: 'group',
+          key: `group-${group}`,
+          label: group,
+        });
+        lastGroup = group;
+      }
+      if (!group) {
+        lastGroup = undefined;
+      }
+      items.push({
+        type: 'option',
+        key: option.value,
+        option,
+      });
+    }
+
+    return items;
   });
 
   buttonClasses = computed(() => {
@@ -130,8 +179,16 @@ export class Select implements ControlValueAccessor {
   }
 
   select(nextValue: string | number) {
-    if (this.disabled()) return;
+    if (this.disabled()) {
+      return;
+    }
     const normalizedValue = String(nextValue);
+    const option = this.normalizedOptions().find(
+      (item) => item.value === normalizedValue,
+    );
+    if (option?.disabled) {
+      return;
+    }
     this.value.set(normalizedValue);
     this.onChangeFn(normalizedValue);
     this.valueChange.emit(normalizedValue);
