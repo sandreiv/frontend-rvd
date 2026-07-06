@@ -8,12 +8,13 @@ import {
 import { ProfessorProjectRow } from './professor-projects.model';
 import {
   DetalleCargaDocenteRequest,
-  SaveActivityDistributionRequest,
-} from './save-activity-distribution.model';
+  SaveDetailProfessorPreloadRequest,
+} from './save-detail-professor-preload.model';
 import { TipoActividad } from './professor-activities.model';
 
-export interface SaveActivityDistributionInput {
+export interface SaveDetailProfessorPreloadInput {
   idCargaDocente: number;
+  idCentroCosto: number | null;
   activityTypes: TipoActividad[];
   actividadesFAD: DirectLearningActivity[];
   actividadesFAI: SimpleActivity[];
@@ -22,33 +23,36 @@ export interface SaveActivityDistributionInput {
   associatedProjectsISU: ProfessorProjectRow[];
 }
 
-export function buildSaveActivityDistributionRequest(
-  input: SaveActivityDistributionInput,
-): SaveActivityDistributionRequest {
+export function buildSaveActivityDistributionRequest(input: SaveDetailProfessorPreloadInput): SaveDetailProfessorPreloadRequest {
   const fadType = findActivityType(input.activityTypes, 'FAD');
   const faiType = findActivityType(input.activityTypes, 'FAI');
   const acType = findActivityType(input.activityTypes, 'AC');
 
   const detalles: DetalleCargaDocenteRequest[] = [];
+  const idCentroCosto = input.idCentroCosto ?? undefined;
 
   for (const activity of input.actividadesFAD) {
-    detalles.push(mapFadDetalle(activity, fadType));
+    detalles.push(withCentroCosto(mapFadDetalle(activity, fadType), idCentroCosto));
   }
 
   for (const activity of input.actividadesFAI) {
-    detalles.push(mapCriteriaDetalle(activity, faiType));
+    detalles.push(
+      withCentroCosto(mapCriteriaDetalle(activity, faiType), idCentroCosto),
+    );
   }
 
   for (const activity of input.actividadesAC) {
-    detalles.push(mapCriteriaDetalle(activity, acType));
+    detalles.push(
+      withCentroCosto(mapCriteriaDetalle(activity, acType), idCentroCosto),
+    );
   }
 
   for (const project of input.associatedProjectsCTEI) {
-    detalles.push(mapProjectDetalle(project));
+    detalles.push(withCentroCosto(mapProjectDetalle(project), idCentroCosto));
   }
 
   for (const project of input.associatedProjectsISU) {
-    detalles.push(mapProjectDetalle(project));
+    detalles.push(withCentroCosto(mapProjectDetalle(project), idCentroCosto));
   }
 
   return {
@@ -57,16 +61,11 @@ export function buildSaveActivityDistributionRequest(
   };
 }
 
-export function hasSaveableActivities(
-  input: SaveActivityDistributionInput,
-): boolean {
+export function hasSaveableActivities(input: SaveDetailProfessorPreloadInput): boolean {
   return buildSaveActivityDistributionRequest(input).detalles.length > 0;
 }
 
-function mapFadDetalle(
-  activity: DirectLearningActivity,
-  fadType: TipoActividad | undefined,
-): DetalleCargaDocenteRequest {
+function mapFadDetalle(activity: DirectLearningActivity, fadType: TipoActividad | undefined): DetalleCargaDocenteRequest {
   return {
     idTipoActividad: activity.idTipoActividad ?? fadType?.id ?? 0,
     codigoTipoActividad:
@@ -76,31 +75,26 @@ function mapFadDetalle(
     idPrograma: activity.idPrograma,
     codigoMateria: activity.codigoMateria,
     idGrupo: activity.idGrupo,
-    relacionesProyecto: [],
+    relacionCargaProyecto: [],
   };
 }
 
-function mapCriteriaDetalle(
-  activity: SimpleActivity,
-  categoryType: TipoActividad | undefined,
-): DetalleCargaDocenteRequest {
+function mapCriteriaDetalle(activity: SimpleActivity, categoryType: TipoActividad | undefined): DetalleCargaDocenteRequest {
   return {
     idTipoActividad: categoryType?.id ?? 0,
     idTipoActividadHija: activity.idTipoActividadHija,
     codigoTipoActividad: categoryType?.codigo ?? '',
     horas: activity.horasDedicacion,
-    relacionesProyecto: [],
+    relacionCargaProyecto: [],
   };
 }
 
-function mapProjectDetalle(
-  project: ProfessorProjectRow,
-): DetalleCargaDocenteRequest {
+function mapProjectDetalle(project: ProfessorProjectRow): DetalleCargaDocenteRequest {
   return {
     idTipoActividad: project.idTipoActividad,
     codigoTipoActividad: project.codigoTipoActividad,
     horas: project.horasDedicacion,
-    relacionesProyecto: [
+    relacionCargaProyecto: [
       {
         idPersonaProyecto: project.idPersonaProyecto,
         idProyecto: project.idProyecto,
@@ -109,9 +103,14 @@ function mapProjectDetalle(
   };
 }
 
-function findActivityType(
-  activityTypes: TipoActividad[],
-  codigo: ActivityCategoryCodigo,
-): TipoActividad | undefined {
+function findActivityType(activityTypes: TipoActividad[], codigo: ActivityCategoryCodigo): TipoActividad | undefined {
   return activityTypes.find((type) => type.codigo === codigo);
+}
+
+function withCentroCosto(detalle: DetalleCargaDocenteRequest, idCentroCosto: number | undefined): DetalleCargaDocenteRequest {
+  if (idCentroCosto == null) {
+    return detalle;
+  }
+
+  return { ...detalle, idCentroCosto };
 }

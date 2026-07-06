@@ -12,7 +12,7 @@
       </span>
       <div class="min-w-0">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
-          Agregar actividades del docente
+          {{ modalTitle() }}
         </h3>
         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
           Distribuye la carga académica, administrativa, de investigación
@@ -50,15 +50,29 @@
   <div
     class="max-h-[calc(100vh-16rem)] flex flex-col gap-4 overflow-y-auto border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10"
   >
-    @if (!visibleActivityItems().length) {
+    @if (isLoadingDetail()) {
+      <p
+        class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+      >
+        Cargando actividades del docente...
+      </p>
+    } @else if (!visibleActivityItems().length) {
       <p
         class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
       >
         No hay categorías de actividades disponibles para esta modalidad
         de contratación.
       </p>
+    } @else if (!hasSavedDetail()) {
+      <p
+        class="rounded-xl border border-dashed border-gray-200 px-4 py-4 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+      >
+        Aún no hay actividades registradas. Agrega la primera actividad
+        en las categorías disponibles.
+      </p>
     }
 
+    @if (!isLoadingDetail()) {
     @for (item of visibleActivityItems(); track item.codigo) {
       @let hours = categoryHours()[item.codigo];
 
@@ -134,6 +148,7 @@
         }
       </app-collapsible-section>
     }
+    }
   </div>
 
   <footer
@@ -152,7 +167,7 @@
       </app-button>
       <app-button
         type="button"
-        [disabled]="isSaving() || !canSaveDistribution()"
+        [disabled]="isSaving() || isLoadingDetail() || !canSaveDistribution()"
         (btnClick)="onSubmit()"
       >
         Guardar distribución

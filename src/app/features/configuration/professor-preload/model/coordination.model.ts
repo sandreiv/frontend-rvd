@@ -17,6 +17,11 @@ export interface CoordinationContractModality {
   nombre: string;
 }
 
+export interface CoordinationCentroCosto {
+  id: number;
+  descripcion: string;
+}
+
 export interface CoordinationPreloadCallApi {
   id: number;
   nombre: string;
@@ -39,6 +44,7 @@ export interface CoordinationApiItem {
   modalidad: CoordinationLookupItem | null;
   convocatoria: CoordinationPreloadCallApi | null;
   carga: PreloadCargaApi | null;
+  centroCosto?: CoordinationCentroCosto | null;
 }
 
 export interface CoordinationItem {
@@ -60,6 +66,7 @@ export interface CoordinationItem {
   idNivelEducativo: number | null;
   convocatoriaNombre: string;
   modalidadesContratacion: CoordinationContractModality[];
+  centroCosto: CoordinationCentroCosto | null;
 }
 
 export interface ValuePointsPreload {
@@ -117,9 +124,18 @@ function resolveEstadoCarga(
   );
 }
 
-function resolveConvocatoriaNombre(
-  convocatoria: CoordinationPreloadCallApi | null | undefined,
-): string {
+function normalizeCentroCosto(centroCosto: CoordinationCentroCosto | null | undefined): CoordinationCentroCosto | null {
+  if (!centroCosto) {
+    return null;
+  }
+
+  return {
+    id: centroCosto.id,
+    descripcion: centroCosto.descripcion?.trim() ?? '',
+  };
+}
+
+function resolveConvocatoriaNombre(convocatoria: CoordinationPreloadCallApi | null | undefined): string {
   if (!convocatoria) {
     return '';
   }
@@ -131,9 +147,7 @@ function resolveConvocatoriaNombre(
   );
 }
 
-export function normalizeCoordinationItem(
-  item: CoordinationApiItem,
-): CoordinationItem {
+export function normalizeCoordinationItem(item: CoordinationApiItem): CoordinationItem {
   return {
     id: item.id,
     nombre: item.nombre?.trim() ?? '',
@@ -159,9 +173,8 @@ export function normalizeCoordinationItem(
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),
     modalidadesContratacion:
       item.convocatoria?.modalidadesContratacion ?? [],
+    centroCosto: normalizeCentroCosto(item.centroCosto),
   };
-
-  
 }
 
 export interface CareerProfessor {
@@ -190,6 +203,7 @@ export interface ModalityProfessor {
   puntos: string | null;
   valorPunto: string | null;
   semanas: string | null;
+  tieneDetalleActividades?: boolean;
 }
 
 export interface ProfessorEscalafon {

@@ -25,7 +25,8 @@ import {
   UnidadRegional,
 } from '../model/professor-activities.model';
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
-import { SaveActivityDistributionRequest } from '../model/save-activity-distribution.model';
+import { DetailProfessorPreloadApi } from '../model/detail-professor-preload.model';
+import { SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
 
 @Injectable({
   providedIn: 'root',
@@ -189,19 +190,21 @@ export class CoordinationService {
   }
 
   saveActivityDistribution(
-    request: SaveActivityDistributionRequest,
+    request: SaveDetailProfessorPreloadRequest,
   ): Observable<void> {
     return this.webRequestService.post<void>(
-      `${this.endpoint}/save-activity-distribution`,
+      `${this.endpoint}/save-detail-professor-preload`,
       request,
     );
   }
 
-  /*listProfessorActivities(idCargaDocente: number,): Observable<ProfessorActivitiesResponseApi> {
-    return this.webRequestService.get<ProfessorActivitiesResponseApi>(
-      `${this.endpoint}/list-professor-activities`,
+  listDetailProfessorPreload(
+    idCargaDocente: number,
+  ): Observable<DetailProfessorPreloadApi> {
+    return this.webRequestService.get<DetailProfessorPreloadApi>(
+      `${this.endpoint}/list-detail-professor-preload`,
       { idCargaDocente },
     );
-  }*/
+  }
 }
 

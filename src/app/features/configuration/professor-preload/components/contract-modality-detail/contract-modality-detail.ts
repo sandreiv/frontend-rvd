@@ -123,17 +123,6 @@ export class ContractModalityDetail {
   readonly activitiesProfessor = signal<ModalityProfessor | null>(null);
   readonly openMenuKey = signal<string | null>(null);
 
-  readonly modalityProfessorActions: ProfessorMenuAction[] = [
-    { id: 'detalle', label: 'Ver detalle preasignación', icon: 'userCircle' },
-    { id: 'actividades', label: 'Agregar actividades', icon: 'plus' },
-    {
-      id: 'eliminar',
-      label: 'Eliminar',
-      icon: 'delete',
-      className: 'text-error-600 dark:text-error-400',
-    },
-  ];
-
   readonly careerProfessorActions: ProfessorMenuAction[] = [
     { id: 'detalle', label: 'Ver detalle preasignación', icon: 'userCircle' },
     {
@@ -341,6 +330,43 @@ export class ContractModalityDetail {
       default:
         return this.buildStatusBadge('En registro', 'gray');
     }
+  }
+
+  activitiesStatusBadge(
+    professor: ModalityProfessor,
+  ): StatusBadge | null {
+    if (professor.tieneDetalleActividades !== true) {
+      return null;
+    }
+
+    return this.buildStatusBadge('Con actividades', 'brand');
+  }
+
+  resolveModalityProfessorActions(
+    professor: ModalityProfessor,
+  ): ProfessorMenuAction[] {
+    const hasDetail = professor.tieneDetalleActividades === true;
+
+    return [
+      {
+        id: 'detalle',
+        label: 'Ver detalle preasignación',
+        icon: 'userCircle',
+      },
+      {
+        id: 'actividades',
+        label: hasDetail
+          ? 'Gestionar actividades'
+          : 'Agregar actividades',
+        icon: hasDetail ? 'pencil' : 'plus',
+      },
+      {
+        id: 'eliminar',
+        label: 'Eliminar',
+        icon: 'delete',
+        className: 'text-error-600 dark:text-error-400',
+      },
+    ];
   }
 
   resolveProfessorName(

@@ -137,6 +137,16 @@
                       ></span>
                       {{ modalityBadge.label }}
                     </span>
+                    @let activitiesBadge = activitiesStatusBadge(professor);
+                    @if (activitiesBadge) {
+                      <span [class]="activitiesBadge.badgeClass">
+                        <span
+                          [class]="activitiesBadge.dotClass"
+                          aria-hidden="true"
+                        ></span>
+                        {{ activitiesBadge.label }}
+                      </span>
+                    }
                   </div>
                 </div>
 
@@ -159,7 +169,10 @@
                   className="w-48 p-2"
                   (close)="closeProfessorMenu()"
                 >
-                  @for (action of modalityProfessorActions; track action.id) {
+                  @for (
+                    action of resolveModalityProfessorActions(professor);
+                    track action.id
+                  ) {
                     <app-item
                       (itemClick)="
                         onModalityProfessorAction(action.id, professor)

@@ -1,4 +1,4 @@
-export interface SaveActivityDistributionRequest {
+export interface SaveDetailProfessorPreloadRequest {
   idCargaDocente: number;
   detalles: DetalleCargaDocenteRequest[];
 }
@@ -12,7 +12,8 @@ export interface DetalleCargaDocenteRequest {
   idPrograma?: number;
   codigoMateria?: string;
   idGrupo?: number;
-  relacionesProyecto: RelacionCargaProyectoRequest[];
+  relacionCargaProyecto: RelacionCargaProyectoRequest[];
+  idCentroCosto?: number;
 }
 
 export interface RelacionCargaProyectoRequest {

@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { NotificationService } from '../../../../../core/service/notification-service';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Button } from '../../../../../shared/ui/button/button';
@@ -43,11 +44,11 @@ import {
   buildSaveActivityDistributionRequest,
   hasSaveableActivities,
 } from '../../model/professor-activities-save.mapper';
+import { mapDetailProfessorPreloadToModalState } from '../../model/professor-activities-load.mapper';
+import { DetailProfessorPreloadApi } from '../../model/detail-professor-preload.model';
 import {
   detectProjectActivityCodigos,
   buildProjectHierarchyRows,
-  mapProjectsToActivityRows,
-  sumProjectActivityHours,
 } from '../../model/professor-projects.mapper';
 import {
   ProfessorProjectRow,
@@ -91,6 +92,7 @@ export class ProfessorActivitiesModal {
   saved = output<void>();
 
   readonly isSaving = signal(false);
+  readonly hasSavedDetail = signal(false);
 
   readonly actividadesFAD = signal<DirectLearningActivity[]>([]);
   readonly actividadesFAI = signal<SimpleActivity[]>([]);
@@ -138,6 +140,28 @@ export class ProfessorActivitiesModal {
     defaultValue: [] as ProyectoDocenteDto[],
   });
 
+  readonly detailResource = rxResource({
+    params: () => {
+      if (!this.isOpen()) {
+        return undefined;
+      }
+      const idCargaDocente = this.professor()?.idCargaDocente;
+      if (idCargaDocente == null) {
+        return undefined;
+      }
+      return { idCargaDocente };
+    },
+    stream: ({ params }) =>
+      this.coordinationService
+        .listDetailProfessorPreload(params.idCargaDocente)
+        .pipe(catchError(() => of(null))),
+    defaultValue: null as DetailProfessorPreloadApi | null,
+  });
+
+  readonly isLoadingDetail = computed(
+    () => this.detailResource.isLoading(),
+  );
+
   readonly expandedCategories = signal(
     createInitialExpandedCategories(),
   );
@@ -150,23 +174,6 @@ export class ProfessorActivitiesModal {
       this.professor()?.idPersonaGeneral,
     ),
   );
-
-  readonly projectActivitiesByCodigo = computed(() => {
-    const proyectos = this.professorProjectsResource.value();
-    const idPersonaGeneral = this.professor()?.idPersonaGeneral;
-    return {
-      CTEI: mapProjectsToActivityRows(
-        proyectos,
-        'CTEI',
-        idPersonaGeneral,
-      ),
-      ISU: mapProjectsToActivityRows(
-        proyectos,
-        'ISU',
-        idPersonaGeneral,
-      ),
-    };
-  });
 
   readonly projectHierarchyRowsByCodigo = computed(() => {
     const proyectos = this.professorProjectsResource.value();
@@ -198,6 +205,18 @@ export class ProfessorActivitiesModal {
   readonly professorDisplayName = computed(() =>
     this.resolveProfessorName(this.professor()),
   );
+
+  readonly modalTitle = computed(() => {
+    if (this.isLoadingDetail()) {
+      if (this.professor()?.tieneDetalleActividades === true) {
+        return 'Gestionar actividades del docente';
+      }
+    }
+
+    return this.hasSavedDetail()
+      ? 'Gestionar actividades del docente'
+      : 'Agregar actividades del docente';
+  });
 
   readonly contractModalityLabel = computed(
     () => this.contractModality()?.nombre?.trim() || '-',
@@ -231,12 +250,8 @@ export class ProfessorActivitiesModal {
       FAD: this.sumDirectHours(),
       FAI: this.sumSimpleHours(this.actividadesFAI()),
       AC: this.sumSimpleHours(this.actividadesAC()),
-      CTEI: sumProjectActivityHours(
-        this.projectActivitiesByCodigo().CTEI,
-      ),
-      ISU: sumProjectActivityHours(
-        this.projectActivitiesByCodigo().ISU,
-      ),
+      CTEI: this.sumProjectHours(this.associatedProjectsCTEI()),
+      ISU: this.sumProjectHours(this.associatedProjectsISU()),
     }),
   );
 
@@ -247,15 +262,26 @@ export class ProfessorActivitiesModal {
     ),
   );
 
-  readonly canSaveDistribution = computed(() =>
-    hasSaveableActivities(this.buildSaveInput()),
+  readonly canSaveDistribution = computed(
+    () =>
+      !this.isLoadingDetail() &&
+      hasSaveableActivities(this.buildSaveInput()),
   );
 
   constructor() {
     effect(() => {
       if (!this.isOpen()) {
         untracked(() => this.resetModalState());
+        return;
       }
+
+      if (this.detailResource.isLoading()) {
+        untracked(() => this.clearActivitySignals());
+        return;
+      }
+
+      const detail = this.detailResource.value();
+      untracked(() => this.applyLoadedDetail(detail));
     });
   }
 
@@ -381,6 +407,7 @@ export class ProfessorActivitiesModal {
   private buildSaveInput() {
     return {
       idCargaDocente: this.professor()?.idCargaDocente ?? 0,
+      idCentroCosto: this.coordination()?.centroCosto?.id ?? null,
       activityTypes: this.activityTypesResource.value(),
       actividadesFAD: this.actividadesFAD(),
       actividadesFAI: this.actividadesFAI(),
@@ -391,14 +418,31 @@ export class ProfessorActivitiesModal {
   }
 
   private resetModalState(): void {
+    this.clearActivitySignals();
+    this.expandedCategories.set(createInitialExpandedCategories());
+    this.addFormOpen.set(createInitialAddFormOpen());
+    this.isSaving.set(false);
+    this.hasSavedDetail.set(false);
+  }
+
+  private clearActivitySignals(): void {
     this.actividadesFAD.set([]);
     this.actividadesFAI.set([]);
     this.actividadesAC.set([]);
     this.associatedProjectsCTEI.set([]);
     this.associatedProjectsISU.set([]);
-    this.expandedCategories.set(createInitialExpandedCategories());
-    this.addFormOpen.set(createInitialAddFormOpen());
-    this.isSaving.set(false);
+  }
+
+  private applyLoadedDetail(
+    detail: DetailProfessorPreloadApi | null,
+  ): void {
+    const state = mapDetailProfessorPreloadToModalState(detail);
+    this.actividadesFAD.set(state.actividadesFAD);
+    this.actividadesFAI.set(state.actividadesFAI);
+    this.actividadesAC.set(state.actividadesAC);
+    this.associatedProjectsCTEI.set(state.associatedProjectsCTEI);
+    this.associatedProjectsISU.set(state.associatedProjectsISU);
+    this.hasSavedDetail.set(state.hasSavedDetail);
   }
 
   private resolveProfessorName(
@@ -420,6 +464,13 @@ export class ProfessorActivitiesModal {
   private sumSimpleHours(items: SimpleActivity[]): number {
     return items.reduce(
       (total, item) => total + item.horasDedicacion,
+      0,
+    );
+  }
+
+  private sumProjectHours(rows: ProfessorProjectRow[]): number {
+    return rows.reduce(
+      (total, row) => total + row.horasDedicacion,
       0,
     );
   }
