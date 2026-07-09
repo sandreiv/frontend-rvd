@@ -47,10 +47,18 @@
           @if (showAddButton) {
             <button
               type="button"
-              class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50"
+              class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-theme-sm font-medium shadow-theme-xs disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:hover:bg-gray-100"
+              [class.text-gray-700]="canAdd"
+              [class.hover:bg-gray-50]="canAdd"
+              [class.text-gray-400]="!canAdd"
+              [disabled]="!canAdd"
               (click)="onToolbarAction('add')"
             >
-              <app-icon name="plus" size="sm" />
+              <app-icon
+                name="plus"
+                size="sm"
+                [classes]="canAdd ? 'text-gray-700' : 'text-gray-400'"
+              />
             </button>
           }
         </div>

@@ -39,6 +39,7 @@ import { formatSentenceValue } from '../../utils/normalized-text.util';
 export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('sentinelElement') sentinelElement?: ElementRef<HTMLDivElement>;
   @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
+  @Input() canAdd = true;
   @Input() columns: DataTableColumn<T>[] = [];
   @Input() rows: T[] = [];
   @Input() rowActions: DataTableRowAction<T>[] = [];

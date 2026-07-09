@@ -12,6 +12,9 @@ import { CostCenterAssignmentForm } from '../../components/cost-center-assignmen
 import { CostCenterAssignmentTable } from '../../components/cost-center-assignment-table/cost-center-assignment-table';
 import { PersonCoordinationForm } from '../../components/person-coordination-form/person-coordination-form';
 import { PersonCoordinationTable } from '../../components/person-coordination-table/person-coordination-table';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Button } from '../../../../../shared/ui/button/button';
+import { Option, Select } from '../../../../../shared/components/form/select/select';
 import {
   CatalogOptionItem,
   CoordinationAdministrationTabId,
@@ -33,7 +36,7 @@ type CoordinationSwitchItem = {
 
 @Component({
   selector: 'app-coordination-administration',
-  imports: [SectionFrame, AssociationCoordinationTable, AssociationCoordinationForm, NewModal, Icon, CostCenterAssignmentTable, CostCenterAssignmentForm, PersonCoordinationTable, PersonCoordinationForm],
+  imports: [ReactiveFormsModule, SectionFrame, AssociationCoordinationTable, AssociationCoordinationForm, NewModal, Icon, CostCenterAssignmentTable, CostCenterAssignmentForm, PersonCoordinationTable, PersonCoordinationForm, NewModal , Icon, Select , Button],
   templateUrl: './coordination-administration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -120,6 +123,118 @@ export class CoordinationAdministration implements OnInit {
     return `¿Seguro que deseas eliminar la asociación ${this.associationToDelete()?.coordinacion ?? ''}?`;
   });
 
+    readonly coordinationFilterControl = new FormControl('', {
+    nonNullable: true,
+    });
+
+    readonly appliedCoordinationFilterId = signal<number | null>(null);
+
+    get coordinationFilterOptions(): Option[] {
+    return this.coordinations().map((item) => ({
+        value: String(item.id),
+        label: item.label,
+    }));
+    }
+
+    readonly filteredAssociations = computed(() => {
+    const idCoordinacion = this.appliedCoordinationFilterId();
+
+    if (idCoordinacion == null) {
+        return [];
+    }
+
+    return this.associations().filter(
+        (item) => Number(item.idCoordinacion) === idCoordinacion,
+    );
+    });
+
+    readonly filteredCostCenterAssignments = computed(() => {
+    const idCoordinacion = this.appliedCoordinationFilterId();
+
+    if (idCoordinacion == null) {
+        return [];
+    }
+
+    return this.costCenterAssignments().filter(
+        (item) => Number(item.idCoordinacion) === idCoordinacion,
+    );
+    });
+
+    readonly filteredPeopleCoordinations = computed(() => {
+    const idCoordinacion = this.appliedCoordinationFilterId();
+
+    if (idCoordinacion == null) {
+        return [];
+    }
+
+    return this.peopleCoordinations().filter(
+        (item) => Number(item.idCoordinacion) === idCoordinacion,
+    );
+    });
+
+    readonly filteredPlantProfessorCoordinations = computed(() => {
+    const idCoordinacion = this.appliedCoordinationFilterId();
+
+    if (idCoordinacion == null) {
+        return [];
+    }
+
+    return this.plantProfessorCoordinations().filter(
+        (item) => Number(item.idCoordinacion) === idCoordinacion,
+    );
+    });  
+
+    applyCoordinationFilter(): void {
+    const value = this.coordinationFilterControl.value;
+
+    if (!value) {
+        this.appliedCoordinationFilterId.set(null);
+        this.closeForm();
+        return;
+    }
+
+    this.appliedCoordinationFilterId.set(Number(value));
+    this.closeForm();
+
+    this.selectedAssociationIds.set([]);
+    this.selectedCostCenterAssignmentIds.set([]);
+    this.selectedPeopleCoordinationIds.set([]);
+    this.selectedPlantProfessorCoordinationIds.set([]);
+    }  
+    
+    private hasCoordinationFilter(): boolean {
+    return this.appliedCoordinationFilterId() != null;
+    } 
+    
+    
+    readonly canManageCurrentCoordination = computed(
+    () => this.appliedCoordinationFilterId() != null,
+    );
+
+    readonly associationEmptyMessage = computed(() =>
+    this.canManageCurrentCoordination()
+        ? 'No hay asociaciones registradas.'
+        : 'Seleccione una coordinación para continuar',
+    );
+
+    readonly costCenterEmptyMessage = computed(() =>
+    this.canManageCurrentCoordination()
+        ? 'No hay centros de costo asignados.'
+        : 'Seleccione una coordinación para continuar',
+    );
+
+    readonly peopleEmptyMessage = computed(() =>
+    this.canManageCurrentCoordination()
+        ? 'No hay personas asociadas.'
+        : 'Seleccione una coordinación para continuar',
+    );
+
+    readonly plantProfessorEmptyMessage = computed(() =>
+    this.canManageCurrentCoordination()
+        ? 'No hay docentes planta asociados.'
+        : 'Seleccione una coordinación para continuar',
+    );    
+
   async ngOnInit(): Promise<void> {
     this.breadcrumbTitle.setPageTitle('Administración / Coordinaciones');
     await this.loadInitialData();
@@ -165,6 +280,10 @@ export class CoordinationAdministration implements OnInit {
    }
 
   openCreateForm(): void {
+    if (!this.hasCoordinationFilter()) {
+        return;
+    }
+
     this.selectedAssociation.set(null);
     this.showForm.set(true);
   }
@@ -181,6 +300,7 @@ export class CoordinationAdministration implements OnInit {
     this.selectedPeopleCoordination.set(null);
     this.selectedPlantProfessorCoordination.set(null);
    }
+   
 
   async onSaveAssociation(payload: CoordinationAssociationFormData): Promise<void> {
     this.isSaving.set(true);
@@ -346,6 +466,10 @@ export class CoordinationAdministration implements OnInit {
   }
 
   openCreateCostCenterForm(): void {
+    if (!this.hasCoordinationFilter()) {
+        return;
+    }
+
     this.selectedCostCenterAssignment.set(null);
     this.showForm.set(true);
     }
@@ -417,6 +541,10 @@ export class CoordinationAdministration implements OnInit {
     }
 
     openCreatePeopleForm(): void {
+    if (!this.hasCoordinationFilter()) {
+     return;
+    }
+        
     this.selectedPeopleCoordination.set(null);
     this.showForm.set(true);
     }
@@ -488,6 +616,11 @@ export class CoordinationAdministration implements OnInit {
     }
 
     openCreatePlantProfessorForm(): void {
+
+    if (!this.hasCoordinationFilter()) {
+        return;
+    }    
+
     this.selectedPlantProfessorCoordination.set(null);
     this.showForm.set(true);
     }

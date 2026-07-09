@@ -18,6 +18,9 @@ export class AssociationCoordinationTable {
   associations = input<CoordinationAssociationItem[]>([]);
   selectedAssociationIds = model<string[]>([]);
 
+  canAdd = input(true);
+  emptyMessage = input('No hay asociaciones registradass.');
+
   @Output() refreshAssociations = new EventEmitter<void>();
   @Output() addAssociation = new EventEmitter<void>();
   @Output() editAssociation = new EventEmitter<CoordinationAssociationItem>();

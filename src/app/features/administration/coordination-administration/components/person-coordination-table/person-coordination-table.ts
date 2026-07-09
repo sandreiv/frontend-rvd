@@ -23,6 +23,8 @@ export class PersonCoordinationTable {
   emptyMessage = input('No hay registros.');
   searchPlaceholder = input('Buscar...');
 
+  canAdd = input(true);
+
   @Output() refreshAssignments = new EventEmitter<void>();
   @Output() addAssignment = new EventEmitter<void>();
   @Output() editAssignment = new EventEmitter<PersonCoordinationItem>();

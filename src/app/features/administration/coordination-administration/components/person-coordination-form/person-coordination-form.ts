@@ -32,6 +32,7 @@ type PersonCoordinationFormGroup = FormGroup<{
 })
 export class PersonCoordinationForm implements OnChanges {
   assignment = input<PersonCoordinationItem | null>(null);
+  selectedCoordinationId = input<number | null>(null);
   people = input<CatalogOptionItem[]>([]);
   coordinations = input<CatalogOptionItem[]>([]);
 
@@ -69,7 +70,7 @@ export class PersonCoordinationForm implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['assignment']) {
+    if (changes['assignment'] || changes['selectedCoordinationId']) {
       this.patchForm();
     }
   }
@@ -92,12 +93,15 @@ export class PersonCoordinationForm implements OnChanges {
 
   private patchForm(): void {
     const item = this.assignment();
+    const idCoordinacion = item?.idCoordinacion ?? this.selectedCoordinationId();
 
     this.form.reset({
       idPersonaGeneral: item?.idPersonaGeneral != null ? String(item.idPersonaGeneral) : '',
-      idCoordinacion: item?.idCoordinacion != null ? String(item.idCoordinacion) : '',
+      idCoordinacion: idCoordinacion != null ? String(idCoordinacion) : '',
       estado: this.isActive(item?.estado),
     });
+
+    this.form.controls.idCoordinacion.disable({ emitEvent: false });
   }
 
   private toOptions(items: CatalogOptionItem[]): Option[] {

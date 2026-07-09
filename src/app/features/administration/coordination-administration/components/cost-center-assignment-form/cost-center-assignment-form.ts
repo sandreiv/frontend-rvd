@@ -32,6 +32,7 @@ type CostCenterForm = FormGroup<{
 })
 export class CostCenterAssignmentForm implements OnChanges {
   assignment = input<CostCenterAssignmentItem | null>(null);
+  selectedCoordinationId = input<number | null>(null);
   coordinations = input<CatalogOptionItem[]>([]);
   costCenters = input<CatalogOptionItem[]>([]);
   isSaving = input(false);
@@ -60,7 +61,7 @@ export class CostCenterAssignmentForm implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['assignment']) {
+    if (changes['assignment'] || changes['selectedCoordinationId']) {
       this.patchForm();
     }
   }
@@ -84,12 +85,15 @@ export class CostCenterAssignmentForm implements OnChanges {
 
   private patchForm(): void {
     const item = this.assignment();
+    const idCoordinacion = item?.idCoordinacion ?? this.selectedCoordinationId();
 
     this.form.reset({
-      idCoordinacion: item?.idCoordinacion != null ? String(item.idCoordinacion) : '',
+      idCoordinacion: idCoordinacion != null ? String(idCoordinacion) : '',
       idCentroCosto: item?.idCentroCosto != null ? String(item.idCentroCosto) : '',
       estado: this.isActive(item?.estado),
     });
+
+    this.form.controls.idCoordinacion.disable({ emitEvent: false });
   }
 
   private toOptions(items: CatalogOptionItem[], includeCode = false): Option[] {

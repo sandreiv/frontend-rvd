@@ -37,6 +37,7 @@ type AssociationForm = FormGroup<{
 })
 export class AssociationCoordinationForm implements OnChanges {
   association = input<CoordinationAssociationItem | null>(null);
+  selectedCoordinationId = input<number | null>(null);
   coordinations = input<CatalogOptionItem[]>([]);
   programs = input<CatalogOptionItem[]>([]);
   subjects = input<SubjectCatalogOptionItem[]>([]);
@@ -76,7 +77,7 @@ export class AssociationCoordinationForm implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['association']) {
+    if (changes['association'] || changes['selectedCoordinationId']) {
       this.patchForm();
     }
   }
@@ -126,9 +127,10 @@ export class AssociationCoordinationForm implements OnChanges {
 
   private patchForm(): void {
     const item = this.association();
+    const idCoordinacion = item?.idCoordinacion ?? this.selectedCoordinationId();
 
     this.form.reset({
-      idCoordinacion: item?.idCoordinacion != null ? String(item.idCoordinacion) : '',
+      idCoordinacion: idCoordinacion != null ? String(idCoordinacion) : '',
       usarPrograma: item?.idPrograma != null,
       idPrograma: item?.idPrograma != null ? String(item.idPrograma) : '',
       usarMateria: !!item?.codigoMateria,
@@ -136,6 +138,8 @@ export class AssociationCoordinationForm implements OnChanges {
       idCentroCosto: item?.idCentroCosto != null ? String(item.idCentroCosto) : '',
       estado: this.isActive(item?.estado),
     });
+
+    this.form.controls.idCoordinacion.disable({ emitEvent: false });
   }
 
   private toOptions(items: CatalogOptionItem[], includeCode = false): Option[] {

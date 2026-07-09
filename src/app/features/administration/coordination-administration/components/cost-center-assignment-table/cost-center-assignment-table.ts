@@ -18,6 +18,9 @@ export class CostCenterAssignmentTable {
   assignments = input<CostCenterAssignmentItem[]>([]);
   selectedAssignmentIds = model<string[]>([]);
 
+  canAdd = input(true);
+  emptyMessage = input('No hay centros de costo asignados.');
+
   @Output() refreshAssignments = new EventEmitter<void>();
   @Output() addAssignment = new EventEmitter<void>();
   @Output() editAssignment = new EventEmitter<CostCenterAssignmentItem>();

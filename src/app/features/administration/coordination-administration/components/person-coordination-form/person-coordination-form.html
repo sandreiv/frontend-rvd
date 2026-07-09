@@ -34,6 +34,7 @@
         formControlName="idCoordinacion"
         [options]="coordinationOptions"
         placeholder="Seleccione la coordinación"
+        [disabled]="true"
       />
 
       @if (form.controls.idCoordinacion.touched && form.controls.idCoordinacion.invalid) {

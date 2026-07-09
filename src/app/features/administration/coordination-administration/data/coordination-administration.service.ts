@@ -17,156 +17,179 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CoordinationAdministrationService {
   private readonly webRequestService = inject(WebRequestService);
-  private readonly endpoint = '/configuration/administration/coordination-associations';
 
-    getCatalogs(): Observable<CoordinationAssociationCatalogs> {
-        return this.webRequestService.get<CoordinationAssociationCatalogs>(
-        `${this.endpoint}/catalogs`,
-        );
-    }
+  private readonly endpoint =
+    '/configuration/administration/coordination-management';
 
-    listAssociations(): Observable<CoordinationAssociationItem[]> {
-        return this.webRequestService.get<CoordinationAssociationItem[]>(
-        `${this.endpoint}/list`,
-        );
-    }
-
-    saveAssociation(payload: CoordinationAssociationFormData): Observable<void> {
-        return this.webRequestService.post<void>(`${this.endpoint}/save`, payload);
-    }
-
-    updateAssociation(id: number, payload: CoordinationAssociationFormData): Observable<void> {
-        return this.webRequestService.put<void>(`${this.endpoint}/update/${id}`, payload);
-    }
-
-    deleteAssociation(id: number): Observable<void> {
-        return this.webRequestService.delete<void>(`${this.endpoint}/delete/${id}`);
-    }
-
-    deleteBulk(payload: DeleteBulkCoordinationAssociationRequest): Observable<void> {
-        return this.webRequestService.post<void>(`${this.endpoint}/delete-bulk`, payload);
-    }
-
-    listCostCenterAssignments(): Observable<CostCenterAssignmentItem[]> {
-    return this.webRequestService.get<CostCenterAssignmentItem[]>(
-        '/configuration/administration/cost-centers/list',
+  getCatalogs(): Observable<CoordinationAssociationCatalogs> {
+    return this.webRequestService.get<CoordinationAssociationCatalogs>(
+      `${this.endpoint}/coordination-associations/catalogs`,
     );
-    }
+  }
 
-    saveCostCenterAssignment(payload: CostCenterAssignmentFormData): Observable<void> {
+  listAssociations(): Observable<CoordinationAssociationItem[]> {
+    return this.webRequestService.get<CoordinationAssociationItem[]>(
+      `${this.endpoint}/coordination-associations/list`,
+    );
+  }
+
+  saveAssociation(payload: CoordinationAssociationFormData): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/cost-centers/save',
-        payload,
+      `${this.endpoint}/coordination-associations/save`,
+      payload,
     );
-    }
+  }
 
-    updateCostCenterAssignment(
+  updateAssociation(
+    id: number,
+    payload: CoordinationAssociationFormData,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/coordination-associations/update/${id}`,
+      payload,
+    );
+  }
+
+  deleteAssociation(id: number): Observable<void> {
+    return this.webRequestService.delete<void>(
+      `${this.endpoint}/coordination-associations/delete/${id}`,
+    );
+  }
+
+  deleteBulk(
+    payload: DeleteBulkCoordinationAssociationRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/coordination-associations/delete-bulk`,
+      payload,
+    );
+  }
+
+  listCostCenterAssignments(): Observable<CostCenterAssignmentItem[]> {
+    return this.webRequestService.get<CostCenterAssignmentItem[]>(
+      `${this.endpoint}/cost-centers/list`,
+    );
+  }
+
+  saveCostCenterAssignment(
+    payload: CostCenterAssignmentFormData,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/cost-centers/save`,
+      payload,
+    );
+  }
+
+  updateCostCenterAssignment(
     id: number,
     payload: CostCenterAssignmentFormData,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.put<void>(
-        `/configuration/administration/cost-centers/update/${id}`,
-        payload,
+      `${this.endpoint}/cost-centers/update/${id}`,
+      payload,
     );
-    }
+  }
 
-    deleteCostCenterAssignment(id: number): Observable<void> {
+  deleteCostCenterAssignment(id: number): Observable<void> {
     return this.webRequestService.delete<void>(
-        `/configuration/administration/cost-centers/delete/${id}`,
+      `${this.endpoint}/cost-centers/delete/${id}`,
     );
-    }
+  }
 
-    deleteBulkCostCenterAssignments(
+  deleteBulkCostCenterAssignments(
     payload: DeleteBulkCostCenterAssignmentRequest,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/cost-centers/delete-bulk',
-        payload,
+      `${this.endpoint}/cost-centers/delete-bulk`,
+      payload,
     );
-    }
+  }
 
-    listPeopleCoordinations(): Observable<PersonCoordinationItem[]> {
+  listPeopleCoordinations(): Observable<PersonCoordinationItem[]> {
     return this.webRequestService.get<PersonCoordinationItem[]>(
-        '/configuration/administration/people/list',
+      `${this.endpoint}/people/list`,
     );
-    }
+  }
 
-    savePeopleCoordination(payload: PersonCoordinationFormData): Observable<void> {
+  savePeopleCoordination(
+    payload: PersonCoordinationFormData,
+  ): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/people/save',
-        payload,
+      `${this.endpoint}/people/save`,
+      payload,
     );
-    }
+  }
 
-    updatePeopleCoordination(
+  updatePeopleCoordination(
     idPersonaGeneral: number,
     idCoordinacion: number,
     payload: PersonCoordinationFormData,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.put<void>(
-        `/configuration/administration/people/update/${idPersonaGeneral}/${idCoordinacion}`,
-        payload,
+      `${this.endpoint}/people/update/${idPersonaGeneral}/${idCoordinacion}`,
+      payload,
     );
-    }
+  }
 
-    deletePeopleCoordination(
+  deletePeopleCoordination(
     idPersonaGeneral: number,
     idCoordinacion: number,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.delete<void>(
-        `/configuration/administration/people/delete/${idPersonaGeneral}/${idCoordinacion}`,
+      `${this.endpoint}/people/delete/${idPersonaGeneral}/${idCoordinacion}`,
     );
-    }
+  }
 
-    deleteBulkPeopleCoordinations(
+  deleteBulkPeopleCoordinations(
     payload: DeleteBulkPersonCoordinationRequest,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/people/delete-bulk',
-        payload,
+      `${this.endpoint}/people/delete-bulk`,
+      payload,
     );
-    }
+  }
 
-    listPlantProfessorCoordinations(): Observable<PersonCoordinationItem[]> {
+  listPlantProfessorCoordinations(): Observable<PersonCoordinationItem[]> {
     return this.webRequestService.get<PersonCoordinationItem[]>(
-        '/configuration/administration/plant-professors/list',
+      `${this.endpoint}/plant-professors/list`,
     );
-    }
+  }
 
-    savePlantProfessorCoordination(payload: PersonCoordinationFormData): Observable<void> {
+  savePlantProfessorCoordination(
+    payload: PersonCoordinationFormData,
+  ): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/plant-professors/save',
-        payload,
+      `${this.endpoint}/plant-professors/save`,
+      payload,
     );
-    }
+  }
 
-    updatePlantProfessorCoordination(
+  updatePlantProfessorCoordination(
     idPersonaGeneral: number,
     idCoordinacion: number,
     payload: PersonCoordinationFormData,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.put<void>(
-        `/configuration/administration/plant-professors/update/${idPersonaGeneral}/${idCoordinacion}`,
-        payload,
+      `${this.endpoint}/plant-professors/update/${idPersonaGeneral}/${idCoordinacion}`,
+      payload,
     );
-    }
+  }
 
-    deletePlantProfessorCoordination(
+  deletePlantProfessorCoordination(
     idPersonaGeneral: number,
     idCoordinacion: number,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.delete<void>(
-        `/configuration/administration/plant-professors/delete/${idPersonaGeneral}/${idCoordinacion}`,
+      `${this.endpoint}/plant-professors/delete/${idPersonaGeneral}/${idCoordinacion}`,
     );
-    }
+  }
 
-    deleteBulkPlantProfessorCoordinations(
+  deleteBulkPlantProfessorCoordinations(
     payload: DeleteBulkPersonCoordinationRequest,
-    ): Observable<void> {
+  ): Observable<void> {
     return this.webRequestService.post<void>(
-        '/configuration/administration/plant-professors/delete-bulk',
-        payload,
+      `${this.endpoint}/plant-professors/delete-bulk`,
+      payload,
     );
-    }    
-
+  }
 }
