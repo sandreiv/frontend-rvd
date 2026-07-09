@@ -15,7 +15,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { merge } from 'rxjs';
-import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
+import { DateRangePicker } from '../../../../../shared/components/form/date-range-picker/date-range-picker';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
 import { Label } from '../../../../../shared/components/form/label/label';
 import {
@@ -36,7 +36,7 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
     Label,
     Select,
     InputField,
-    DatePicker,
+    DateRangePicker,
     Button,
   ],
   templateUrl: './modality-form-modal.html',

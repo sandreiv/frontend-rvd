@@ -14,7 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
-import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
+import { DateRangePicker } from '../../../../../shared/components/form/date-range-picker/date-range-picker';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
 import { Label } from '../../../../../shared/components/form/label/label';
 import {
@@ -46,7 +46,7 @@ import { PreloadCallPersonSearchModal } from '../preload-call-person-search-moda
     ReactiveFormsModule,
     Label,
     InputField,
-    DatePicker,
+    DateRangePicker,
     CollapsibleSection,
     Button,
     Icon,

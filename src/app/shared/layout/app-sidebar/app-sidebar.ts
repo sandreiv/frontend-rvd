@@ -33,6 +33,11 @@ export class AppSidebar {
       name: 'Precarga docente',
       path: '/rvd/precarga-docente',
     },
+    {
+      icon: 'adjustmentsHorizontal',
+      name: 'Administración',
+      path: '/rvd/administracion',
+    },
   ];
   // Others nav items
   othersItems: NavItem[] = [];

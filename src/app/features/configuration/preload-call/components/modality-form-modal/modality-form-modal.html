@@ -39,24 +39,16 @@
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div class="flex flex-col gap-3">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <app-label>Fecha inicio</app-label>
-            <app-date-picker
-              id="modalityFechaInicio"
-              formControlName="fechaInicio"
-              placeholder="Fecha inicio"
-            />
-          </div>
-          <div>
-            <app-label>Fecha fin</app-label>
-            <app-date-picker
-              id="modalityFechaFin"
-              formControlName="fechaFin"
-              placeholder="Fecha fin"
-            />
-          </div>
-        </div>
+        <app-date-range-picker
+          [formGroup]="form"
+          startControlName="fechaInicio"
+          endControlName="fechaFin"
+          startId="modalityFechaInicio"
+          endId="modalityFechaFin"
+          startPlaceholder="Fecha inicio"
+          endPlaceholder="Fecha fin"
+          [showLabels]="true"
+        />
       </div>
       <div>
         <div class="">

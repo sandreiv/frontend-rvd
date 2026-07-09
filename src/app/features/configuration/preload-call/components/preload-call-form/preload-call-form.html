@@ -97,68 +97,51 @@
       <h5 class="text-sm font-semibold text-gray-800 dark:text-white">
         Fechas convocatoria
       </h5>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <app-date-picker
-            id="fechaInicio"
-            formControlName="fechaInicio"
-            placeholder="Fecha inicio"
-          />
-        </div>
-        <div>
-          <app-date-picker
-            id="fechaFin"
-            formControlName="fechaFin"
-            placeholder="Fecha fin"
-          />
-        </div>
-      </div>
+
+      <app-date-range-picker
+        [formGroup]="form"
+        startControlName="fechaInicio"
+        endControlName="fechaFin"
+        startId="fechaInicio"
+        endId="fechaFin"
+        startPlaceholder="Fecha inicio"
+        endPlaceholder="Fecha fin"
+      />
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div class="flex flex-col gap-3">
-        <h5 class="text-sm font-semibold text-gray-800 dark:text-white">
-          Fechas CTEI
-        </h5>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <app-date-picker
-              id="fechaInicioCtei"
-              formControlName="fechaInicioCtei"
-              placeholder="Fecha inicio"
-            />
-          </div>
-          <div>
-            <app-date-picker
-              id="fechaFinCtei"
-              formControlName="fechaFinCtei"
-              placeholder="Fecha fin"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-col gap-3">
-        <h5 class="text-sm font-semibold text-gray-800 dark:text-white">
-          Fechas ISU
-        </h5>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <app-date-picker
-              id="fechaInicioIsu"
-              formControlName="fechaInicioIsu"
-              placeholder="Fecha inicio"
-            />
-          </div>
-          <div>
-            <app-date-picker
-              id="fechaFinIsu"
-              formControlName="fechaFinIsu"
-              placeholder="Fecha fin"
-            />
-          </div>
-        </div>
-      </div>
+  <div class="flex flex-col gap-3">
+    <h5 class="text-sm font-semibold text-gray-800 dark:text-white">
+      Fechas CTEI
+    </h5>
+
+    <app-date-range-picker
+      [formGroup]="form"
+      startControlName="fechaInicioCtei"
+      endControlName="fechaFinCtei"
+      startId="fechaInicioCtei"
+      endId="fechaFinCtei"
+      startPlaceholder="Fecha inicio"
+      endPlaceholder="Fecha fin"
+    />
+  </div>
+
+  <div class="flex flex-col gap-3">
+      <h5 class="text-sm font-semibold text-gray-800 dark:text-white">
+        Fechas ISU
+      </h5>
+
+      <app-date-range-picker
+        [formGroup]="form"
+        startControlName="fechaInicioIsu"
+        endControlName="fechaFinIsu"
+        startId="fechaInicioIsu"
+        endId="fechaFinIsu"
+        startPlaceholder="Fecha inicio"
+        endPlaceholder="Fecha fin"
+      />
     </div>
+  </div>
   </app-collapsible-section>
 
   <hr class="border-gray-200 dark:border-white/5" />

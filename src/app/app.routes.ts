@@ -3,6 +3,7 @@ import { AppLayout } from './shared/layout/app-layout/app-layout';
 import { configurationRoutes } from './features/configuration/configuration.routes';
 import { PreloadCall } from './features/configuration/preload-call/pages/preload-call/preload-call';
 import { ProfessorPreload } from './features/configuration/professor-preload/pages/professor-preload/professor-preload';
+import { administrationRoutes } from './features/administration/administration.routes';
 
 
 
@@ -21,6 +22,7 @@ export const routes: Routes = [
     children: [
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
+      { path: 'administracion', children: administrationRoutes },
     ],
   }
 ];
