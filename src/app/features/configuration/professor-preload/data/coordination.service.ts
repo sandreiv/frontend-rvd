@@ -25,7 +25,7 @@ import {
   UnidadRegional,
 } from '../model/professor-activities.model';
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
-import { DetailProfessorPreloadApi } from '../model/detail-professor-preload.model';
+import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
 import { SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
 
 @Injectable({
@@ -104,10 +104,6 @@ export class CoordinationService {
   }
 
   getValuePointsPreload(anio: number, idCategoriaCatedratico: number, idPersonaGeneral: number | null): Observable<ValuePointsPreload> {
-
-    console.log('idPersonaGeneral', idPersonaGeneral);
-    console.log('anio', anio);
-    console.log('idCategoriaCatedratico', idCategoriaCatedratico);
     return this.webRequestService.get<ValuePointsPreload>(
       `${this.endpoint}/value-points-preload`,
       { anio, idCategoriaCatedratico, idPersonaGeneral },
@@ -155,10 +151,10 @@ export class CoordinationService {
     );
   }
 
-  listPrograms(idUnidadRegional: number, idNivelEducativo: number): Observable<ProgramaAcademico[]> {
+  listPrograms(idCoordinacion: number,idUnidadRegional: number,idNivelEducativo: number,): Observable<ProgramaAcademico[]> {
     return this.webRequestService.get<ProgramaAcademico[]>(
       `${this.endpoint}/list-program`,
-      { idUnidadRegional, idNivelEducativo },
+      { idCoordinacion, idUnidadRegional, idNivelEducativo },
     );
   }
 
@@ -189,21 +185,30 @@ export class CoordinationService {
     );
   }
 
-  saveActivityDistribution(
-    request: SaveDetailProfessorPreloadRequest,
-  ): Observable<void> {
+  saveActivityDistribution(request: SaveDetailProfessorPreloadRequest): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/save-detail-professor-preload`,
       request,
     );
   }
 
-  listDetailProfessorPreload(
-    idCargaDocente: number,
-  ): Observable<DetailProfessorPreloadApi> {
+  listDetailProfessorPreload(idCargaDocente: number): Observable<DetailProfessorPreloadApi> {
     return this.webRequestService.get<DetailProfessorPreloadApi>(
       `${this.endpoint}/list-detail-professor-preload`,
       { idCargaDocente },
+    );
+  }
+
+  updateDetailProfessorPreload(detalle: DetailProfessorPreloadItemApi): Observable<void> {
+    const payload: DetailProfessorPreloadItemApi = {
+      idDetalleCargaDocente: detalle.idDetalleCargaDocente,
+      idCargaDocente: detalle.idCargaDocente,
+      detalles: [detalle.detalles[0]],
+    };
+
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/update-detail-professor-preload`,
+      payload,
     );
   }
 }

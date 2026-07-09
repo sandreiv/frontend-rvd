@@ -2,14 +2,18 @@ import { CoordinationCentroCosto } from './coordination.model';
 import { TipoActividad } from './professor-activities.model';
 import { ProyectoDocenteDto } from './professor-projects.model';
 
-export interface DetailProfessorPreloadApi {
+export interface DetailProfessorPreloadItemApi {
+  idDetalleCargaDocente: number;
   idCargaDocente: number;
   detalles: DetalleCargaDocenteFormularioApi[];
 }
 
+export type DetailProfessorPreloadApi = DetailProfessorPreloadItemApi[];
+
 export interface DetalleMateriaApi {
   codigoMateria: string;
   nombre: string;
+  idCentroCosto?: number | null;
 }
 
 export interface DetalleCargaDocenteFormularioApi {

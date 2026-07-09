@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { NotificationService } from '../../../../../core/service/notification-service';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Button } from '../../../../../shared/ui/button/button';
@@ -42,10 +42,14 @@ import {
 import { TipoActividad } from '../../model/professor-activities.model';
 import {
   buildSaveActivityDistributionRequest,
+  buildUpdateDetailProfessorPreloadRequests,
   hasSaveableActivities,
 } from '../../model/professor-activities-save.mapper';
 import { mapDetailProfessorPreloadToModalState } from '../../model/professor-activities-load.mapper';
-import { DetailProfessorPreloadApi } from '../../model/detail-professor-preload.model';
+import {
+  DetailProfessorPreloadApi,
+  DetailProfessorPreloadItemApi,
+} from '../../model/detail-professor-preload.model';
 import {
   detectProjectActivityCodigos,
   buildProjectHierarchyRows,
@@ -99,6 +103,9 @@ export class ProfessorActivitiesModal {
   readonly actividadesAC = signal<SimpleActivity[]>([]);
   readonly associatedProjectsCTEI = signal<ProfessorProjectRow[]>([]);
   readonly associatedProjectsISU = signal<ProfessorProjectRow[]>([]);
+  private readonly loadedDetailsById = signal<
+    Map<number, DetailProfessorPreloadItemApi>
+  >(new Map());
 
   private readonly criteriaActivitiesByCodigo: Record<
     CriteriaActivityCodigo,
@@ -108,10 +115,7 @@ export class ProfessorActivitiesModal {
     AC: this.actividadesAC,
   };
 
-  private readonly associatedProjectsByCodigo: Record<
-    ProjectActivityCategoryCodigo,
-    WritableSignal<ProfessorProjectRow[]>
-  > = {
+  private readonly associatedProjectsByCodigo: Record<ProjectActivityCategoryCodigo, WritableSignal<ProfessorProjectRow[]>> = {
     CTEI: this.associatedProjectsCTEI,
     ISU: this.associatedProjectsISU,
   };
@@ -154,8 +158,8 @@ export class ProfessorActivitiesModal {
     stream: ({ params }) =>
       this.coordinationService
         .listDetailProfessorPreload(params.idCargaDocente)
-        .pipe(catchError(() => of(null))),
-    defaultValue: null as DetailProfessorPreloadApi | null,
+        .pipe(catchError(() => of([] as DetailProfessorPreloadApi))),
+    defaultValue: [] as DetailProfessorPreloadApi,
   });
 
   readonly isLoadingDetail = computed(
@@ -197,6 +201,7 @@ export class ProfessorActivitiesModal {
       resolveVisibleActivityCodigos(
         this.contractModality()?.nombre,
         this.projectActivityCodigos(),
+        this.contractModality()?.esPlanta === true,
       ),
       this.activityTypesResource.value(),
     ),
@@ -265,7 +270,10 @@ export class ProfessorActivitiesModal {
   readonly canSaveDistribution = computed(
     () =>
       !this.isLoadingDetail() &&
-      hasSaveableActivities(this.buildSaveInput()),
+      hasSaveableActivities(
+        this.buildSaveInput(),
+        this.loadedDetailsById(),
+      ),
   );
 
   constructor() {
@@ -376,7 +384,7 @@ export class ProfessorActivitiesModal {
     }
 
     const input = this.buildSaveInput();
-    if (!hasSaveableActivities(input)) {
+    if (!hasSaveableActivities(input, this.loadedDetailsById())) {
       this.notificationService.warning(
         'Agrega al menos una actividad o proyecto asociado para guardar.',
         'Sin actividades',
@@ -384,19 +392,30 @@ export class ProfessorActivitiesModal {
       return;
     }
 
-    const request = buildSaveActivityDistributionRequest(input);
+    const saveRequest = buildSaveActivityDistributionRequest(input);
+    const updateRequests = buildUpdateDetailProfessorPreloadRequests(
+      input,
+      this.loadedDetailsById(),
+    );
+    const requests = [
+      ...updateRequests.map((detalle) =>
+        this.coordinationService.updateDetailProfessorPreload(detalle),
+      ),
+    ];
+
+    if (saveRequest.detalles.length > 0) {
+      requests.push(
+        this.coordinationService.saveActivityDistribution(saveRequest),
+      );
+    }
+
     this.isSaving.set(true);
 
-    this.coordinationService
-      .saveActivityDistribution(request)
+    forkJoin(requests)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.isSaving.set(false);
-          this.notificationService.success(
-            'Puedes continuar cargando más actividades en otro momento.',
-            'Actividades guardadas',
-          );
           this.saved.emit();
           this.close.emit();
         },
@@ -405,9 +424,12 @@ export class ProfessorActivitiesModal {
   }
 
   private buildSaveInput() {
+    const coordination = this.coordination();
+
     return {
       idCargaDocente: this.professor()?.idCargaDocente ?? 0,
-      idCentroCosto: this.coordination()?.centroCosto?.id ?? null,
+      idCentroCosto: coordination?.centroCosto?.id ?? null,
+      centroCostoDescripcion: coordination?.centroCosto?.descripcion ?? null,
       activityTypes: this.activityTypesResource.value(),
       actividadesFAD: this.actividadesFAD(),
       actividadesFAI: this.actividadesFAI(),
@@ -419,6 +441,7 @@ export class ProfessorActivitiesModal {
 
   private resetModalState(): void {
     this.clearActivitySignals();
+    this.loadedDetailsById.set(new Map());
     this.expandedCategories.set(createInitialExpandedCategories());
     this.addFormOpen.set(createInitialAddFormOpen());
     this.isSaving.set(false);
@@ -434,9 +457,19 @@ export class ProfessorActivitiesModal {
   }
 
   private applyLoadedDetail(
-    detail: DetailProfessorPreloadApi | null,
+    detail: DetailProfessorPreloadApi,
   ): void {
     const state = mapDetailProfessorPreloadToModalState(detail);
+    const loadedDetails = new Map<number, DetailProfessorPreloadItemApi>();
+
+    for (const item of detail) {
+      loadedDetails.set(
+        item.idDetalleCargaDocente,
+        structuredClone(item),
+      );
+    }
+
+    this.loadedDetailsById.set(loadedDetails);
     this.actividadesFAD.set(state.actividadesFAD);
     this.actividadesFAI.set(state.actividadesFAI);
     this.actividadesAC.set(state.actividadesAC);

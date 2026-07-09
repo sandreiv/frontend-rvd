@@ -1,4 +1,5 @@
 export interface DirectLearningActivity {
+  idDetalleCargaDocente?: number;
   id: string;
   criterio: string;
   unidad: string;
@@ -12,10 +13,12 @@ export interface DirectLearningActivity {
   idUnidadRegional: number;
   idPrograma: number;
   codigoMateria: string;
+  idCentroCostoMateria?: number | null;
   idGrupo: number;
 }
 
 export interface SimpleActivity {
+  idDetalleCargaDocente?: number;
   id: string;
   actividad: string;
   horasDedicacion: number;

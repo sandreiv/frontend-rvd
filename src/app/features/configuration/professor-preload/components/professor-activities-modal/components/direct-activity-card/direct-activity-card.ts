@@ -115,15 +115,21 @@ export class DirectActivityCard {
 
   private readonly programsResource = rxResource({
     params: () => {
+      const idCoordinacion = this.idCoordinacion();
       const idUnidadRegional = this.selectedUnidadId();
       const idNivelEducativo = this.idNivelEducativo();
-      if (idUnidadRegional == null || idNivelEducativo == null) {
+      if (
+        idCoordinacion == null ||
+        idUnidadRegional == null ||
+        idNivelEducativo == null
+      ) {
         return undefined;
       }
-      return { idUnidadRegional, idNivelEducativo };
+      return { idCoordinacion, idUnidadRegional, idNivelEducativo };
     },
     stream: ({ params }) =>
       this.coordinationService.listPrograms(
+        params.idCoordinacion,
         params.idUnidadRegional,
         params.idNivelEducativo,
       ),
@@ -437,6 +443,7 @@ export class DirectActivityCard {
       idUnidadRegional: unidad.id,
       idPrograma: programa.id,
       codigoMateria: materia.codigoMateria,
+      idCentroCostoMateria: materia.centroCosto?.id ?? null,
       idGrupo: grupo.id,
     };
   }
