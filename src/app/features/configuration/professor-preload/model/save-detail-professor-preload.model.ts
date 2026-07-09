@@ -3,6 +3,11 @@ export interface SaveDetailProfessorPreloadRequest {
   detalles: DetalleCargaDocenteRequest[];
 }
 
+export interface DetalleMateriaRequest {
+  codigoMateria: string;
+  idCentroCosto?: number | null;
+}
+
 export interface DetalleCargaDocenteRequest {
   idTipoActividad: number;
   idTipoActividadHija?: number;
@@ -10,7 +15,7 @@ export interface DetalleCargaDocenteRequest {
   horas: number;
   idUnidadRegional?: number;
   idPrograma?: number;
-  codigoMateria?: string;
+  materia?: DetalleMateriaRequest | null;
   idGrupo?: number;
   relacionCargaProyecto: RelacionCargaProyectoRequest[];
   idCentroCosto?: number;

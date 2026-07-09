@@ -26,7 +26,7 @@ export function mapDetailProfessorPreloadToModalState(
 ): ProfessorActivitiesModalState {
   const state = createEmptyModalState();
 
-  if (!response?.detalles?.length) {
+  if (!response?.length) {
     return state;
   }
 
@@ -35,29 +35,41 @@ export function mapDetailProfessorPreloadToModalState(
   let fadIndex = 0;
   let criteriaIndex = 0;
 
-  for (const detalle of response.detalles) {
+  for (const item of response) {
+    const detalle = item.detalles[0];
+    if (!detalle) {
+      continue;
+    }
+
     const codigo = detalle.tipoActividad.codigo;
+    const idDetalleCargaDocente = item.idDetalleCargaDocente;
 
     if (codigo === 'FAD') {
-      state.actividadesFAD.push(mapFadDetalle(detalle, fadIndex));
+      state.actividadesFAD.push(
+        mapFadDetalle(detalle, fadIndex, idDetalleCargaDocente),
+      );
       fadIndex += 1;
       continue;
     }
 
     if (codigo === 'FAI') {
-      state.actividadesFAI.push(mapCriteriaDetalle(detalle, criteriaIndex));
+      state.actividadesFAI.push(
+        mapCriteriaDetalle(detalle, criteriaIndex, idDetalleCargaDocente),
+      );
       criteriaIndex += 1;
       continue;
     }
 
     if (codigo === 'AC') {
-      state.actividadesAC.push(mapCriteriaDetalle(detalle, criteriaIndex));
+      state.actividadesAC.push(
+        mapCriteriaDetalle(detalle, criteriaIndex, idDetalleCargaDocente),
+      );
       criteriaIndex += 1;
       continue;
     }
 
     if (codigo === 'CTEI' || codigo === 'ISU') {
-      const row = mapProjectDetalle(detalle);
+      const row = mapProjectDetalle(detalle, idDetalleCargaDocente);
       if (row) {
         state[projectStateKey(codigo)].push(row);
       }
@@ -81,9 +93,11 @@ function createEmptyModalState(): ProfessorActivitiesModalState {
 function mapFadDetalle(
   detalle: DetalleCargaDocenteFormularioApi,
   index: number,
+  idDetalleCargaDocente: number,
 ): DirectLearningActivity {
   return {
-    id: `fad-${detalle.grupo?.id ?? index}`,
+    idDetalleCargaDocente,
+    id: `fad-${idDetalleCargaDocente ?? detalle.grupo?.id ?? index}`,
     criterio: '',
     unidad: detalle.unidadRegional?.nombre?.trim() ?? '',
     programa: detalle.programa?.nombre?.trim() ?? '',
@@ -96,6 +110,7 @@ function mapFadDetalle(
     idUnidadRegional: detalle.unidadRegional?.id ?? 0,
     idPrograma: detalle.programa?.id ?? 0,
     codigoMateria: detalle.materia?.codigoMateria?.trim() ?? '',
+    idCentroCostoMateria: detalle.materia?.idCentroCosto ?? null,
     idGrupo: detalle.grupo?.id ?? 0,
   };
 }
@@ -103,11 +118,13 @@ function mapFadDetalle(
 function mapCriteriaDetalle(
   detalle: DetalleCargaDocenteFormularioApi,
   index: number,
+  idDetalleCargaDocente: number,
 ): SimpleActivity {
   const hija = detalle.tipoActividadHija[0];
 
   return {
-    id: `criteria-${hija?.id ?? index}`,
+    idDetalleCargaDocente,
+    id: `criteria-${idDetalleCargaDocente ?? hija?.id ?? index}`,
     actividad: hija?.nombre?.trim() ?? hija?.descripcion?.trim() ?? '',
     horasDedicacion: parseHoras(detalle.horas),
     idTipoActividadHija: hija?.id,
@@ -116,6 +133,7 @@ function mapCriteriaDetalle(
 
 function mapProjectDetalle(
   detalle: DetalleCargaDocenteFormularioApi,
+  idDetalleCargaDocente: number,
 ): ProfessorProjectRow | null {
   const relacion = detalle.relacionCargaProyecto[0];
   if (!relacion) {
@@ -129,6 +147,7 @@ function mapProjectDetalle(
   );
 
   return {
+    idDetalleCargaDocente,
     idPersonaProyecto: relacion.idPersonaProyecto,
     idProyecto: relacion.idProyecto,
     idTipoActividad: detalle.tipoActividad.id,

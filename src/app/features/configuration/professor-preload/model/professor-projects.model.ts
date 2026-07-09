@@ -36,6 +36,7 @@ export interface ProyectoDocenteDto {
 export type ProjectActivityCodigo = 'CTEI' | 'ISU';
 
 export interface ProfessorProjectRow {
+  idDetalleCargaDocente?: number;
   idPersonaProyecto: number;
   idProyecto: number;
   idTipoActividad: number;

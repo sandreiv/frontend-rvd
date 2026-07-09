@@ -1,3 +1,5 @@
+import { CoordinationCentroCosto } from './coordination.model';
+
 export interface TipoActividad {
   id: number;
   idPadre: number | null;
@@ -23,6 +25,7 @@ export interface ProgramaAcademico {
   nombre: string;
 }
 
+
 export interface MateriaAcademica {
   codigoMateria: string;
   nombre: string;
@@ -34,6 +37,7 @@ export interface MateriaAcademica {
   horasDirectas: number;
   capacidad: number | null;
   tieneGrupo: boolean;
+  centroCosto?: CoordinationCentroCosto | null;
 }
 
 export interface GrupoMateria {

@@ -14,10 +14,7 @@ export type ActivityCategoryCodigo =
 
 export type ActivityFormType = 'direct' | 'criteria' | 'project';
 
-export type ProjectActivityCodigo = Extract<
-  ActivityCategoryCodigo,
-  'CTEI' | 'ISU'
->;
+export type ProjectActivityCodigo = Extract<ActivityCategoryCodigo, 'CTEI' | 'ISU'>;
 
 const DEFAULT_EXPANDED_CATEGORY: ActivityCategoryCodigo = 'FAD';
 
@@ -46,10 +43,7 @@ export interface ActivityVisibleItem extends ActivityUiConfig {
   tipoActividad?: TipoActividad;
 }
 
-export const ACTIVITY_UI_CONFIG: Record<
-  ActivityCategoryCodigo,
-  ActivityUiConfig
-> = {
+export const ACTIVITY_UI_CONFIG: Record<ActivityCategoryCodigo, ActivityUiConfig> = {
   FAD: {
     formType: 'direct',
     icon: 'bookOpen',
@@ -99,7 +93,12 @@ export const VISIBLE_ACTIVITY_CARDS: Record<
 export function resolveVisibleActivityCodigos(
   modalityNombre: string | null | undefined,
   projectActivityCodigos: ProjectActivityCodigo[] = [],
+  esPlanta = false,
 ): ActivityCategoryCodigo[] {
+  if (esPlanta) {
+    return [...TCO_BASE_ACTIVITY_CARDS, ...projectActivityCodigos];
+  }
+
   const kind = resolveModalityKind(modalityNombre);
   if (!kind) {
     return [];
