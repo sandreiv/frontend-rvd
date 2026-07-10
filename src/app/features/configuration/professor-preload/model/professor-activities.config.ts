@@ -80,24 +80,25 @@ export const TCO_BASE_ACTIVITY_CARDS: ActivityCategoryCodigo[] = [
   'AC',
 ];
 
+export const TCO_ACTIVITY_CARDS: ActivityCategoryCodigo[] = [
+  ...TCO_BASE_ACTIVITY_CARDS,
+  ...PROJECT_ACTIVITY_CODIGOS,
+];
+
 export const VISIBLE_ACTIVITY_CARDS: Record<
   ContractModalityKind,
   ActivityCategoryCodigo[]
 > = {
   catedra: ['FAD'],
-  tiempoCompletoOcasional: TCO_BASE_ACTIVITY_CARDS,
+  tiempoCompletoOcasional: TCO_ACTIVITY_CARDS,
 };
 
 export function resolveVisibleActivityCodigos(
   modalityNombre: string | null | undefined,
-  projectActivityCodigos: ProjectActivityCodigo[] = [],
   esPlanta = false,
 ): ActivityCategoryCodigo[] {
   if (esPlanta) {
-    return orderWithProjectsFirst(
-      TCO_BASE_ACTIVITY_CARDS,
-      projectActivityCodigos,
-    );
+    return [...TCO_ACTIVITY_CARDS];
   }
 
   const kind = resolveModalityKind(modalityNombre);
@@ -105,22 +106,16 @@ export function resolveVisibleActivityCodigos(
     return [];
   }
 
-  const baseCodigos = VISIBLE_ACTIVITY_CARDS[kind];
-  if (kind === 'tiempoCompletoOcasional') {
-    return orderWithProjectsFirst(baseCodigos, projectActivityCodigos);
-  }
-  return [...baseCodigos];
+  return [...VISIBLE_ACTIVITY_CARDS[kind]];
 }
 
-function orderWithProjectsFirst(
-  baseCodigos: ActivityCategoryCodigo[],
-  projectActivityCodigos: ProjectActivityCodigo[],
-): ActivityCategoryCodigo[] {
-  if (!projectActivityCodigos.length) {
-    return [...baseCodigos];
-  }
-
-  return [...projectActivityCodigos, ...baseCodigos];
+function compareActivityOrden(
+  a: ActivityVisibleItem,
+  b: ActivityVisibleItem,
+): number {
+  const ordenA = Number(a.tipoActividad?.orden ?? 0);
+  const ordenB = Number(b.tipoActividad?.orden ?? 0);
+  return ordenA - ordenB;
 }
 
 export function buildVisibleActivityItems(
@@ -139,7 +134,19 @@ export function buildVisibleActivityItems(
       tipoActividad: activityTypes.find((type) => type.codigo === codigo),
     });
   }
-  return items;
+  return items.sort(compareActivityOrden);
+}
+
+export function resolveInitialExpandedCategories(
+  projectRowsByCodigo: Record<ProjectActivityCodigo, readonly unknown[]>,
+): Record<ActivityCategoryCodigo, boolean> {
+  const state = createInitialExpandedCategories();
+
+  for (const codigo of PROJECT_ACTIVITY_CODIGOS) {
+    state[codigo] = projectRowsByCodigo[codigo].length > 0;
+  }
+
+  return state;
 }
 
 export function createInitialExpandedCategories(): Record<

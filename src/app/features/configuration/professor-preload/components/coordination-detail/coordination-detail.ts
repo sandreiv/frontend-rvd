@@ -26,6 +26,7 @@ import { TotalCoordination } from '../total-coordination/total-coordination';
 })
 export class CoordinationDetail {
   coordination = input.required<CoordinationItem>();
+  coordinationsCatalog = input<CoordinationItem[]>([]);
 
   back = output<void>();
   coordinationUpdated = output<CoordinationItem>();

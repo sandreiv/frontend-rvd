@@ -47,6 +47,7 @@
     } @else if (selectedCoordination(); as coordination) {
       <app-coordination-detail
         [coordination]="coordination"
+        [coordinationsCatalog]="coordinations()"
         (back)="onBackToCoordinationList()"
         (coordinationUpdated)="onCoordinationUpdated($event)"
       />

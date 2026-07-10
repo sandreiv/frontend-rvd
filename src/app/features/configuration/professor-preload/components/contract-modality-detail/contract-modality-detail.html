@@ -130,13 +130,25 @@
   [editingProfessor]="editingModalityProfessor()"
   (close)="closeProfessorAddModal()"
   (saved)="onProfessorSaved()"
+  (existingLoadSelected)="onExistingLoadSelected($event)"
+/>
+
+<app-new-modal
+  [isOpen]="isExistingLoadAlertOpen()"
+  title="Carga docente existente"
+  message="El docente seleccionado ya cuenta con una carga inicializada. ¿Quieres continuar con la misma?"
+  buttonText="Continuar"
+  [showCancelButton]="true"
+  cancelButtonText="Cancelar"
+  (confirm)="confirmExistingLoadContinue()"
+  (close)="closeExistingLoadAlert()"
 />
 
 <app-professor-activities-modal
   [isOpen]="isActivitiesModalOpen()"
   [professor]="activitiesProfessor()"
-  [contractModality]="selectedModalityForModals()"
-  [coordination]="coordination()"
+  [contractModality]="activitiesModalContractModality()"
+  [coordination]="activitiesModalCoordination()"
   (close)="closeActivitiesModal()"
   (saved)="onActivitiesSaved()"
 />

@@ -165,10 +165,10 @@ export class CoordinationService {
     );
   }
 
-  listSubjectGroups(codigoMateria: string): Observable<GrupoMateria[]> {
+  listSubjectGroups(codigoMateria: string, idPeriodoUniversidad: number,): Observable<GrupoMateria[]> {
     return this.webRequestService.get<GrupoMateria[]>(
       `${this.endpoint}/list-subject-group`,
-      { codigoMateria },
+      { codigoMateria, idPeriodoUniversidad },
     );
   }
 

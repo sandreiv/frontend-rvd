@@ -86,6 +86,7 @@ export class ProfessorAddModal {
   editingProfessor = input<ModalityProfessor | null>(null);
   close = output<void>();
   saved = output<void>();
+  existingLoadSelected = output<ProfessorSearchResult>();
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
 
@@ -534,6 +535,11 @@ export class ProfessorAddModal {
 
   onProfessorSelected(option: TypeaheadOption): void {
     const professor = option.data as ProfessorSearchResult;
+    if (professor.cargaDocente) {
+      this.existingLoadSelected.emit(professor);
+      return;
+    }
+
     this.selectedProfessor.set(professor);
 
     const descripcion = professor.categoriaCatedratico?.descripcion ?? '';
@@ -544,6 +550,10 @@ export class ProfessorAddModal {
 
   onSubmit(): void {
     if (this.isSaving()) {
+      return;
+    }
+
+    if (this.selectedProfessor()?.cargaDocente) {
       return;
     }
 

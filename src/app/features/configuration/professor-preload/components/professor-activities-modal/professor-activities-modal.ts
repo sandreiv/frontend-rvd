@@ -34,6 +34,7 @@ import {
   buildVisibleActivityItems,
   createInitialAddFormOpen,
   createInitialExpandedCategories,
+  resolveInitialExpandedCategories,
   resolveVisibleActivityCodigos,
 } from '../../model/professor-activities.config';
 import {
@@ -51,10 +52,7 @@ import {
   DetailProfessorPreloadApi,
   DetailProfessorPreloadItemApi,
 } from '../../model/detail-professor-preload.model';
-import {
-  detectProjectActivityCodigos,
-  buildProjectHierarchyRows,
-} from '../../model/professor-projects.mapper';
+import { buildProjectHierarchyRows } from '../../model/professor-projects.mapper';
 import {
   ProfessorProjectRow,
   ProyectoDocenteDto,
@@ -193,12 +191,7 @@ export class ProfessorActivitiesModal {
 
   readonly addFormOpen = signal(createInitialAddFormOpen());
 
-  readonly projectActivityCodigos = computed(() =>
-    detectProjectActivityCodigos(
-      this.professorProjectsResource.value(),
-      this.professor()?.idPersonaGeneral,
-    ),
-  );
+  private readonly expandedCategoriesInitialized = signal(false);
 
   readonly projectHierarchyRowsByCodigo = computed(() => {
     const proyectos = this.professorProjectsResource.value();
@@ -221,7 +214,6 @@ export class ProfessorActivitiesModal {
     buildVisibleActivityItems(
       resolveVisibleActivityCodigos(
         this.contractModality()?.nombre,
-        this.projectActivityCodigos(),
         this.contractModality()?.esPlanta === true,
       ),
       this.activityTypesResource.value(),
@@ -258,12 +250,17 @@ export class ProfessorActivitiesModal {
 
   readonly directActivityContext = computed(() => {
     const coordination = this.coordination();
-    if (!coordination?.id || coordination.idNivelEducativo == null) {
+    if (
+      !coordination?.id ||
+      coordination.idNivelEducativo == null ||
+      coordination.idPeriodoUniversidad == null
+    ) {
       return null;
     }
     return {
       idCoordinacion: coordination.id,
       idNivelEducativo: coordination.idNivelEducativo,
+      idPeriodoUniversidad: coordination.idPeriodoUniversidad,
     };
   });
 
@@ -341,6 +338,32 @@ export class ProfessorActivitiesModal {
 
       const detail = this.detailResource.value();
       untracked(() => this.applyLoadedDetail(detail));
+    });
+
+    effect(() => {
+      if (!this.isOpen()) {
+        untracked(() => this.expandedCategoriesInitialized.set(false));
+        return;
+      }
+
+      if (this.professorProjectsResource.isLoading()) {
+        return;
+      }
+
+      if (this.expandedCategoriesInitialized()) {
+        return;
+      }
+
+      const rows = this.projectHierarchyRowsByCodigo();
+      untracked(() => {
+        this.expandedCategories.set(
+          resolveInitialExpandedCategories({
+            CTEI: rows.CTEI,
+            ISU: rows.ISU,
+          }),
+        );
+        this.expandedCategoriesInitialized.set(true);
+      });
     });
   }
 

@@ -61,6 +61,7 @@ export class DirectActivityCard {
   tipoActividad = input<TipoActividad | null>(null);
   idCoordinacion = input.required<number>();
   idNivelEducativo = input.required<number>();
+  idPeriodoUniversidad = input.required<number>();
   addFormOpen = input(false);
   activities = input<DirectLearningActivity[]>([]);
 
@@ -156,13 +157,17 @@ export class DirectActivityCard {
   private readonly groupsResource = rxResource({
     params: () => {
       const codigoMateria = this.selectedCodigoMateria();
-      if (!codigoMateria) {
+      const idPeriodoUniversidad = this.idPeriodoUniversidad();
+      if (!codigoMateria || idPeriodoUniversidad == null) {
         return undefined;
       }
-      return { codigoMateria };
+      return { codigoMateria, idPeriodoUniversidad };
     },
     stream: ({ params }) =>
-      this.coordinationService.listSubjectGroups(params.codigoMateria),
+      this.coordinationService.listSubjectGroups(
+        params.codigoMateria,
+        params.idPeriodoUniversidad,
+      ),
     defaultValue: [] as GrupoMateria[],
   });
 

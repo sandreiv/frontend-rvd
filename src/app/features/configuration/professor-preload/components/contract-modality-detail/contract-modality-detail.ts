@@ -9,13 +9,14 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { Button } from '../../../../../shared/ui/button/button';
 import { Dropdown } from '../../../../../shared/ui/dropdown/dropdown/dropdown';
 import { Item } from '../../../../../shared/ui/dropdown/item/item';
 import { Icon } from '../../../../../shared/ui/icon/icon';
 import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { TabBar } from '../../../../../shared/ui/tab-bar/tab-bar';
+import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
 import {
   TabBarId,
   TabBarItem,
@@ -29,9 +30,16 @@ import {
   isPlantaModality,
   mapCareerProfessorToModalityProfessor,
   ModalityProfessor,
+  ProfessorCargaDocenteSummary,
+  ProfessorSearchResult,
 } from '../../model/coordination.model';
+import {
+  mapProfessorSearchToModalityProfessor,
+  resolveModalityFromCarga,
+} from '../../model/professor-search.mapper';
 import { ProfessorAddModal } from '../professor-add-modal/professor-add-modal';
 import { ProfessorActivitiesModal } from '../professor-activities-modal/professor-activities-modal';
+import { resolveModalityKind } from '../../model/professor-form.config';
 
 export type ProfessorManagementStatus =
   | 'completo'
@@ -105,6 +113,7 @@ const VERIFIED_MODALITY_STATE = '2';
     Item,
     Icon,
     TabBar,
+    NewModal,
     ProfessorAddModal,
     ProfessorActivitiesModal,
   ],
@@ -116,6 +125,7 @@ export class ContractModalityDetail {
   private readonly destroyRef = inject(DestroyRef);
 
   coordination = input.required<CoordinationItem>();
+  coordinationsCatalog = input<CoordinationItem[]>([]);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly isProfessorAddModalOpen = signal(false);
@@ -123,18 +133,28 @@ export class ContractModalityDetail {
   readonly professorModalMode = signal<'create' | 'edit'>('create');
   readonly editingModalityProfessor = signal<ModalityProfessor | null>(null);
   readonly activitiesProfessor = signal<ModalityProfessor | null>(null);
+  readonly activitiesCoordination = signal<CoordinationItem | null>(null);
+  readonly activitiesContractModality =
+    signal<CoordinationContractModality | null>(null);
+  readonly isExistingLoadAlertOpen = signal(false);
+  readonly pendingExistingLoadProfessor =
+    signal<ProfessorSearchResult | null>(null);
   readonly openMenuKey = signal<string | null>(null);
 
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
   );
 
+  readonly sortedContractModalities = computed(() =>
+    this.sortContractModalities(this.contractModalities()),
+  );
+
   readonly assignableModalities = computed(() =>
-    getAssignableModalities(this.contractModalities()),
+    getAssignableModalities(this.sortedContractModalities()),
   );
 
   readonly hasPlantaModality = computed(() =>
-    this.contractModalities().some(isPlantaModality),
+    this.sortedContractModalities().some(isPlantaModality),
   );
 
   readonly careerProfessorsResource = rxResource({
@@ -155,7 +175,7 @@ export class ContractModalityDetail {
 
   readonly modalityProfessorsResource = rxResource({
     params: () => {
-      const modalities = this.contractModalities();
+      const modalities = this.sortedContractModalities();
       if (!modalities.length) {
         return undefined;
       }
@@ -200,7 +220,7 @@ export class ContractModalityDetail {
 
   readonly modalityTabs = computed<TabBarItem[]>(() => {
     const professorsByModality = this.modalityProfessorsMap();
-    return this.contractModalities().map((modality) =>
+    return this.sortedContractModalities().map((modality) =>
       this.toModalityTabItem(modality, professorsByModality),
     );
   });
@@ -209,14 +229,14 @@ export class ContractModalityDetail {
 
   readonly isPlantaSelected = computed(() => {
     const selectedId = this.selectedContractModalityId();
-    const modality = this.contractModalities().find(
+    const modality = this.sortedContractModalities().find(
       (item) => item.id === selectedId,
     );
     return modality != null && isPlantaModality(modality);
   });
 
   readonly selectedPlantaModality = computed(
-    () => this.contractModalities().find(isPlantaModality) ?? null,
+    () => this.sortedContractModalities().find(isPlantaModality) ?? null,
   );
 
   readonly selectedContractModality = computed(() => {
@@ -240,6 +260,22 @@ export class ContractModalityDetail {
       return this.selectedPlantaModality()?.nombre ?? 'planta';
     }
     return this.selectedContractModality()?.nombre ?? '-';
+  });
+
+  readonly activitiesModalCoordination = computed(() => {
+    const resolved = this.activitiesCoordination();
+    if (resolved) {
+      return resolved;
+    }
+    return this.coordination();
+  });
+
+  readonly activitiesModalContractModality = computed(() => {
+    const resolved = this.activitiesContractModality();
+    if (resolved) {
+      return resolved;
+    }
+    return this.selectedModalityForModals();
   });
 
   constructor() {
@@ -281,6 +317,40 @@ export class ContractModalityDetail {
     this.careerProfessorsResource.reload();
   }
 
+  onExistingLoadSelected(professor: ProfessorSearchResult): void {
+    this.pendingExistingLoadProfessor.set(professor);
+    this.isExistingLoadAlertOpen.set(true);
+  }
+
+  closeExistingLoadAlert(): void {
+    this.isExistingLoadAlertOpen.set(false);
+    this.pendingExistingLoadProfessor.set(null);
+  }
+
+  confirmExistingLoadContinue(): void {
+    const search = this.pendingExistingLoadProfessor();
+    const carga = search?.cargaDocente;
+    if (!search || !carga) {
+      return;
+    }
+
+    const professor = mapProfessorSearchToModalityProfessor(search);
+    if (!professor) {
+      return;
+    }
+
+    this.resolveActivitiesContext(carga)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ coordination, modality }) => {
+        this.closeExistingLoadAlert();
+        this.closeProfessorAddModal();
+        this.activitiesCoordination.set(coordination);
+        this.activitiesContractModality.set(modality);
+        this.activitiesProfessor.set(professor);
+        this.isActivitiesModalOpen.set(true);
+      });
+  }
+
   private resolvePlantaProfessors(): ModalityProfessor[] {
     const planta = this.selectedPlantaModality();
     if (!planta) {
@@ -315,10 +385,31 @@ export class ContractModalityDetail {
     });
   }
 
-  private toModalityTabItem(
-    modality: CoordinationContractModality,
-    professorsByModality: Record<number, ModalityProfessor[]>,
-  ): TabBarItem {
+  private sortContractModalities(modalities: CoordinationContractModality[]): CoordinationContractModality[] {
+    return [...modalities].sort(
+      (left, right) =>
+        this.resolveModalitySortOrder(left) -
+        this.resolveModalitySortOrder(right),
+    );
+  }
+
+  private resolveModalitySortOrder(modality: CoordinationContractModality): number {
+    if (isPlantaModality(modality)) {
+      return 2;
+    }
+
+    const kind = resolveModalityKind(modality.nombre);
+    if (kind === 'tiempoCompletoOcasional') {
+      return 0;
+    }
+    if (kind === 'catedra') {
+      return 1;
+    }
+
+    return 3;
+  }
+
+  private toModalityTabItem(modality: CoordinationContractModality, professorsByModality: Record<number, ModalityProfessor[]>): TabBarItem {
     if (isPlantaModality(modality)) {
       const professors = professorsByModality[modality.id] ?? [];
       const count = professors.length || this.careerProfessors().length;
@@ -341,9 +432,7 @@ export class ContractModalityDetail {
     };
   }
 
-  private toModalityProfessorsMap(
-    entries: { id: number; professors: ModalityProfessor[] }[],
-  ): Record<number, ModalityProfessor[]> {
+  private toModalityProfessorsMap(entries: { id: number; professors: ModalityProfessor[] }[],): Record<number, ModalityProfessor[]> {
     return entries.reduce<Record<number, ModalityProfessor[]>>(
       (accumulator, entry) => {
         accumulator[entry.id] = entry.professors;
@@ -389,9 +478,7 @@ export class ContractModalityDetail {
     }
   }
 
-  activitiesStatusBadge(
-    professor: ModalityProfessor,
-  ): StatusBadge | null {
+  activitiesStatusBadge(professor: ModalityProfessor): StatusBadge | null {
     if (professor.tieneDetalleActividades !== true) {
       return null;
     }
@@ -444,9 +531,7 @@ export class ContractModalityDetail {
     this.openMenuKey.set(null);
   }
 
-  onProfessorMenuAction(
-    actionId: string,
-    professor: ModalityProfessor,
+  onProfessorMenuAction(actionId: string, professor: ModalityProfessor,
   ): void {
     this.closeProfessorMenu();
 
@@ -466,6 +551,14 @@ export class ContractModalityDetail {
   }
 
   openActivitiesModal(professor: ModalityProfessor): void {
+    const coordination = this.coordination();
+    const modality =
+      coordination.modalidadesContratacion.find(
+        (item) => item.id === professor.idModalidadContratacion,
+      ) ?? this.selectedModalityForModals();
+
+    this.activitiesCoordination.set(coordination);
+    this.activitiesContractModality.set(modality);
     this.activitiesProfessor.set(professor);
     this.isActivitiesModalOpen.set(true);
   }
@@ -473,6 +566,8 @@ export class ContractModalityDetail {
   closeActivitiesModal(): void {
     this.isActivitiesModalOpen.set(false);
     this.activitiesProfessor.set(null);
+    this.activitiesCoordination.set(null);
+    this.activitiesContractModality.set(null);
   }
 
   onActivitiesSaved(): void {
@@ -494,5 +589,96 @@ export class ContractModalityDetail {
         this.modalityProfessorsResource.reload();
         this.careerProfessorsResource.reload();
       });
+  }
+
+  private resolveActivitiesContext(
+    carga: NonNullable<ProfessorSearchResult['cargaDocente']>,
+  ): Observable<{
+    coordination: CoordinationItem;
+    modality: CoordinationContractModality;
+  }> {
+    return this.findCoordinationForCarga(carga).pipe(
+      map((coordination) => ({
+        coordination,
+        modality: resolveModalityFromCarga(coordination, carga),
+      })),
+    );
+  }
+
+  private findCoordinationForCarga(
+    carga: ProfessorCargaDocenteSummary,
+  ): Observable<CoordinationItem> {
+    const current = this.coordination();
+    const idCoordinacion = carga.idCoordinacion;
+
+    if (idCoordinacion === current.id) {
+      return of(current);
+    }
+
+    if (carga.idConvocatoria != null) {
+      return this.coordinationService
+        .getCoordinations(carga.idConvocatoria)
+        .pipe(
+          switchMap((items) => {
+            const match = this.findCoordinationInList(
+              items,
+              idCoordinacion,
+            );
+            if (match) {
+              return of(match);
+            }
+            return this.findCoordinationFallback(idCoordinacion, current);
+          }),
+        );
+    }
+
+    return this.findCoordinationFallback(idCoordinacion, current);
+  }
+
+  private findCoordinationFallback(
+    idCoordinacion: number,
+    current: CoordinationItem,
+  ): Observable<CoordinationItem> {
+    const catalogMatch = this.findCoordinationInList(
+      this.coordinationsCatalog(),
+      idCoordinacion,
+    );
+
+    if (catalogMatch) {
+      return of(catalogMatch);
+    }
+
+    const idConvocatoria = current.idConvocatoria;
+    const scoped$ =
+      idConvocatoria != null
+        ? this.coordinationService.getCoordinations(idConvocatoria)
+        : of([] as CoordinationItem[]);
+
+    return scoped$.pipe(
+      switchMap((scopedItems) => {
+        const scopedMatch = this.findCoordinationInList(
+          scopedItems,
+          idCoordinacion,
+        );
+        if (scopedMatch) {
+          return of(scopedMatch);
+        }
+
+        return this.coordinationService.getCoordinations().pipe(
+          map(
+            (allItems) =>
+              this.findCoordinationInList(allItems, idCoordinacion) ??
+              current,
+          ),
+        );
+      }),
+    );
+  }
+
+  private findCoordinationInList(
+    items: CoordinationItem[],
+    idCoordinacion: number,
+  ): CoordinationItem | undefined {
+    return items.find((item) => item.id === idCoordinacion);
   }
 }

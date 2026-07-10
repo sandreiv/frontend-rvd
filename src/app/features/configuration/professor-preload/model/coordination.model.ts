@@ -72,6 +72,7 @@ export interface CoordinationItem {
   modalidad: string;
   nivelEducativo: string;
   periodoUniversidad: string;
+  idPeriodoUniversidad: number | null;
   anioUniversidad: number | null;
   estadoCarga: string;
   idCarga: number | null;
@@ -178,6 +179,7 @@ export function normalizeCoordinationItem(item: CoordinationApiItem): Coordinati
     periodoUniversidad: formatUniversityPeriod(
       item.convocatoria?.periodoUniversidad,
     ),
+    idPeriodoUniversidad: item.convocatoria?.periodoUniversidad?.id ?? null,
     anioUniversidad: item.convocatoria?.periodoUniversidad?.anio ?? null,
     estadoCarga: resolveEstadoCarga(item.carga),
     idCarga: item.carga?.id ?? null,
@@ -274,12 +276,22 @@ export interface ProfessorEscalafon {
   puntos: string;
 }
 
+export interface ProfessorCargaDocenteSummary {
+  id: number;
+  idCarga: number;
+  idConvocatoria: number;
+  idCoordinacion: number;
+  idModalidadContratacion: number;
+  idFechasConvocatoria: number;
+}
+
 export interface ProfessorSearchResult {
   id: number;
   documentoIdentidad: string;
   nombreCompleto: string;
   categoriaCatedratico: CoordinationLookupItem | null;
   escalafon: ProfessorEscalafon | null;
+  cargaDocente?: ProfessorCargaDocenteSummary | null;
 }
 
 export interface WorkDate {
