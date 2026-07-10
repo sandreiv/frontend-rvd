@@ -24,5 +24,10 @@ export class AdministrationView {
       icon: 'adjustmentsHorizontal',
       path: 'coordinaciones',
     },
+    {
+      label: 'Tipo actividades',
+      icon: 'bookOpen',
+      path: 'tipo-actividades',
+    },
   ];
 }
