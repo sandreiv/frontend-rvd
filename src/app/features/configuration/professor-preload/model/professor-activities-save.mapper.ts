@@ -126,7 +126,7 @@ function mapProjectDetalle(
   return {
     idTipoActividad: project.idTipoActividad,
     codigoTipoActividad: project.codigoTipoActividad,
-    horas: project.horasDedicacion,
+    horas: project.horasDedicacion ?? 0,
     materia: null,
     relacionCargaProyecto: [
       {

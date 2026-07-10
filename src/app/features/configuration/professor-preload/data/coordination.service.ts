@@ -186,6 +186,7 @@ export class CoordinationService {
   }
 
   saveActivityDistribution(request: SaveDetailProfessorPreloadRequest): Observable<void> {
+    console.log('request', request);
     return this.webRequestService.post<void>(
       `${this.endpoint}/save-detail-professor-preload`,
       request,

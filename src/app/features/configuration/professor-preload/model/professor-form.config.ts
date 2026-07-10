@@ -31,7 +31,7 @@ export const PROFESSOR_FIELDS: Record<ContractModalityKind, ProfessorFieldConfig
     },
     {
       key: 'categoriaCatedratico',
-      label: 'Categoría catedrático',
+      label: 'Categoría del docente',
       control: 'text',
       readonly: true
     },
@@ -127,6 +127,17 @@ export function formatWorkDateRange(fechaInicio: string, fechaFin: string): stri
   return `${formatWorkDate(fechaInicio)} - ${formatWorkDate(fechaFin)}`;
 }
 
+export function parseMaxWeeklyHours(rangoHoras: string | null | undefined): number | null {
+  if (!rangoHoras?.trim()) {
+    return null;
+  }
+
+  const parts = rangoHoras.split('-').map((part) => part.trim());
+  const max = Number(parts[parts.length - 1]);
+
+  return Number.isFinite(max) ? max : null;
+}
+
 function formatWorkDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -140,7 +151,7 @@ function formatWorkDate(value: string): string {
   });
 }
 
-//const PRIMA_LEGAL = 1376873;
+
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export interface ContractValues {

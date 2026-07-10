@@ -27,6 +27,7 @@ import {
   CoordinationContractModality,
   CoordinationItem,
   ModalityProfessor,
+  WorkDate,
 } from '../../model/coordination.model';
 import {
   ActivityCategoryCodigo,
@@ -58,6 +59,7 @@ import {
   ProfessorProjectRow,
   ProyectoDocenteDto,
 } from '../../model/professor-projects.model';
+import { parseMaxWeeklyHours } from '../../model/professor-form.config';
 
 const NN_LABEL = 'NN';
 
@@ -90,7 +92,6 @@ export class ProfessorActivitiesModal {
   professor = input<ModalityProfessor | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
   coordination = input<CoordinationItem | null>(null);
-  weeklyHoursLimit = input(40);
 
   close = output<void>();
   saved = output<void>();
@@ -142,6 +143,26 @@ export class ProfessorActivitiesModal {
         params.idPersonaGeneral,
       ),
     defaultValue: [] as ProyectoDocenteDto[],
+  });
+
+  readonly workDatesResource = rxResource({
+    params: () => {
+      if (!this.isOpen()) {
+        return undefined;
+      }
+      const idCoordinacion = this.coordination()?.id;
+      const idModalidadContratacion = this.contractModality()?.id;
+      if (idCoordinacion == null || idModalidadContratacion == null) {
+        return undefined;
+      }
+      return { idCoordinacion, idModalidadContratacion };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getWorkDates(
+        params.idCoordinacion,
+        params.idModalidadContratacion,
+      ),
+    defaultValue: [] as WorkDate[],
   });
 
   readonly detailResource = rxResource({
@@ -267,6 +288,36 @@ export class ProfessorActivitiesModal {
     ),
   );
 
+  readonly professorWorkDate = computed(() => {
+    const idFechasConvocatoria = this.professor()?.idFechasConvocatoria;
+    if (idFechasConvocatoria == null) {
+      return null;
+    }
+
+    return (
+      this.workDatesResource
+        .value()
+        .find((item) => item.id === idFechasConvocatoria) ?? null
+    );
+  });
+
+  readonly weeklyHoursLimit = computed(() =>
+    parseMaxWeeklyHours(this.professorWorkDate()?.rangoHoras),
+  );
+
+  readonly isLoadingWorkDates = computed(
+    () => this.workDatesResource.isLoading(),
+  );
+
+  readonly exceedsWeeklyLimit = computed(() => {
+    const limit = this.weeklyHoursLimit();
+    if (limit == null) {
+      return false;
+    }
+
+    return this.totalAssignedHours() > limit;
+  });
+
   readonly canSaveDistribution = computed(
     () =>
       !this.isLoadingDetail() &&
@@ -325,18 +376,14 @@ export class ProfessorActivitiesModal {
     return `${hours}h`;
   }
 
-  criteriaActivitiesForCodigo(
-    codigo: ActivityCategoryCodigo,
-  ): SimpleActivity[] {
+  criteriaActivitiesForCodigo(codigo: ActivityCategoryCodigo): SimpleActivity[] {
     if (codigo === 'FAI' || codigo === 'AC') {
       return this.criteriaActivitiesByCodigo[codigo]();
     }
     return [];
   }
 
-  projectHierarchyRowsForCodigo(
-    codigo: ActivityCategoryCodigo,
-  ): ProfessorProjectRow[] {
+  projectHierarchyRowsForCodigo(codigo: ActivityCategoryCodigo): ProfessorProjectRow[] {
     const rows = this.projectHierarchyRowsByCodigo();
     if (codigo === 'CTEI') {
       return rows.CTEI;
@@ -347,28 +394,20 @@ export class ProfessorActivitiesModal {
     return [];
   }
 
-  associatedProjectsForCodigo(
-    codigo: ActivityCategoryCodigo,
-  ): ProfessorProjectRow[] {
+  associatedProjectsForCodigo(codigo: ActivityCategoryCodigo): ProfessorProjectRow[] {
     if (codigo === 'CTEI' || codigo === 'ISU') {
       return this.associatedProjectsByCodigo[codigo]();
     }
     return [];
   }
 
-  setAssociatedProjectsForCodigo(
-    codigo: ActivityCategoryCodigo,
-    rows: ProfessorProjectRow[],
-  ): void {
+  setAssociatedProjectsForCodigo(codigo: ActivityCategoryCodigo, rows: ProfessorProjectRow[]): void {
     if (codigo === 'CTEI' || codigo === 'ISU') {
       this.associatedProjectsByCodigo[codigo].set(rows);
     }
   }
 
-  setCriteriaActivitiesForCodigo(
-    codigo: ActivityCategoryCodigo,
-    activities: SimpleActivity[],
-  ): void {
+  setCriteriaActivitiesForCodigo(codigo: ActivityCategoryCodigo, activities: SimpleActivity[]): void {
     if (codigo === 'FAI' || codigo === 'AC') {
       this.criteriaActivitiesByCodigo[codigo].set(activities);
     }
@@ -503,7 +542,7 @@ export class ProfessorActivitiesModal {
 
   private sumProjectHours(rows: ProfessorProjectRow[]): number {
     return rows.reduce(
-      (total, row) => total + row.horasDedicacion,
+      (total, row) => total + (row.horasDedicacion ?? 0),
       0,
     );
   }

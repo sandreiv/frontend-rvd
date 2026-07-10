@@ -107,4 +107,8 @@ export class ProjectActivityCard {
   rowPaddingClass(nivel: 0 | 1): string {
     return nivel === 1 ? 'pl-8' : '';
   }
+
+  hasHorasDedicacion(row: ProfessorProjectRow): boolean {
+    return row.horasDedicacion != null;
+  }
 }

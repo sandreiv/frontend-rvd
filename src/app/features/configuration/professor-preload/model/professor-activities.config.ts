@@ -16,8 +16,6 @@ export type ActivityFormType = 'direct' | 'criteria' | 'project';
 
 export type ProjectActivityCodigo = Extract<ActivityCategoryCodigo, 'CTEI' | 'ISU'>;
 
-const DEFAULT_EXPANDED_CATEGORY: ActivityCategoryCodigo = 'FAD';
-
 export const ALL_ACTIVITY_CODIGOS: ActivityCategoryCodigo[] = [
   'FAD',
   'FAI',
@@ -96,7 +94,10 @@ export function resolveVisibleActivityCodigos(
   esPlanta = false,
 ): ActivityCategoryCodigo[] {
   if (esPlanta) {
-    return [...TCO_BASE_ACTIVITY_CARDS, ...projectActivityCodigos];
+    return orderWithProjectsFirst(
+      TCO_BASE_ACTIVITY_CARDS,
+      projectActivityCodigos,
+    );
   }
 
   const kind = resolveModalityKind(modalityNombre);
@@ -106,9 +107,20 @@ export function resolveVisibleActivityCodigos(
 
   const baseCodigos = VISIBLE_ACTIVITY_CARDS[kind];
   if (kind === 'tiempoCompletoOcasional') {
-    return [...baseCodigos, ...projectActivityCodigos];
+    return orderWithProjectsFirst(baseCodigos, projectActivityCodigos);
   }
   return [...baseCodigos];
+}
+
+function orderWithProjectsFirst(
+  baseCodigos: ActivityCategoryCodigo[],
+  projectActivityCodigos: ProjectActivityCodigo[],
+): ActivityCategoryCodigo[] {
+  if (!projectActivityCodigos.length) {
+    return [...baseCodigos];
+  }
+
+  return [...projectActivityCodigos, ...baseCodigos];
 }
 
 export function buildVisibleActivityItems(
@@ -137,7 +149,7 @@ export function createInitialExpandedCategories(): Record<
   return ALL_ACTIVITY_CODIGOS.reduce(
     (state, codigo) => ({
       ...state,
-      [codigo]: codigo === DEFAULT_EXPANDED_CATEGORY,
+      [codigo]: false,
     }),
     {} as Record<ActivityCategoryCodigo, boolean>,
   );

@@ -64,12 +64,15 @@
         de contratación.
       </p>
     } @else if (!hasSavedDetail()) {
-      <p
-        class="rounded-xl border border-dashed border-gray-200 px-4 py-4 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400"
+      <div
+        class="mb-5 flex items-start gap-2 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 dark:border-warning-500/30 dark:bg-warning-500/10"
       >
-        Aún no hay actividades registradas. Agrega la primera actividad
-        en las categorías disponibles.
-      </p>
+        <app-icon name="infoCircle" size="sm" classes="text-warning-500" />
+        <p class="text-sm text-warning-700 dark:text-warning-400">
+          Aún no hay actividades registradas. Agrega la primera actividad
+          en las categorías disponibles.
+        </p>
+      </div>
     }
 
     @if (!isLoadingDetail()) {
@@ -156,8 +159,19 @@
   >
     <p class="text-sm text-gray-500 dark:text-gray-400">
       Total de horas asignadas:
-      <span class="font-semibold text-gray-900 dark:text-white/90">
-        {{ totalAssignedHours() }} h / {{ weeklyHoursLimit() }} h
+      <span
+        class="font-semibold"
+        [class.text-gray-900]="!exceedsWeeklyLimit()"
+        [class.dark:text-white/90]="!exceedsWeeklyLimit()"
+        [class.text-error-600]="exceedsWeeklyLimit()"
+        [class.dark:text-error-400]="exceedsWeeklyLimit()"
+      >
+        {{ totalAssignedHours() }} h
+        @if (isLoadingWorkDates()) {
+          / ...
+        } @else if (weeklyHoursLimit() != null) {
+          / {{ weeklyHoursLimit() }} h
+        }
       </span>
       semanales
     </p>

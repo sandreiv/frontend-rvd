@@ -43,7 +43,7 @@ export interface ProfessorProjectRow {
   codigoTipoActividad: string;
   nombreProyecto: string;
   nombreActividad: string;
-  horasDedicacion: number;
+  horasDedicacion: number | null;
   nivel: 0 | 1;
   esPadre: boolean;
   esSeleccionable: boolean;

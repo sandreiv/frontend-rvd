@@ -61,7 +61,7 @@ export function buildProjectHierarchyRows(
         parentPersona,
         0,
         true,
-        !tieneHijos,
+        true,
       ),
     );
 
@@ -80,7 +80,7 @@ export function buildProjectHierarchyRows(
       }
 
       rows.push(
-        mapToProjectRow(producto, childPersona, 1, false, true),
+        mapToProjectRow(producto, childPersona, 1, false, false),
       );
     }
   }
@@ -104,7 +104,7 @@ export function mapProjectsToActivityRows(
     .map((row) => ({
       id: String(row.idPersonaProyecto),
       actividad: row.nombreActividad,
-      horasDedicacion: row.horasDedicacion,
+      horasDedicacion: row.horasDedicacion ?? 0,
       descripcionProyecto: row.nombreProyecto,
     }));
 }
@@ -112,7 +112,7 @@ export function mapProjectsToActivityRows(
 export function sumProjectActivityHours(rows: SimpleActivity[]): number {
   let total = 0;
   for (const row of rows) {
-    total += row.horasDedicacion;
+    total += row.horasDedicacion ?? 0;
   }
   return total;
 }
@@ -143,7 +143,9 @@ function mapToProjectRow(
     codigoTipoActividad: persona.tipoActividad.codigo,
     nombreProyecto: resolveProjectLabel(proyecto),
     nombreActividad: persona.tipoActividad.nombre,
-    horasDedicacion: parseProjectHours(persona.horas),
+    horasDedicacion: nivel === 1
+      ? parseChildProjectHours(persona.horas)
+      : parseProjectHours(persona.horas),
     nivel,
     esPadre,
     esSeleccionable,
@@ -157,8 +159,23 @@ function isProjectActivityCodigo(
 }
 
 function parseProjectHours(horas: string): number {
-  const parsed = Number(horas);
+  const trimmed = horas?.trim() ?? '';
+  if (!trimmed) {
+    return 0;
+  }
+
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseChildProjectHours(horas: string): number | null {
+  const trimmed = horas?.trim() ?? '';
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function resolveProjectLabel(proyecto: ProyectoDocenteDto): string {

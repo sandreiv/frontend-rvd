@@ -95,10 +95,12 @@ function mapFadDetalle(
   index: number,
   idDetalleCargaDocente: number,
 ): DirectLearningActivity {
+  const hija = detalle.tipoActividadHija[0];
+
   return {
     idDetalleCargaDocente,
     id: `fad-${idDetalleCargaDocente ?? detalle.grupo?.id ?? index}`,
-    criterio: '',
+    criterio: hija?.nombre?.trim() ?? hija?.descripcion?.trim() ?? '',
     unidad: detalle.unidadRegional?.nombre?.trim() ?? '',
     programa: detalle.programa?.nombre?.trim() ?? '',
     materia: detalle.materia?.nombre?.trim() ?? '',

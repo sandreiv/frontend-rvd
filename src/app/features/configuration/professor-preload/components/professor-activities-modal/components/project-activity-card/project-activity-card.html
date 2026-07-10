@@ -48,7 +48,9 @@
                 </p>
               </td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
-                {{ row.horasDedicacion }}
+                @if (hasHorasDedicacion(row)) {
+                  {{ row.horasDedicacion }}
+                }
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-center">
@@ -125,7 +127,9 @@
                     </p>
                   </td>
                   <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
-                    {{ row.horasDedicacion }}
+                    @if (hasHorasDedicacion(row)) {
+                      {{ row.horasDedicacion }}
+                    }
                   </td>
                   <td class="px-4 py-3 text-center">
                     <app-button

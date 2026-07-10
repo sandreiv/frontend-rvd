@@ -195,7 +195,7 @@ function patchProjectDetailItem(
   input: SaveDetailProfessorPreloadInput,
 ): DetailProfessorPreloadItemApi {
   const detalle = cloneDetalle(original.detalles[0]);
-  detalle.horas = String(project.horasDedicacion);
+  detalle.horas = String(project.horasDedicacion ?? 0);
   detalle.centroCosto = resolveCentroCosto(
     input.idCentroCosto,
     input.centroCostoDescripcion,
