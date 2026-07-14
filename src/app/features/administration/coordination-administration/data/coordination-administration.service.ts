@@ -12,6 +12,11 @@ import {
   PersonCoordinationFormData,
   PersonCoordinationItem,
   DeleteBulkPersonCoordinationRequest,
+  CoordinationManagementCatalogs,
+  CoordinationManagementFormData,
+  CoordinationManagementItem,
+  DeleteBulkCoordinationsRequest,
+  CatalogOptionItem,
 } from '../model/coordination-administration.model';
 
 @Injectable({ providedIn: 'root' })
@@ -192,4 +197,73 @@ export class CoordinationAdministrationService {
       payload,
     );
   }
+
+    getCoordinationCatalogs(): Observable<CoordinationManagementCatalogs> {
+    return this.webRequestService.get<CoordinationManagementCatalogs>(
+        `${this.endpoint}/coordinations/catalogs`,
+    );
+    }
+
+    searchUnits(term: string): Observable<CatalogOptionItem[]> {
+    return this.webRequestService.get<CatalogOptionItem[]>(
+        `${this.endpoint}/coordinations/units/search?term=${encodeURIComponent(term)}`,
+    );
+    }
+
+    listParentCoordinations(): Observable<CoordinationManagementItem[]> {
+    return this.webRequestService.get<CoordinationManagementItem[]>(
+        `${this.endpoint}/coordinations/parents/list`,
+    );
+    }
+
+    listChildCoordinations(idPadre: number): Observable<CoordinationManagementItem[]> {
+    return this.webRequestService.get<CoordinationManagementItem[]>(
+        `${this.endpoint}/coordinations/${idPadre}/children/list`,
+    );
+    }
+
+    saveParentCoordination(payload: CoordinationManagementFormData): Observable<void> {
+    return this.webRequestService.post<void>(
+        `${this.endpoint}/coordinations/parents/save`,
+        payload,
+    );
+    }
+
+    saveChildCoordination(
+    idPadre: number,
+    payload: CoordinationManagementFormData,
+    ): Observable<void> {
+    return this.webRequestService.post<void>(
+        `${this.endpoint}/coordinations/${idPadre}/children/save`,
+        payload,
+    );
+    }
+
+    updateCoordination(
+    id: number,
+    payload: CoordinationManagementFormData,
+    ): Observable<void> {
+    return this.webRequestService.put<void>(
+        `${this.endpoint}/coordinations/update/${id}`,
+        payload,
+    );
+    }
+
+    deleteCoordination(id: number): Observable<void> {
+    return this.webRequestService.delete<void>(
+        `${this.endpoint}/coordinations/delete/${id}`,
+    );
+    }
+
+    deleteBulkCoordinations(
+    payload: DeleteBulkCoordinationsRequest,
+    ): Observable<void> {
+    return this.webRequestService.post<void>(
+        `${this.endpoint}/coordinations/delete-bulk`,
+        payload,
+    );
+    }
+
+
+
 }

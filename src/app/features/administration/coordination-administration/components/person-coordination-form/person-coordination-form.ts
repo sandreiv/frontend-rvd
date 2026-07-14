@@ -6,12 +6,16 @@ import {
   Output,
   SimpleChanges,
   input,
+  signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from '../../../../../shared/ui/button/button';
 import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
 import { Label } from '../../../../../shared/components/form/label/label';
-import { Option, Select } from '../../../../../shared/components/form/select/select';
+import {
+  TypeaheadOption,
+  TypeaheadSelect,
+} from '../../../../../shared/components/form/typeahead-select/typeahead-select';
 import {
   CatalogOptionItem,
   PersonCoordinationFormData,
@@ -26,7 +30,7 @@ type PersonCoordinationFormGroup = FormGroup<{
 
 @Component({
   selector: 'app-person-coordination-form',
-  imports: [ReactiveFormsModule, Label, Select, Checkbox, Button],
+  imports: [ReactiveFormsModule, Label, TypeaheadSelect, Checkbox, Button],
   templateUrl: './person-coordination-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -38,9 +42,9 @@ export class PersonCoordinationForm implements OnChanges {
 
   title = input('Nueva persona');
   editTitle = input('Editar persona');
-  description = input('Selecciona la persona, la coordinación y el estado.');
+  description = input('Selecciona la persona y el estado.');
   personLabel = input('Persona');
-  personPlaceholder = input('Seleccione la persona');
+  personPlaceholder = input('Buscar persona...');
   statusTitle = input('Estado de la persona');
   statusDescription = input('Define si esta relación quedará activa para su uso en el sistema.');
 
@@ -48,6 +52,10 @@ export class PersonCoordinationForm implements OnChanges {
 
   @Output() cancel = new EventEmitter<void>();
   @Output() saveAssignment = new EventEmitter<PersonCoordinationFormData>();
+
+  readonly filteredPeople = signal<CatalogOptionItem[]>([]);
+  readonly submitted = signal(false);
+  readonly personFieldBlurred = signal(false);
 
   readonly form: PersonCoordinationFormGroup = new FormGroup({
     idPersonaGeneral: new FormControl('', {
@@ -61,28 +69,80 @@ export class PersonCoordinationForm implements OnChanges {
     estado: new FormControl(true, { nonNullable: true }),
   });
 
-  get peopleOptions(): Option[] {
-    return this.toOptions(this.people());
-  }
+  readonly personOptionAdapter = (item: unknown): TypeaheadOption => {
+    const person = item as CatalogOptionItem;
 
-  get coordinationOptions(): Option[] {
-    return this.toOptions(this.coordinations());
-  }
+    return {
+      value: String(person.id),
+      label: person.label,
+      secondaryLabel: person.codigo ?? undefined,
+      data: person,
+    };
+  };
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['assignment'] || changes['selectedCoordinationId']) {
+    if (
+      changes['assignment'] ||
+      changes['selectedCoordinationId'] ||
+      changes['people']
+    ) {
       this.patchForm();
     }
   }
 
+  onSearchPerson(term: string): void {
+    const normalizedTerm = this.normalize(term);
+
+    if (normalizedTerm.length < 2) {
+      this.filteredPeople.set([]);
+      return;
+    }
+
+    const rows = this.people()
+      .filter((item) => {
+        const label = this.normalize(item.label);
+        const codigo = this.normalize(item.codigo ?? '');
+        const id = this.normalize(String(item.id));
+
+        return (
+          label.includes(normalizedTerm) ||
+          codigo.includes(normalizedTerm) ||
+          id.includes(normalizedTerm)
+        );
+      })
+      .slice(0, 20);
+
+    this.filteredPeople.set(rows);
+  }
+
+  markPersonFieldBlurred(): void {
+    this.personFieldBlurred.set(true);
+  }
+
+  shouldShowPersonRequiredError(): boolean {
+    return (
+      this.form.controls.idPersonaGeneral.invalid &&
+      (this.submitted() || this.personFieldBlurred())
+    );
+  }
+
+  personRequiredMessage(): string {
+    return `${this.personLabel()} es obligatorio.`;
+  }
+
   onSubmit(): void {
+    this.submitted.set(true);
     this.form.markAllAsTouched();
+
+    const raw = this.form.getRawValue();
+
+    if (!raw.idCoordinacion) {
+      return;
+    }
 
     if (this.form.invalid) {
       return;
     }
-
-    const raw = this.form.getRawValue();
 
     this.saveAssignment.emit({
       idPersonaGeneral: Number(raw.idPersonaGeneral),
@@ -92,6 +152,9 @@ export class PersonCoordinationForm implements OnChanges {
   }
 
   private patchForm(): void {
+    this.submitted.set(false);
+    this.personFieldBlurred.set(false);
+
     const item = this.assignment();
     const idCoordinacion = item?.idCoordinacion ?? this.selectedCoordinationId();
 
@@ -102,13 +165,38 @@ export class PersonCoordinationForm implements OnChanges {
     });
 
     this.form.controls.idCoordinacion.disable({ emitEvent: false });
+
+    const selectedPerson =
+      item?.idPersonaGeneral != null
+        ? this.findOrBuildSelectedPerson(item)
+        : null;
+
+    this.filteredPeople.set(selectedPerson ? [selectedPerson] : []);
+    
   }
 
-  private toOptions(items: CatalogOptionItem[]): Option[] {
-    return items.map((item) => ({
-      value: String(item.id),
-      label: item.label,
-    }));
+  private findOrBuildSelectedPerson(item: PersonCoordinationItem): CatalogOptionItem {
+    const found = this.people().find((person) => person.id === item.idPersonaGeneral);
+
+    if (found) {
+      return found;
+    }
+
+    const documento = item.documentoIdentidad ? `${item.documentoIdentidad} - ` : '';
+
+    return {
+      id: item.idPersonaGeneral,
+      label: `${documento}${item.persona}`,
+      codigo: item.documentoIdentidad ?? null,
+    };
+  }
+
+  private normalize(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
   }
 
   private isActive(value: PersonCoordinationItem['estado'] | undefined): boolean {

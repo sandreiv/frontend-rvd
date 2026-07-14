@@ -8,42 +8,11 @@
       {{ association() ? 'Editar asociación coordinación' : 'Nueva asociación coordinación' }}
     </h4>
     <p class="text-xs text-gray-500 dark:text-gray-400">
-      Selecciona la coordinación, el centro de costo y define si aplica por programa o materia.
+      Define si la asociación aplica por programa o materia.
     </p>
   </div>
 
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <div>
-      <app-label>Coordinación</app-label>
-      <app-select
-        formControlName="idCoordinacion"
-        [options]="coordinationOptions"
-        placeholder="Seleccione la coordinación"
-        [disabled]="true"
-      />
-      @if (form.controls.idCoordinacion.touched && form.controls.idCoordinacion.invalid) {
-        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-          La coordinación es obligatoria.
-        </p>
-      }
-    </div>
-
-    <div>
-      <app-label>Centro de costo</app-label>
-      <app-select
-        formControlName="idCentroCosto"
-        [options]="costCenterOptions"
-        placeholder="Seleccione el centro de costo"
-      />
-      @if (form.controls.idCentroCosto.touched && form.controls.idCentroCosto.invalid) {
-        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-          El centro de costo es obligatorio.
-        </p>
-      }
-    </div>
-  </div>
-
-  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
       <div class="mb-2">
         <app-checkbox
@@ -79,20 +48,33 @@
     </div>
   </div>
 
+  <div class="mt-4">
+    <app-label>Centro de costo</app-label>
+    <app-select
+      formControlName="idCentroCosto"
+      [options]="costCenterOptions"
+      placeholder="Seleccione el centro de costo"
+      [disabled]="!isCostCenterEnabled"
+    />
+    <p class="mt-1 text-xs text-gray-400">
+      Opcional. Solo se habilita cuando la asociación aplica por programa.
+    </p>
+  </div>
+
   <div class="mt-4 rounded-lg border border-gray-100 p-3 dark:border-white/10">
     <div class="mb-2">
-        <h5 class="text-sm font-semibold text-gray-900 dark:text-white">
+      <h5 class="text-sm font-semibold text-gray-900 dark:text-white">
         Estado de la asociación
-        </h5>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
+      </h5>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
         Define si la asociación quedará activa para su uso en el sistema.
-        </p>
+      </p>
     </div>
 
     <app-checkbox
-        label="Activo"
-        [checked]="form.controls.estado.value"
-        (checkedChange)="form.controls.estado.setValue($event)"
+      label="Activo"
+      [checked]="form.controls.estado.value"
+      (checkedChange)="form.controls.estado.setValue($event)"
     />
   </div>
 

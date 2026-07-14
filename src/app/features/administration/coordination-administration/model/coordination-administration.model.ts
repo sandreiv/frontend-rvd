@@ -34,8 +34,8 @@ export interface CoordinationAssociationItem {
   programa?: string | null;
   codigoMateria?: string | null;
   materia?: string | null;
-  idCentroCosto: number;
-  centroCosto: string;
+  idCentroCosto: number | null;
+  centroCosto: string | null;
   estado: '1' | '0' | 'ACTIVO' | 'INACTIVO' | string;
 }
 
@@ -44,7 +44,7 @@ export interface CoordinationAssociationFormData {
   idCoordinacion: number;
   idPrograma?: number | null;
   codigoMateria?: string | null;
-  idCentroCosto: number;
+  idCentroCosto: number | null;
   estado: '1' | '0';
 }
 
@@ -117,4 +117,56 @@ export interface PersonCoordinationKey {
 
 export interface DeleteBulkPersonCoordinationRequest {
   registros: PersonCoordinationKey[];
+}
+
+export interface CoordinationManagementCatalogs {
+  modalidades: CatalogOptionItem[];
+  metodologias: CatalogOptionItem[];
+  centrosCosto: CatalogOptionItem[];
+}
+
+export interface CoordinationManagementItem {
+  id: number;
+  idCoordinacionPadre: number | null;
+
+  nombre: string;
+  descripcion: string;
+
+  idUnidadPadre: number | null;
+  unidadPadre: string | null;
+
+  idUnidadRegional: number | null;
+  unidadRegional: string | null;
+
+  idUnidad: number | null;
+  unidad: string | null;
+
+  idModalidad: number | null;
+  modalidad: string | null;
+
+  idMetodologia: number | null;
+  metodologia: string | null;
+
+  idCentroCosto: number | null;
+  centroCosto: string | null;
+
+  codigo: string | null;
+  esAcademica: '1' | '0' | 'S' | 'N' | string;
+}
+
+export interface CoordinationManagementFormData {
+  nombre: string;
+  descripcion: string;
+  idUnidadPadre: number | null;
+  idUnidadRegional: number;
+  idUnidad: number;
+  idModalidad: number;
+  idMetodologia: number;
+  idCentroCosto: number;
+  codigo: string | null;
+  esAcademica: '1' | '0';
+}
+
+export interface DeleteBulkCoordinationsRequest {
+  ids: number[];
 }

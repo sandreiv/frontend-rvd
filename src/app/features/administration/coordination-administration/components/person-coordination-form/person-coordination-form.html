@@ -12,37 +12,25 @@
     </p>
   </div>
 
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <div>
-      <app-label>{{ personLabel() }}</app-label>
-      <app-select
+  <div>
+    <app-label>{{ personLabel() }}</app-label>
+
+    <div (focusout)="markPersonFieldBlurred()">
+      <app-typeahead-select
         formControlName="idPersonaGeneral"
-        [options]="peopleOptions"
+        [items]="filteredPeople()"
+        [optionAdapter]="personOptionAdapter"
         [placeholder]="personPlaceholder()"
+        emptyText="Sin resultados"
+        (queryChange)="onSearchPerson($event)"
       />
-
-      @if (form.controls.idPersonaGeneral.touched && form.controls.idPersonaGeneral.invalid) {
-        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-          La persona es obligatoria.
-        </p>
-      }
     </div>
 
-    <div>
-      <app-label>Coordinación</app-label>
-      <app-select
-        formControlName="idCoordinacion"
-        [options]="coordinationOptions"
-        placeholder="Seleccione la coordinación"
-        [disabled]="true"
-      />
-
-      @if (form.controls.idCoordinacion.touched && form.controls.idCoordinacion.invalid) {
-        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-          La coordinación es obligatoria.
-        </p>
-      }
-    </div>
+    @if (shouldShowPersonRequiredError()) {
+      <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+        {{ personRequiredMessage() }}
+      </p>
+    }
   </div>
 
   <div class="mt-4 rounded-lg border border-gray-100 p-3 dark:border-white/10">

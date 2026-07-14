@@ -48,18 +48,20 @@ export class AssociationCoordinationForm implements OnChanges {
   @Output() saveAssociation = new EventEmitter<CoordinationAssociationFormData>();
 
   readonly form: AssociationForm = new FormGroup({
-    idCoordinacion: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    idCoordinacion: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     usarPrograma: new FormControl(false, { nonNullable: true }),
     idPrograma: new FormControl('', { nonNullable: true }),
     usarMateria: new FormControl(false, { nonNullable: true }),
     codigoMateria: new FormControl('', { nonNullable: true }),
-    idCentroCosto: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+
+    // Centro de costo ahora es opcional.
+    idCentroCosto: new FormControl('', { nonNullable: true }),
+
     estado: new FormControl(true, { nonNullable: true }),
   });
-
-  get coordinationOptions(): Option[] {
-    return this.toOptions(this.coordinations());
-  }
 
   get programOptions(): Option[] {
     return this.toOptions(this.programs());
@@ -73,7 +75,11 @@ export class AssociationCoordinationForm implements OnChanges {
   }
 
   get costCenterOptions(): Option[] {
-   return this.toOptions(this.costCenters());
+    return this.toOptions(this.costCenters());
+  }
+
+  get isCostCenterEnabled(): boolean {
+    return this.form.controls.usarPrograma.value;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -88,10 +94,14 @@ export class AssociationCoordinationForm implements OnChanges {
     if (checked) {
       this.form.controls.usarMateria.setValue(false);
       this.form.controls.codigoMateria.setValue('');
+
+      this.form.controls.idCentroCosto.enable({ emitEvent: false });
       return;
     }
 
     this.form.controls.idPrograma.setValue('');
+    this.form.controls.idCentroCosto.setValue('');
+    this.form.controls.idCentroCosto.disable({ emitEvent: false });
   }
 
   onSubjectCheckChange(checked: boolean): void {
@@ -100,27 +110,40 @@ export class AssociationCoordinationForm implements OnChanges {
     if (checked) {
       this.form.controls.usarPrograma.setValue(false);
       this.form.controls.idPrograma.setValue('');
+
+      this.form.controls.idCentroCosto.setValue('');
+      this.form.controls.idCentroCosto.disable({ emitEvent: false });
       return;
     }
 
     this.form.controls.codigoMateria.setValue('');
+
+    if (!this.form.controls.usarPrograma.value) {
+      this.form.controls.idCentroCosto.setValue('');
+      this.form.controls.idCentroCosto.disable({ emitEvent: false });
+    }
   }
 
   onSubmit(): void {
     this.form.markAllAsTouched();
 
-    if (this.form.invalid) {
+    const raw = this.form.getRawValue();
+
+    if (!raw.idCoordinacion) {
       return;
     }
 
-    const raw = this.form.getRawValue();
+    if (this.form.invalid) {
+      return;
+    }
 
     this.saveAssociation.emit({
       id: this.association()?.id ?? null,
       idCoordinacion: Number(raw.idCoordinacion),
       idPrograma: raw.usarPrograma && raw.idPrograma ? Number(raw.idPrograma) : null,
       codigoMateria: raw.usarMateria && raw.codigoMateria ? raw.codigoMateria : null,
-      idCentroCosto: Number(raw.idCentroCosto),
+      idCentroCosto:
+        raw.usarPrograma && raw.idCentroCosto ? Number(raw.idCentroCosto) : null,
       estado: raw.estado ? '1' : '0',
     });
   }
@@ -129,17 +152,27 @@ export class AssociationCoordinationForm implements OnChanges {
     const item = this.association();
     const idCoordinacion = item?.idCoordinacion ?? this.selectedCoordinationId();
 
+    const hasProgram = item?.idPrograma != null;
+    const hasSubject = !!item?.codigoMateria;
+
     this.form.reset({
       idCoordinacion: idCoordinacion != null ? String(idCoordinacion) : '',
-      usarPrograma: item?.idPrograma != null,
+      usarPrograma: hasProgram,
       idPrograma: item?.idPrograma != null ? String(item.idPrograma) : '',
-      usarMateria: !!item?.codigoMateria,
+      usarMateria: hasSubject,
       codigoMateria: item?.codigoMateria ?? '',
-      idCentroCosto: item?.idCentroCosto != null ? String(item.idCentroCosto) : '',
+      idCentroCosto:
+        hasProgram && item?.idCentroCosto != null ? String(item.idCentroCosto) : '',
       estado: this.isActive(item?.estado),
     });
 
     this.form.controls.idCoordinacion.disable({ emitEvent: false });
+
+    if (hasProgram) {
+      this.form.controls.idCentroCosto.enable({ emitEvent: false });
+    } else {
+      this.form.controls.idCentroCosto.disable({ emitEvent: false });
+    }
   }
 
   private toOptions(items: CatalogOptionItem[], includeCode = false): Option[] {
