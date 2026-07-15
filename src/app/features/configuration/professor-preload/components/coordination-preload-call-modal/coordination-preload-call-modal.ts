@@ -73,6 +73,12 @@ export class CoordinationPreloadCallModal {
         return;
       }
 
+      this.selectedPreloadCallId.set(
+        this.coordination().idConvocatoria != null
+          ? String(this.coordination().idConvocatoria)
+          : '',
+      );
+
       this.activePreloadCallsResource.reload();
     });
   }
@@ -84,12 +90,21 @@ export class CoordinationPreloadCallModal {
 
   onSave(): void {
     const idConvocatoria = Number(this.selectedPreloadCallId());
+
     if (!idConvocatoria) {
       return;
     }
 
-    const coordinationId = this.coordination().id;
-    const request = { idCoordinacion: coordinationId, idConvocatoria };
+    const coordination = this.coordination();
+
+    const request = {
+      idCoordinacion: coordination.id,
+      idConvocatoria,
+    };
+
+    const selectedPreloadCall = this.activePreloadCallsResource
+      .value()
+      .find((item) => item.id === idConvocatoria);
 
     this.isSaving.set(true);
     this.saveError.set(null);
@@ -97,15 +112,19 @@ export class CoordinationPreloadCallModal {
     this.coordinationService
       .savePreload(request)
       .pipe(
-        switchMap(() =>
-          this.coordinationService.getCoordinations(idConvocatoria),
-        ),
+        switchMap(() => this.coordinationService.getCoordinations(idConvocatoria)),
         map((items) => {
-          const updated = items.find((item) => item.id === coordinationId);
-          if (!updated) {
-            throw new Error('No se encontró la coordinación actualizada.');
+          const updated = items.find((item) => item.id === coordination.id);
+
+          if (updated) {
+            return updated;
           }
-          return updated;
+
+          return this.buildUpdatedCoordinationFromSelectedPreloadCall(
+            coordination,
+            selectedPreloadCall,
+            idConvocatoria,
+          );
         }),
         finalize(() => this.isSaving.set(false)),
       )
@@ -116,5 +135,39 @@ export class CoordinationPreloadCallModal {
             'No fue posible asignar la convocatoria. Intente nuevamente.',
           ),
       });
+  }
+
+  private buildUpdatedCoordinationFromSelectedPreloadCall(
+    coordination: CoordinationItem,
+    preloadCall: CoordinationPreloadCallApi | undefined,
+    idConvocatoria: number,
+  ): CoordinationItem {
+    const periodoUniversidad = preloadCall?.periodoUniversidad;
+    const nivelEducativo = preloadCall?.nivelEducativo;
+
+    return {
+      ...coordination,
+      idConvocatoria,
+      convocatoriaNombre:
+        preloadCall?.nombre?.trim() ||
+        preloadCall?.descripcion?.trim() ||
+        coordination.convocatoriaNombre,
+      nivelEducativo:
+        nivelEducativo?.descripcion?.trim() ||
+        nivelEducativo?.nombre?.trim() ||
+        coordination.nivelEducativo,
+      periodoUniversidad: periodoUniversidad
+        ? `${periodoUniversidad.anio}-${periodoUniversidad.periodo}`
+        : coordination.periodoUniversidad,
+      idPeriodoUniversidad:
+        periodoUniversidad?.id ?? coordination.idPeriodoUniversidad,
+      anioUniversidad:
+        periodoUniversidad?.anio ?? coordination.anioUniversidad,
+      idNivelEducativo:
+        nivelEducativo?.id ?? coordination.idNivelEducativo,
+      modalidadesContratacion:
+        preloadCall?.modalidadesContratacion ??
+        coordination.modalidadesContratacion,
+    };
   }
 }

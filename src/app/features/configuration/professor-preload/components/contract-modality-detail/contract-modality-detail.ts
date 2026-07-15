@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -126,6 +127,7 @@ export class ContractModalityDetail {
 
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
+  hasProfessorsChange = output<boolean>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly isProfessorAddModalOpen = signal(false);
@@ -197,6 +199,12 @@ export class ContractModalityDetail {
 
   readonly modalityProfessorsMap = computed(() =>
     this.modalityProfessorsResource.value(),
+  );
+
+  readonly hasLoadedProfessors = computed(() =>
+    Object.values(this.modalityProfessorsMap()).some(
+      (professors) => professors.length > 0,
+    ),
   );
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
@@ -292,6 +300,10 @@ export class ContractModalityDetail {
       if (!hasCurrent) {
         this.selectedContractModalityId.set(tabs[0].id);
       }
+    });
+
+    effect(() => {
+      this.hasProfessorsChange.emit(this.hasLoadedProfessors());
     });
   }
 

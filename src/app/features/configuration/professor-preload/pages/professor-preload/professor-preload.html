@@ -37,6 +37,7 @@
         <app-coordination-table
           [coordinations]="coordinations()"
           [(selectedCoordinationIds)]="selectedCoordinationIds"
+          [isStartingPreassignment]="isStartingPreassignment()"
           [emptyMessage]="hasAppliedFilter()
             ? 'No hay coordinaciones para mostrar.'
             : 'Seleccione un criterio y pulse Filtrar.'"

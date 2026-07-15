@@ -16,9 +16,9 @@
   <app-button
     type="button"
     size="sm"
-    [disabled]="selectedCoordinationIds().length === 0"
+    [disabled]="selectedCoordinationIds().length === 0 || isStartingPreassignment()"
     (btnClick)="onStartPreassignment()"
   >
-    Iniciar preasignación
+    {{ isStartingPreassignment() ? 'Iniciando...' : 'Iniciar preasignación' }}
   </app-button>
 </div>

@@ -1,6 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
+  effect,
   input,
   output,
   signal,
@@ -32,8 +34,22 @@ export class CoordinationDetail {
   coordinationUpdated = output<CoordinationItem>();
 
   readonly isAssignModalOpen = signal(false);
+  readonly hasLoadedProfessors = signal(false);
+
+  readonly canChangePreloadCall = computed(() => !this.hasLoadedProfessors());
+
+  constructor() {
+    effect(() => {
+      this.coordination().id;
+      this.hasLoadedProfessors.set(false);
+    });
+  }
 
   openAssignModal(): void {
+    if (!this.canChangePreloadCall()) {
+      return;
+    }
+
     this.isAssignModalOpen.set(true);
   }
 
@@ -44,5 +60,9 @@ export class CoordinationDetail {
   onPreloadCallAssigned(updated: CoordinationItem): void {
     this.coordinationUpdated.emit(updated);
     this.closeAssignModal();
+  }
+
+  onHasProfessorsChange(hasProfessors: boolean): void {
+    this.hasLoadedProfessors.set(hasProfessors);
   }
 }

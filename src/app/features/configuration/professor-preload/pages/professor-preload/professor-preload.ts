@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { Button } from '../../../../../shared/ui/button/button';
 import {
   Select,
@@ -48,6 +48,7 @@ export class ProfessorPreload implements OnInit {
   readonly selectedCoordinationIds = signal<string[]>([]);
   readonly selectedCoordination = signal<CoordinationItem | null>(null);
   readonly showCoordinationDetail = signal(false);
+  readonly isStartingPreassignment = signal(false);
 
   readonly coordinationsResource = rxResource({
     stream: () => {
@@ -109,16 +110,116 @@ export class ProfessorPreload implements OnInit {
     this.coordinationsResource.reload();
   }
 
-  onStartPreassignment(coordination: CoordinationItem): void {
+  async onStartPreassignment(coordination: CoordinationItem): Promise<void> {
+    const isUnassignedFilter =
+      this.appliedFilterPreloadCallId() === UNASSIGNED_PRELOAD_CALL_FILTER;
+
+    const shouldAutoAssignPreloadCall =
+      isUnassignedFilter && coordination.idConvocatoria == null;
+
+    if (!shouldAutoAssignPreloadCall) {
+      this.openCoordinationDetail(coordination);
+      return;
+    }
+
+    const defaultPreloadCall = this.activePreloadCallsResource.value()[0];
+
+    if (!defaultPreloadCall?.id) {
+      this.openCoordinationDetail(coordination);
+      return;
+    }
+
+    this.isStartingPreassignment.set(true);
+
+    try {
+      await firstValueFrom(
+        this.coordinationService.savePreload({
+          idCoordinacion: coordination.id,
+          idConvocatoria: defaultPreloadCall.id,
+        }),
+      );
+
+      const updatedCoordinations = await firstValueFrom(
+        this.coordinationService.getCoordinations(defaultPreloadCall.id),
+      );
+
+      const updatedCoordination =
+        updatedCoordinations.find((item) => item.id === coordination.id) ??
+        this.buildCoordinationWithDefaultPreloadCall(
+          coordination,
+          defaultPreloadCall,
+        );
+
+      this.selectedCoordination.set(updatedCoordination);
+      this.showCoordinationDetail.set(true);
+
+      this.coordinationsResource.reload();
+    } catch (error) {
+      console.error(error);
+      this.openCoordinationDetail(coordination);
+    } finally {
+      this.isStartingPreassignment.set(false);
+    }
+  }
+
+  private openCoordinationDetail(coordination: CoordinationItem): void {
     this.selectedCoordination.set(coordination);
     this.showCoordinationDetail.set(true);
   }
 
+  private buildCoordinationWithDefaultPreloadCall(
+    coordination: CoordinationItem,
+    preloadCall: CoordinationPreloadCallApi,
+  ): CoordinationItem {
+    const periodoUniversidad = preloadCall.periodoUniversidad;
+    const nivelEducativo = preloadCall.nivelEducativo;
+
+    return {
+      ...coordination,
+      idConvocatoria: preloadCall.id,
+      convocatoriaNombre:
+        preloadCall.nombre?.trim() || preloadCall.descripcion?.trim() || '',
+      nivelEducativo:
+        nivelEducativo?.descripcion?.trim() ||
+        nivelEducativo?.nombre?.trim() ||
+        coordination.nivelEducativo,
+      periodoUniversidad: periodoUniversidad
+        ? `${periodoUniversidad.anio}-${periodoUniversidad.periodo}`
+        : coordination.periodoUniversidad,
+      idPeriodoUniversidad: periodoUniversidad?.id ?? coordination.idPeriodoUniversidad,
+      anioUniversidad: periodoUniversidad?.anio ?? coordination.anioUniversidad,
+      idNivelEducativo: nivelEducativo?.id ?? coordination.idNivelEducativo,
+      modalidadesContratacion:
+        preloadCall.modalidadesContratacion ?? coordination.modalidadesContratacion,
+    };
+  }
+
   onBackToCoordinationList(): void {
+    this.syncListFilterWithSelectedCoordination();
     this.showCoordinationDetail.set(false);
   }
 
   onCoordinationUpdated(updated: CoordinationItem): void {
     this.selectedCoordination.set(updated);
   }
+
+  private syncListFilterWithSelectedCoordination(): void {
+    const coordination = this.selectedCoordination();
+
+    if (!coordination) {
+      return;
+    }
+
+    const filterId =
+      coordination.idConvocatoria != null
+        ? String(coordination.idConvocatoria)
+        : UNASSIGNED_PRELOAD_CALL_FILTER;
+
+    this.selectedPreloadCallId.set(filterId);
+    this.appliedFilterPreloadCallId.set(filterId);
+    this.selectedCoordinationIds.set([String(coordination.id)]);
+
+    this.coordinationsResource.reload();
+  }
+  
 }
