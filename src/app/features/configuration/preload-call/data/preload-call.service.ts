@@ -9,10 +9,14 @@ import {
   PreloadCallDetailResponse,
   PreloadCallItem,
   PreloadCallListApiItem,
+  RestrictCoordinationFormData,
+  RestrictCoordinationItem,
+  RestrictCoordinationDeleteRequest,
   SearchGeneralPersonParams,
   UniversityPeriodItem,
 } from '../model/preload-call.model';
 import { PreloadCallDeleteRequest, PreloadCallSaveRequest } from '../model/preload-call-save.model';
+import { CoordinationOption } from '../components/restrict-coordination/restrict-coordination-form/restrict-coordination-form';
 
 @Injectable({
   providedIn: 'root',
@@ -103,5 +107,52 @@ export class PreloadCallService {
     );
   }
 
+  searchCoordination(nombre: string): Observable<CoordinationOption[]> {
+    return this.webRequestService.get<CoordinationOption[]>(
+      `${this.endpoint}/search-coordination`,
+      { nombre },
+    );
+  }
 
+  saveCoordinationRestriction(payload: RestrictCoordinationFormData): Observable<RestrictCoordinationItem> {
+    console.log('payload', payload);
+    return this.webRequestService.post<RestrictCoordinationItem>(
+      `${this.endpoint}/save-coordination-restriction`,
+      payload,
+    );
+  }
+
+  listCoordinationRestriction(idConvocatoria?: number,): Observable<RestrictCoordinationItem[]> {
+    const query: Record<string, string> = {};
+
+    if (idConvocatoria != null) {
+      query['idConvocatoria'] = String(idConvocatoria);
+    }
+
+    return this.webRequestService.get<RestrictCoordinationItem[]>(
+      `${this.endpoint}/list-coordination-restriction`,
+      query,
+    );
+  }
+
+  updateCoordinationRestriction(id: number, payload: RestrictCoordinationFormData): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/update-coordination-restriction/${id}`,
+      payload,
+    );
+  }
+
+  deleteCoordinationRestriction(id: number, payload: RestrictCoordinationDeleteRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/delete-coordination-restriction/${id}`,
+      payload,
+    );
+  }
+
+  bulkDeleteCoordinationRestriction(payload: RestrictCoordinationDeleteRequest[]): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/delete-bulk-coordination-restriction`,
+      payload,
+    );
+  }
 }

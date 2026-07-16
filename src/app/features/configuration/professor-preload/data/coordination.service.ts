@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
 import {
-  CareerProfessor,
   CategoriaCatedratico,
   CoordinationApiItem,
   CoordinationItem,
@@ -27,6 +26,7 @@ import {
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
 import { SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
+import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 
 @Injectable({
   providedIn: 'root',
@@ -76,12 +76,6 @@ export class CoordinationService {
     return this.webRequestService.get<ProfessorSearchResult[]>(
       `${this.endpoint}/search-professor`,
       query,
-    );
-  }
-
-  getCareerProfessors(idCoordinacion: number): Observable<CareerProfessor[]> {
-    return this.webRequestService.get<CareerProfessor[]>(
-      `${this.endpoint}/list-career-professors/${idCoordinacion}`,
     );
   }
 
@@ -210,6 +204,19 @@ export class CoordinationService {
     return this.webRequestService.put<void>(
       `${this.endpoint}/update-detail-professor-preload`,
       payload,
+    );
+  }
+
+  saveCareerProfessorPreload(request: SaveCareerProfessorPreloadRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-career-professor-preload`,
+      request,
+    );
+  }
+
+  deleteProfessorActivity(idDetalleCargaDocente: number): Observable<void>{
+    return this.webRequestService.delete<void>(
+      `${this.endpoint}/delete-professor-activity/${idDetalleCargaDocente}`,
     );
   }
 }

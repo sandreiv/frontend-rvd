@@ -8,16 +8,16 @@ import {
   input,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Button } from '../../../../../shared/ui/button/button';
-import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
-import { Label } from '../../../../../shared/components/form/label/label';
-import { Option, Select } from '../../../../../shared/components/form/select/select';
+import { Button } from '../../../../../../shared/ui/button/button';
+import { Checkbox } from '../../../../../../shared/components/form/input/checkbox';
+import { Label } from '../../../../../../shared/components/form/label/label';
+import { Option, Select } from '../../../../../../shared/components/form/select/select';
 import {
   CatalogOptionItem,
   CoordinationAssociationFormData,
   CoordinationAssociationItem,
   SubjectCatalogOptionItem,
-} from '../../model/coordination-administration.model';
+} from '../../../model/coordination-administration.model';
 
 type AssociationForm = FormGroup<{
   idCoordinacion: FormControl<string>;

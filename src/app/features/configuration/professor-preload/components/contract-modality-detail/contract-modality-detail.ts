@@ -17,6 +17,7 @@ import { Item } from '../../../../../shared/ui/dropdown/item/item';
 import { Icon } from '../../../../../shared/ui/icon/icon';
 import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { TabBar } from '../../../../../shared/ui/tab-bar/tab-bar';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
 import {
   TabBarId,
@@ -24,12 +25,10 @@ import {
 } from '../../../../../shared/ui/tab-bar/tab-bar.types';
 import { CoordinationService } from '../../data/coordination.service';
 import {
-  CareerProfessor,
   CoordinationContractModality,
   CoordinationItem,
   getAssignableModalities,
   isPlantaModality,
-  mapCareerProfessorToModalityProfessor,
   ModalityProfessor,
   ProfessorCargaDocenteSummary,
   ProfessorSearchResult,
@@ -38,6 +37,7 @@ import {
   mapProfessorSearchToModalityProfessor,
   resolveModalityFromCarga,
 } from '../../model/professor-search.mapper';
+import { SaveCareerProfessorPreloadRequest } from '../../model/save-career-professor-preload.model';
 import { ProfessorAddModal } from '../professor-add-modal/professor-add-modal';
 import { ProfessorActivitiesModal } from '../professor-activities-modal/professor-activities-modal';
 import { resolveModalityKind } from '../../model/professor-form.config';
@@ -52,7 +52,10 @@ interface ProfessorMenuAction {
   label: string;
   icon: AppIconName;
   className?: string;
+  tooltip?: string;
 }
+
+const ACTIVATE_LOAD_TOOLTIP = 'Activar carga permite agregar las actividades al docente de tipo planta';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'gray';
 
@@ -114,6 +117,7 @@ const VERIFIED_MODALITY_STATE = '2';
     Item,
     Icon,
     TabBar,
+    Tooltip,
     NewModal,
     ProfessorAddModal,
     ProfessorActivitiesModal,
@@ -136,11 +140,9 @@ export class ContractModalityDetail {
   readonly editingModalityProfessor = signal<ModalityProfessor | null>(null);
   readonly activitiesProfessor = signal<ModalityProfessor | null>(null);
   readonly activitiesCoordination = signal<CoordinationItem | null>(null);
-  readonly activitiesContractModality =
-    signal<CoordinationContractModality | null>(null);
+  readonly activitiesContractModality = signal<CoordinationContractModality | null>(null);
   readonly isExistingLoadAlertOpen = signal(false);
-  readonly pendingExistingLoadProfessor =
-    signal<ProfessorSearchResult | null>(null);
+  readonly pendingExistingLoadProfessor = signal<ProfessorSearchResult | null>(null);
   readonly openMenuKey = signal<string | null>(null);
 
   readonly contractModalities = computed(
@@ -153,26 +155,6 @@ export class ContractModalityDetail {
 
   readonly assignableModalities = computed(() =>
     getAssignableModalities(this.sortedContractModalities()),
-  );
-
-  readonly hasPlantaModality = computed(() =>
-    this.sortedContractModalities().some(isPlantaModality),
-  );
-
-  readonly careerProfessorsResource = rxResource({
-    params: () => {
-      if (!this.hasPlantaModality()) {
-        return undefined;
-      }
-      return { idCoordinacion: this.coordination().id };
-    },
-    stream: ({ params }) =>
-      this.coordinationService.getCareerProfessors(params.idCoordinacion),
-    defaultValue: [] as CareerProfessor[],
-  });
-
-  readonly careerProfessors = computed(() =>
-    this.careerProfessorsResource.value(),
   );
 
   readonly modalityProfessorsResource = rxResource({
@@ -209,21 +191,14 @@ export class ContractModalityDetail {
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
     const selectedId = this.selectedContractModalityId();
-    if (selectedId == null || this.isPlantaSelected()) {
+    if (selectedId == null) {
       return [];
     }
     return this.modalityProfessorsMap()[Number(selectedId)] ?? [];
   });
 
-  readonly currentTabProfessors = computed<ModalityProfessor[]>(() => {
-    if (this.isPlantaSelected()) {
-      return this.resolvePlantaProfessors();
-    }
-    return this.modalityProfessors();
-  });
-
   readonly currentProfessorRows = computed<ModalityProfessorRow[]>(() =>
-    this.buildProfessorRows(this.currentTabProfessors()),
+    this.buildProfessorRows(this.modalityProfessors()),
   );
 
   readonly modalityTabs = computed<TabBarItem[]>(() => {
@@ -326,7 +301,6 @@ export class ContractModalityDetail {
   onProfessorSaved(): void {
     this.closeProfessorAddModal();
     this.modalityProfessorsResource.reload();
-    this.careerProfessorsResource.reload();
   }
 
   onExistingLoadSelected(professor: ProfessorSearchResult): void {
@@ -361,26 +335,6 @@ export class ContractModalityDetail {
         this.activitiesProfessor.set(professor);
         this.isActivitiesModalOpen.set(true);
       });
-  }
-
-  private resolvePlantaProfessors(): ModalityProfessor[] {
-    const planta = this.selectedPlantaModality();
-    if (!planta) {
-      return [];
-    }
-
-    const fromModality = this.modalityProfessorsMap()[planta.id] ?? [];
-    if (fromModality.length) {
-      return fromModality;
-    }
-
-    return this.careerProfessors().map((career) =>
-      mapCareerProfessorToModalityProfessor(
-        career,
-        planta,
-        this.coordination().idCarga,
-      ),
-    );
   }
 
   private buildProfessorRows(
@@ -422,17 +376,16 @@ export class ContractModalityDetail {
   }
 
   private toModalityTabItem(modality: CoordinationContractModality, professorsByModality: Record<number, ModalityProfessor[]>): TabBarItem {
+    const professors = professorsByModality[modality.id] ?? [];
+
     if (isPlantaModality(modality)) {
-      const professors = professorsByModality[modality.id] ?? [];
-      const count = professors.length || this.careerProfessors().length;
       return {
         id: modality.id,
         label: modality.nombre,
-        badge: `${count}`,
+        badge: `${professors.length}`,
       };
     }
 
-    const professors = professorsByModality[modality.id] ?? [];
     const verified = professors.filter(
       (professor) => professor.estado === VERIFIED_MODALITY_STATE,
     ).length;
@@ -454,13 +407,7 @@ export class ContractModalityDetail {
     );
   }
 
-  professorStatusBadge(professor: ModalityProfessor): StatusBadge {
-    if (this.isPlantaSelected()) {
-      return professor.estado === '1'
-        ? this.buildStatusBadge('Activo', 'success')
-        : this.buildStatusBadge('Inactivo', 'gray');
-    }
-
+  professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
     return this.modalityStatusBadge(professor);
   }
 
@@ -477,8 +424,15 @@ export class ContractModalityDetail {
     };
   }
 
-  modalityStatusBadge(professor: ModalityProfessor): StatusBadge {
+  modalityStatusBadge(professor: ModalityProfessor): StatusBadge | null{
+
+    if(!professor.estado){
+      return null;
+    }
+
     switch (professor.estado) {
+      case '0':
+        return this.buildStatusBadge('En registro', 'gray');
       case '1':
         return this.buildStatusBadge('Aprobada', 'success');
       case '2':
@@ -498,7 +452,10 @@ export class ContractModalityDetail {
     return this.buildStatusBadge('Con actividades', 'brand');
   }
 
-  resolveProfessorActions(professor: {tieneDetalleActividades?: boolean}): ProfessorMenuAction[] {
+  resolveProfessorActions(professor: {
+    tieneDetalleActividades?: boolean;
+    tieneCarga?: boolean;
+  }): ProfessorMenuAction[] {
     const hasDetail = professor.tieneDetalleActividades === true;
     const activitiesAction: ProfessorMenuAction = {
       id: 'actividades',
@@ -507,6 +464,16 @@ export class ContractModalityDetail {
     };
 
     if (this.isPlantaSelected()) {
+      if (professor.tieneCarga === false) {
+        return [
+          {
+            id: 'activar-carga',
+            label: 'Activar carga',
+            icon: 'briefcase',
+            tooltip: ACTIVATE_LOAD_TOOLTIP,
+          },
+        ];
+      }
       return [activitiesAction];
     }
 
@@ -557,6 +524,11 @@ export class ContractModalityDetail {
       return;
     }
 
+    if (actionId === 'activar-carga') {
+      this.activateCareerProfessorLoad(professor);
+      return;
+    }
+
     if (actionId === 'eliminar') {
       this.deleteModalityProfessor(professor.idCargaDocente);
     }
@@ -584,7 +556,6 @@ export class ContractModalityDetail {
 
   onActivitiesSaved(): void {
     this.modalityProfessorsResource.reload();
-    this.careerProfessorsResource.reload();
   }
 
   private openProfessorDetail(professor: ModalityProfessor): void {
@@ -593,14 +564,52 @@ export class ContractModalityDetail {
     this.isProfessorAddModalOpen.set(true);
   }
 
-  private deleteModalityProfessor(idCargaDocente: number): void {
+  private deleteModalityProfessor(idCargaDocente: number | null): void {
+    if (idCargaDocente == null) {
+      return;
+    }
+
     this.coordinationService
       .deleteProfessor(idCargaDocente)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.modalityProfessorsResource.reload();
-        this.careerProfessorsResource.reload();
       });
+  }
+
+  private activateCareerProfessorLoad(professor: ModalityProfessor): void {
+    const request = this.buildActivateCareerProfessorLoadRequest(professor);
+    if (!request) {
+      return;
+    }
+
+    this.coordinationService
+      .saveCareerProfessorPreload(request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.modalityProfessorsResource.reload();
+      });
+  }
+
+  private buildActivateCareerProfessorLoadRequest(
+    professor: ModalityProfessor,
+  ): SaveCareerProfessorPreloadRequest | null {
+    const coordination = this.coordination();
+    const idConvocatoria = coordination.idConvocatoria;
+    const idPersonaGeneral = professor.idPersonaGeneral;
+
+    if (idConvocatoria == null || idPersonaGeneral == null) {
+      return null;
+    }
+
+    return {
+      idConvocatoria,
+      idPersonaGeneral,
+      idModalidadContratacion:
+        professor.idModalidadContratacion ??
+        this.selectedPlantaModality()?.id,
+      idCarga: coordination.idCarga ?? undefined,
+    };
   }
 
   private resolveActivitiesContext(

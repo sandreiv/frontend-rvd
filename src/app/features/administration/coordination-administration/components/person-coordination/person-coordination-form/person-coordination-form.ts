@@ -9,18 +9,18 @@ import {
   signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Button } from '../../../../../shared/ui/button/button';
-import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
-import { Label } from '../../../../../shared/components/form/label/label';
+import { Button } from '../../../../../../shared/ui/button/button';
+import { Checkbox } from '../../../../../../shared/components/form/input/checkbox';
+import { Label } from '../../../../../../shared/components/form/label/label';
 import {
   TypeaheadOption,
   TypeaheadSelect,
-} from '../../../../../shared/components/form/typeahead-select/typeahead-select';
+} from '../../../../../../shared/components/form/typeahead-select/typeahead-select';
 import {
   CatalogOptionItem,
   PersonCoordinationFormData,
   PersonCoordinationItem,
-} from '../../model/coordination-administration.model';
+} from '../../../model/coordination-administration.model';
 
 type PersonCoordinationFormGroup = FormGroup<{
   idPersonaGeneral: FormControl<string>;

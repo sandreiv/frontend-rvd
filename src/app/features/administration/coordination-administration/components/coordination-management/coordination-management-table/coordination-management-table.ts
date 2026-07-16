@@ -7,14 +7,14 @@ import {
   input,
   model,
 } from '@angular/core';
-import { DataTable } from '../../../../../shared/ui/data-table/data-table';
+import { DataTable } from '../../../../../../shared/ui/data-table/data-table';
 import {
   DataTableActionEvent,
   DataTableColumn,
   DataTableRowAction,
   DataTableToolbarActionEvent,
-} from '../../../../../shared/ui/data-table/table.types';
-import { CoordinationManagementItem } from '../../model/coordination-administration.model';
+} from '../../../../../../shared/ui/data-table/table.types';
+import { CoordinationManagementItem } from '../../../model/coordination-administration.model';
 
 @Component({
   selector: 'app-coordination-management-table',

@@ -318,6 +318,7 @@ export class ProfessorActivitiesModal {
   readonly canSaveDistribution = computed(
     () =>
       !this.isLoadingDetail() &&
+      !this.exceedsWeeklyLimit() &&
       hasSaveableActivities(
         this.buildSaveInput(),
         this.loadedDetailsById(),
@@ -452,6 +453,12 @@ export class ProfessorActivitiesModal {
         'Sin actividades',
       );
       return;
+    }
+
+    if(this.exceedsWeeklyLimit()){
+      this.notificationService.error(
+        `El total de horas asignadas (${this.totalAssignedHours()}h) supera el límite semanal de ${this.weeklyHoursLimit()}h.`,
+      )
     }
 
     const saveRequest = buildSaveActivityDistributionRequest(input);

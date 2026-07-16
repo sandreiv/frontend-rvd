@@ -252,8 +252,22 @@ export class DirectActivityCard {
   }
 
   removeActivity(activityId: string): void {
+    const activity = this.activities().find((item) => item.id === activityId);
+    if(activity?.idDetalleCargaDocente == null){
+      this.withoutActivity(activityId);
+      return;
+    }
+
+    this.coordinationService
+    .deleteProfessorActivity(activity.idDetalleCargaDocente)
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(() => this.withoutActivity(activityId));
+
+  }
+
+  private withoutActivity(activityId: string): void{
     this.activitiesChange.emit(
-      this.activities().filter((item) => item.id !== activityId),
+      this.activities().filter((item) => item.id !== activityId)
     );
   }
 

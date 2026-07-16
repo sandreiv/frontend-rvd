@@ -5,17 +5,17 @@ import { SectionFrame } from '../../../../../shared/ui/section-frame/section-fra
 import { Icon } from '../../../../../shared/ui/icon/icon';
 import type { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
-import { AssociationCoordinationForm } from '../../components/association-coordination-form/association-coordination-form';
-import { AssociationCoordinationTable } from '../../components/association-coordination-table/association-coordination-table';
+import { AssociationCoordinationForm } from '../../components/association-coordination/association-coordination-form/association-coordination-form';
+import { AssociationCoordinationTable } from '../../components/association-coordination/association-coordination-table/association-coordination-table';
 import { CoordinationAdministrationService } from '../../data/coordination-administration.service';
-import { CostCenterAssignmentForm } from '../../components/cost-center-assignment-form/cost-center-assignment-form';
-import { CostCenterAssignmentTable } from '../../components/cost-center-assignment-table/cost-center-assignment-table';
-import { PersonCoordinationForm } from '../../components/person-coordination-form/person-coordination-form';
-import { PersonCoordinationTable } from '../../components/person-coordination-table/person-coordination-table';
+import { CostCenterAssignmentForm } from '../../components/cost-center-assignment/cost-center-assignment-form/cost-center-assignment-form';
+import { CostCenterAssignmentTable } from '../../components/cost-center-assignment/cost-center-assignment-table/cost-center-assignment-table';
+import { PersonCoordinationForm } from '../../components/person-coordination/person-coordination-form/person-coordination-form';
+import { PersonCoordinationTable } from '../../components/person-coordination/person-coordination-table/person-coordination-table';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from '../../../../../shared/ui/button/button';
-import { CoordinationManagementForm } from '../../components/coordination-management-form/coordination-management-form';
-import { CoordinationManagementTable } from '../../components/coordination-management-table/coordination-management-table';
+import { CoordinationManagementForm } from '../../components/coordination-management/coordination-management-form/coordination-management-form';
+import { CoordinationManagementTable } from '../../components/coordination-management/coordination-management-table/coordination-management-table';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
 import {
   CatalogOptionItem,
@@ -40,7 +40,7 @@ type CoordinationSwitchItem = {
 
 @Component({
   selector: 'app-coordination-administration',
-  imports: [ReactiveFormsModule, SectionFrame, AssociationCoordinationTable, AssociationCoordinationForm, NewModal, Icon, CostCenterAssignmentTable, CostCenterAssignmentForm, PersonCoordinationTable, PersonCoordinationForm, NewModal , Icon, Select , Button, CoordinationManagementTable, CoordinationManagementForm],
+  imports: [ReactiveFormsModule, SectionFrame, AssociationCoordinationTable, AssociationCoordinationForm, NewModal, Icon, PersonCoordinationTable, PersonCoordinationForm, NewModal , Icon, Button, CoordinationManagementTable, CoordinationManagementForm],
   templateUrl: './coordination-administration.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

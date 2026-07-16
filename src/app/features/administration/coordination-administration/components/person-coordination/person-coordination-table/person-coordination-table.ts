@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output, input, model } from '@angular/core';
-import { DataTable } from '../../../../../shared/ui/data-table/data-table';
+import { DataTable } from '../../../../../../shared/ui/data-table/data-table';
 import {
   DataTableActionEvent,
   DataTableColumn,
   DataTableRowAction,
   DataTableToolbarActionEvent,
-} from '../../../../../shared/ui/data-table/table.types';
+} from '../../../../../../shared/ui/data-table/table.types';
 import {
   PersonCoordinationItem,
   PersonCoordinationKey,
-} from '../../model/coordination-administration.model';
+} from '../../../model/coordination-administration.model';
 
 @Component({
   selector: 'app-person-coordination-table',

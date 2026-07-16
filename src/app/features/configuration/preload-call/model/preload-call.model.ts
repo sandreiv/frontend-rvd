@@ -41,9 +41,7 @@ export function resolvePreloadCallListId(
   return null;
 }
 
-export function normalizePreloadCallListItem(
-  item: PreloadCallListApiItem,
-): PreloadCallItem | null {
+export function normalizePreloadCallListItem(item: PreloadCallListApiItem): PreloadCallItem | null {
   const id = resolvePreloadCallListId(item);
   if (id == null) {
     return null;
@@ -149,4 +147,40 @@ export interface EducationalLevelItem {
   id: number;
   descripcion: string;
 }
+
+
+/** Restringir coordinación */
+export interface RestrictCoordinationCoordinacion {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  codigo: string | null;
+}
+
+export interface RestrictCoordinationItem {
+  id: number;
+  coordinacion: RestrictCoordinationCoordinacion;
+  fechaInicio: string;
+  fechaFin: string;
+  estado: string;
+}
+
+export interface RestrictCoordinationFormData {
+  idConvocatoria: number | null;
+  idCoordinacion: number;
+  idFechasConvocatoria: number | null;
+  fechaInicio: string;
+  fechaFin: string;
+  estado: '1' | '0';
+}
+
+/** Payload de eliminación (CoordinacionRestriccionDTO) */
+export type RestrictCoordinationDeleteRequest = RestrictCoordinationItem;
+
+export interface RestrictCoordinationSaveEvent {
+  id: number | null;
+  data: RestrictCoordinationFormData;
+}
+
+
 

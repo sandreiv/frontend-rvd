@@ -192,64 +192,12 @@ export function normalizeCoordinationItem(item: CoordinationApiItem): Coordinati
   };
 }
 
-export interface CareerProfessor {
-  idPersonaGeneral: number;
-  nombreCompleto: string;
-  estado: string;
-  tieneDetalleActividades?: boolean;
-  idCargaDocente?: number;
-  idModalidadContratacion?: number;
-  idCategoriaCatedratico?: number;
-  idCarga?: number;
-  idFechasConvocatoria?: number;
-  fechaConvocatoriaCodigo?: string | null;
-  fechaInicio?: string;
-  fechaFin?: string;
-  valorContrato?: string | null;
-  valorPrestaciones?: string | null;
-  asignacionSalarial?: string | null;
-  totalContrato?: string | null;
-  valorHora?: string | null;
-  puntos?: string | null;
-  valorPunto?: string | null;
-  semanas?: string | null;
-}
-
-export function mapCareerProfessorToModalityProfessor(
-  career: CareerProfessor,
-  plantaModality: CoordinationContractModality,
-  idCarga: number | null,
-): ModalityProfessor {
-  return {
-    idCargaDocente: career.idCargaDocente ?? 0,
-    idPersonaGeneral: career.idPersonaGeneral,
-    nombreCompleto: career.nombreCompleto,
-    estado: career.estado,
-    idModalidadContratacion:
-      career.idModalidadContratacion ?? plantaModality.id,
-    idCategoriaCatedratico: career.idCategoriaCatedratico ?? 0,
-    idCarga: career.idCarga ?? idCarga ?? 0,
-    idFechasConvocatoria: career.idFechasConvocatoria ?? 0,
-    fechaConvocatoriaCodigo: career.fechaConvocatoriaCodigo ?? null,
-    fechaInicio: career.fechaInicio ?? '',
-    fechaFin: career.fechaFin ?? '',
-    valorContrato: career.valorContrato ?? null,
-    valorPrestaciones: career.valorPrestaciones ?? null,
-    asignacionSalarial: career.asignacionSalarial ?? null,
-    totalContrato: career.totalContrato ?? null,
-    valorHora: career.valorHora ?? null,
-    puntos: career.puntos ?? null,
-    valorPunto: career.valorPunto ?? null,
-    semanas: career.semanas ?? null,
-    tieneDetalleActividades: career.tieneDetalleActividades,
-  };
-}
-
 export interface ModalityProfessor {
-  idCargaDocente: number;
+  idCargaDocente: number | null;
   idPersonaGeneral: number | null;
   nombreCompleto: string | null;
   estado: string;
+  tieneCarga?: boolean;
   idModalidadContratacion: number;
   idCategoriaCatedratico: number;
   idCarga: number;

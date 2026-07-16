@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output, input, model } from '@angular/core';
-import { DataTable } from '../../../../../shared/ui/data-table/data-table';
+import { DataTable } from '../../../../../../shared/ui/data-table/data-table';
 import {
   DataTableActionEvent,
   DataTableColumn,
   DataTableRowAction,
   DataTableToolbarActionEvent,
-} from '../../../../../shared/ui/data-table/table.types';
-import { CoordinationAssociationItem } from '../../model/coordination-administration.model';
+} from '../../../../../../shared/ui/data-table/table.types';
+import { CoordinationAssociationItem } from '../../../model/coordination-administration.model';
 
 @Component({
   selector: 'app-association-coordination-table',

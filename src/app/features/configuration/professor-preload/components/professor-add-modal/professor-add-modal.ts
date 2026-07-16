@@ -643,7 +643,7 @@ export class ProfessorAddModal {
 
     const workDate = this.selectedWorkDate();
     const base: AddProfessorRequest = {
-      idCargaDocente: editing.idCargaDocente,
+      idCargaDocente: editing.idCargaDocente ?? undefined,
       idCarga,
       idPersonaGeneral: editing.idPersonaGeneral,
       idModalidadContratacion: editing.idModalidadContratacion,
@@ -685,7 +685,7 @@ export class ProfessorAddModal {
   private editPayloadId(): { idCargaDocente?: number } {
     const editing = this.editingProfessor();
     return this.isEditMode() && editing
-      ? { idCargaDocente: editing.idCargaDocente }
+      ? { idCargaDocente: editing.idCargaDocente ?? undefined }
       : {};
   }
 

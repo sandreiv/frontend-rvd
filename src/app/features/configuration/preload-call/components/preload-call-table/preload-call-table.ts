@@ -30,6 +30,7 @@ export class PreloadCallTable {
   readonly refreshPreloadCall = output<void>();
   readonly deleteAllPreloadCall = output<string[]>();
   readonly selectedPreloadCallIdsChange = output<string[]>();
+  readonly restrictCoordination = output<PreloadCallItem>();
 
   readonly rowIdentity = (row: PreloadCallItem): string => String(row.id);
 
@@ -72,10 +73,16 @@ export class PreloadCallTable {
   ];
 
   readonly rowActions: DataTableRowAction<PreloadCallItem>[] = [
+    
     {
       id: 'edit',
       label: 'Editar',
       icon: 'pencil',
+    },
+    {
+      id: 'restrictCoordination',
+      label: 'Restringir coordinación',
+      icon: 'lock',
     },
     {
       id: 'delete',
@@ -88,6 +95,11 @@ export class PreloadCallTable {
   onTableAction(event: DataTableActionEvent<PreloadCallItem>): void {
     if (event.actionId === 'edit') {
       this.editPreloadCall.emit(event.row);
+      return;
+    }
+
+    if (event.actionId === 'restrictCoordination') {
+      this.restrictCoordination.emit(event.row);
       return;
     }
 
@@ -118,4 +130,5 @@ export class PreloadCallTable {
   onSelectedPreloadCallIdsChange(keys: Array<string | number>): void {
     this.selectedPreloadCallIdsChange.emit(keys.map(String));
   }
+
 }

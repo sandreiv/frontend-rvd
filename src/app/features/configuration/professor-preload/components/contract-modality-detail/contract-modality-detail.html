@@ -44,15 +44,18 @@
                 >
                   {{ row.displayName }}
                 </p>
+                
                 <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                   @let statusBadge = professorStatusBadge(professor);
-                  <span [class]="statusBadge.badgeClass">
-                    <span
-                      [class]="statusBadge.dotClass"
-                      aria-hidden="true"
-                    ></span>
-                    {{ statusBadge.label }}
-                  </span>
+                  @if (statusBadge) {
+                    <span [class]="statusBadge.badgeClass">
+                      <span
+                        [class]="statusBadge.dotClass"
+                        aria-hidden="true"
+                      ></span>
+                      {{ statusBadge.label }}
+                    </span>
+                  }
                   @let activitiesBadge = activitiesStatusBadge(professor);
                   @if (activitiesBadge) {
                     <span [class]="activitiesBadge.badgeClass">
@@ -90,6 +93,8 @@
                   track action.id
                 ) {
                   <app-item
+                    [appTooltip]="action.tooltip ?? ''"
+                    tooltipPlacement="left"
                     (itemClick)="onProfessorMenuAction(action.id, professor)"
                   >
                     <span

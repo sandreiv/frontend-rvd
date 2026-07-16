@@ -176,6 +176,11 @@
       </span>
       semanales
     </p>
+    @if(exceedsWeeklyLimit()){
+      <p class="text-xs text-error-600 dark:text-error-400">
+        Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
+      </p>
+    }
     <div class="flex justify-end gap-3">
       <app-button type="button" variant="outline" (btnClick)="close.emit()">
         Cancelar

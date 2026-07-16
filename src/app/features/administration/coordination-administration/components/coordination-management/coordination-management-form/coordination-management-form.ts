@@ -11,21 +11,21 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Button } from '../../../../../shared/ui/button/button';
-import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
-import { InputField } from '../../../../../shared/components/form/input/input-field';
-import { Label } from '../../../../../shared/components/form/label/label';
-import { Option, Select } from '../../../../../shared/components/form/select/select';
+import { Button } from '../../../../../../shared/ui/button/button';
+import { Checkbox } from '../../../../../../shared/components/form/input/checkbox';
+import { InputField } from '../../../../../../shared/components/form/input/input-field';
+import { Label } from '../../../../../../shared/components/form/label/label';
+import { Option, Select } from '../../../../../../shared/components/form/select/select';
 import {
   TypeaheadOption,
   TypeaheadSelect,
-} from '../../../../../shared/components/form/typeahead-select/typeahead-select';
-import { CoordinationAdministrationService } from '../../data/coordination-administration.service';
+} from '../../../../../../shared/components/form/typeahead-select/typeahead-select';
+import { CoordinationAdministrationService } from '../../../data/coordination-administration.service';
 import {
   CatalogOptionItem,
   CoordinationManagementFormData,
   CoordinationManagementItem,
-} from '../../model/coordination-administration.model';
+} from '../../../model/coordination-administration.model';
 
 type UnitField = 'parent' | 'regional' | 'unit';
 

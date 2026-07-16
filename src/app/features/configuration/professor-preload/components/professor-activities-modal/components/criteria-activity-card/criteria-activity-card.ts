@@ -5,8 +5,9 @@ import {
   inject,
   input,
   output,
+  DestroyRef
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -44,6 +45,7 @@ import { SimpleActivity } from '../../../../model/professor-activities-modal.mod
 })
 export class CriteriaActivityCard {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   tipoActividad = input<TipoActividad | null>(null);
   addFormOpen = input(false);
@@ -110,8 +112,22 @@ export class CriteriaActivityCard {
   }
 
   removeActivity(activityId: string): void {
+    const activity = this.activities().find((item) => item.id === activityId);
+    if(activity?.idDetalleCargaDocente == null){
+      this.withoutActivity(activityId);
+      return;
+    }
+
+    this.coordinationService
+    .deleteProfessorActivity(activity.idDetalleCargaDocente)
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(() => this.withoutActivity(activityId));
+
+  }
+
+  private withoutActivity(activityId: string): void{
     this.activitiesChange.emit(
-      this.activities().filter((item) => item.id !== activityId),
+      this.activities().filter((item) => item.id !== activityId)
     );
   }
 
