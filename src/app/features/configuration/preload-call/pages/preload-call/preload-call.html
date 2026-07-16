@@ -9,9 +9,37 @@
       iconName="call"
       iconVariant="brand"
     >
+      <div
+        sectionFrameHeaderActions
+        class="flex w-full items-center gap-2 sm:w-auto"
+      >
+        <div class="min-w-0 flex-1 sm:min-w-[16rem] sm:max-w-sm">
+          <app-select
+            [options]="periodOptions()"
+            [value]="selectedPeriodId()"
+            [disabled]="isLoadingPeriods()"
+            placeholder="Seleccione el periodo"
+            searchPlaceholder="Buscar periodo..."
+            emptyText="No hay periodos disponibles"
+            (valueChange)="onPeriodChange($event)"
+          />
+        </div>
+
+        <app-button
+          type="button"
+          size="sm"
+          className="h-11 shrink-0 whitespace-nowrap"
+          [disabled]="isLoadingPeriods() || isLoading()"
+          (btnClick)="onApplyPeriodFilter()"
+        >
+          Filtrar
+        </app-button>
+      </div>
+
       <app-preload-call-table
         [preloadCalls]="preloadCalls()"
         [selectedPreloadCallIds]="selectedPreloadCallIds()"
+        [emptyMessage]="tableEmptyMessage()"
         (selectedPreloadCallIdsChange)="onSelectedPreloadCallIdsChange($event)"
         (addPreloadCall)="openPreloadCallForm()"
         (editPreloadCall)="openEditPreloadCallForm($event)"

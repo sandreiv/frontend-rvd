@@ -21,6 +21,7 @@ import {
   PreloadCallItem,
   RestrictCoordinationItem,
   RestrictCoordinationSaveEvent,
+  UniversityPeriodItem,
 } from '../../model/preload-call.model';
 import { buildPreloadCallDeletePayload } from '../../model/build-preload-call-delete-payload.function';
 import {
@@ -28,6 +29,8 @@ import {
   PreloadCallSaveRequest,
 } from '../../model/preload-call-save.model';
 import { RestrictCoordinationTable } from "../../components/restrict-coordination/restrict-coordination-table/restrict-coordination-table";
+import { Option, Select } from "../../../../../shared/components/form/select/select";
+import { Button } from "../../../../../shared/ui/button/button";
 
 @Component({
   selector: 'app-preload-call',
@@ -37,6 +40,8 @@ import { RestrictCoordinationTable } from "../../components/restrict-coordinatio
     PreloadCallForm,
     NewModal,
     RestrictCoordinationTable,
+    Select,
+    Button,
   ],
   templateUrl: './preload-call.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,16 +53,43 @@ export class PreloadCall implements OnInit, OnDestroy {
 
   readonly showRestrictCoordination = signal(false);
   readonly preloadCallForRestriction = signal<PreloadCallItem | null>(null);
-  readonly preloadCallDetailForRestriction = signal<PreloadCallDetailResponse | null>(null);
+  readonly preloadCallDetailForRestriction =
+    signal<PreloadCallDetailResponse | null>(null);
   readonly restrictCoordinations = signal<RestrictCoordinationItem[]>([]);
 
+  readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
+  readonly selectedPeriodId = signal('');
+  readonly appliedPeriodId = signal<number | null>(null);
+  readonly isLoadingPeriods = signal(false);
+
   readonly preloadCallsResource = rxResource({
-    stream: () => this.preloadCallService.getPreloadCallList(),
+    params: () => {
+      const idPeriodoUniversidad = this.appliedPeriodId();
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+      return { idPeriodoUniversidad };
+    },
+    stream: ({ params }) =>
+      this.preloadCallService.getPreloadCallList(params.idPeriodoUniversidad),
     defaultValue: [] as PreloadCallItem[],
   });
 
   readonly preloadCalls = computed(() => this.preloadCallsResource.value());
   readonly isLoading = computed(() => this.preloadCallsResource.isLoading());
+
+  readonly periodOptions = computed<Option[]>(() =>
+    this.universityPeriods().map((item) => ({
+      value: String(item.id),
+      label: `${item.anio} - ${item.periodo}`,
+    })),
+  );
+
+  readonly tableEmptyMessage = computed(() =>
+    this.appliedPeriodId() != null
+      ? 'No hay convocatorias de precarga para el periodo seleccionado.'
+      : 'Seleccione un periodo y pulse Filtrar.',
+  );
 
   readonly selectedPreloadCallIds = signal<string[]>([]);
   readonly selectedPreloadCall = signal<PreloadCallDetailResponse | null>(null);
@@ -120,10 +152,59 @@ export class PreloadCall implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.breadcrumbTitleService.setPageTitle('Convocatoria precarga');
+    void this.loadUniversityPeriods();
   }
 
   ngOnDestroy(): void {
     this.breadcrumbTitleService.clearPageTitle();
+  }
+
+  onPeriodChange(periodId: string): void {
+    this.selectedPeriodId.set(periodId);
+  }
+
+  onApplyPeriodFilter(): void {
+    const periodId = this.selectedPeriodId();
+
+    if (!periodId) {
+      this.appliedPeriodId.set(null);
+      this.selectedPreloadCallIds.set([]);
+      this.closePreloadCallForm();
+      this.closeRestrictCoordination();
+      return;
+    }
+
+    const nextId = Number(periodId);
+
+    if (Number.isNaN(nextId)) {
+      return;
+    }
+
+    this.selectedPreloadCallIds.set([]);
+    this.closeRestrictCoordination();
+
+    if (this.appliedPeriodId() === nextId) {
+      this.preloadCallsResource.reload();
+      return;
+    }
+
+    this.appliedPeriodId.set(nextId);
+  }
+
+  private async loadUniversityPeriods(): Promise<void> {
+    this.isLoadingPeriods.set(true);
+
+    try {
+      const periods = await firstValueFrom(
+        this.preloadCallService.getUniversityPeriod(),
+      );
+      this.universityPeriods.set(periods ?? []);
+    } catch (error) {
+      console.error('Error al cargar periodos universitarios:', error);
+      this.universityPeriods.set([]);
+    } finally {
+      this.isLoadingPeriods.set(false);
+    }
   }
 
   openPreloadCallForm(): void {
@@ -196,6 +277,10 @@ export class PreloadCall implements OnInit, OnDestroy {
   }
 
   onRefreshPreloadCallList(): void {
+    if (this.appliedPeriodId() == null) {
+      return;
+    }
+
     this.preloadCallsResource.reload();
   }
 

@@ -23,6 +23,7 @@ import { PreloadCallItem } from '../../model/preload-call.model';
 export class PreloadCallTable {
   readonly preloadCalls = input<PreloadCallItem[]>([]);
   readonly selectedPreloadCallIds = input<string[]>([]);
+  readonly emptyMessage = input('No hay convocatorias de precarga.');
 
   readonly addPreloadCall = output<void>();
   readonly editPreloadCall = output<PreloadCallItem>();
@@ -83,6 +84,7 @@ export class PreloadCallTable {
       id: 'restrictCoordination',
       label: 'Restringir coordinación',
       icon: 'lock',
+      visible: (row) => row.estado === '0',
     },
     {
       id: 'delete',

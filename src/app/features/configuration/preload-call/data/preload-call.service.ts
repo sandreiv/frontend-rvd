@@ -25,9 +25,11 @@ export class PreloadCallService {
   private readonly webRequestService = inject(WebRequestService);
   private readonly endpoint = '/configuration/preload-call';
 
-  getPreloadCallList(): Observable<PreloadCallItem[]> {
+  getPreloadCallList(idPeriodoUniversidad: number): Observable<PreloadCallItem[]> {
     return this.webRequestService
-      .get<PreloadCallListApiItem[]>(`${this.endpoint}/list`)
+      .get<PreloadCallListApiItem[]>(`${this.endpoint}/list`, {
+        idPeriodoUniversidad: String(idPeriodoUniversidad),
+      })
       .pipe(
         map((items) =>
           items
@@ -60,6 +62,7 @@ export class PreloadCallService {
       `${this.endpoint}/list-modality`,
     );
   }
+
   getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
     return this.webRequestService.get<UniversityPeriodItem[]>(
       `${this.endpoint}/list-university-period`,
