@@ -8,6 +8,7 @@ import {
   CoordinationPreloadCallApi,
   ModalityProfessor,
   ProfessorSearchResult,
+  TotalPreload,
   ValuePointsPreload,
   WorkDate,
   normalizeCoordinationItem,
@@ -219,5 +220,13 @@ export class CoordinationService {
       `${this.endpoint}/delete-professor-activity/${idDetalleCargaDocente}`,
     );
   }
+
+  getTotalPreload(idCarga: number): Observable<TotalPreload> {
+    return this.webRequestService.get<TotalPreload>(
+      `${this.endpoint}/total-preload`,
+      { idCarga },
+    );
+  }
+
 }
 

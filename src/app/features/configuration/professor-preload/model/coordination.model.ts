@@ -260,3 +260,19 @@ export interface CategoriaCatedratico {
   id: number;
   descripcion: string;
 }
+
+export interface TotalHorasPreloadItem {
+  idTipoActividad: number;
+  codigo: string;
+  nombre: string;
+  horas: number;
+}
+
+export interface TotalPreload {
+  totalDocentes: number;
+  totalPrestaciones: number;
+  totalContratos: number;
+  totalPreasignacion: number;
+  totalHorasPreasignacion: TotalHorasPreloadItem[];
+  totalHoras: number;
+}
