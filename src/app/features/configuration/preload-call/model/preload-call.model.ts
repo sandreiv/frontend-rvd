@@ -80,7 +80,7 @@ export interface PreloadCallDetailConvocatoria {
 
 export interface PreloadCallDetailFecha {
   id?: number;
-  codigo: 'CNV' | 'CTI' | 'ISU';
+  codigo: 'CNV' | 'CTEI' | 'ISU';
   fechaInicio: string;
   fechaFin: string;
 }
@@ -125,7 +125,7 @@ export interface ModalityFormItem {
 }
 
 export interface FechaFormMeta {
-  codigo: 'CNV' | 'CTI' | 'ISU';
+  codigo: 'CNV' | 'CTEI' | 'ISU';
   id?: number;
 }
 

@@ -230,8 +230,8 @@ export class ProfessorAddModal {
 
   readonly asignacionSalarialNum = computed<number | null>(() => {
     if (this.isEditMode() && this.isProfessorActive()) {
-      const stored = Number(this.editingProfessor()?.asignacionSalarial);
-      return Number.isNaN(stored) ? null : stored;
+      const stored = this.editingProfessor()?.asignacionSalarial;
+      return stored == null || Number.isNaN(stored) ? null : stored;
     }
     const values = this.valuePointsResource.value() as
       | ValuePointsPreload
@@ -240,12 +240,14 @@ export class ProfessorAddModal {
       return null;
     }
     if (this.isProfessorActive()) {
-      const asignacion = Number(values.asignacionSalarial);
-      return Number.isNaN(asignacion) ? null : asignacion;
+      const asignacion = values.asignacionSalarial;
+      return asignacion == null || Number.isNaN(asignacion)
+        ? null
+        : asignacion;
     }
-    const valorPunto = Number(values.valorPunto);
+    const valorPunto = values.valorPunto;
     const puntos = this.manualNumeroPuntos();
-    if (Number.isNaN(valorPunto) || puntos == null) {
+    if (valorPunto == null || Number.isNaN(valorPunto) || puntos == null) {
       return null;
     }
     return valorPunto * puntos;
@@ -617,8 +619,8 @@ export class ProfessorAddModal {
     if (this.modalityKind() === 'catedra') {
       return {
         ...base,
-        valorPunto: this.valorPuntoString(),
-        valorHora: this.valorHoraString(),
+        valorPunto: this.resolveValorPunto(),
+        valorHora: this.resolveValorHora(),
       };
     }
 
@@ -626,7 +628,7 @@ export class ProfessorAddModal {
     return {
       ...base,
       puntos: this.puntosString(),
-      valorPunto: this.valorPuntoString(),
+      valorPunto: this.resolveValorPunto(),
       asignacionSalarial: this.toAmount(this.asignacionSalarialNum()),
       valorContrato: this.toAmount(contract?.valorContrato),
       valorPrestaciones: this.toAmount(contract?.valorPrestaciones),
@@ -659,8 +661,8 @@ export class ProfessorAddModal {
     if (this.modalityKind() === 'catedra') {
       return {
         ...base,
-        valorPunto: editing.valorPunto ?? '',
-        valorHora: editing.valorHora ?? '',
+        valorPunto: editing.valorPunto,
+        valorHora: editing.valorHora,
       };
     }
 
@@ -668,17 +670,17 @@ export class ProfessorAddModal {
     return {
       ...base,
       puntos: editing.puntos ?? '',
-      valorPunto: editing.valorPunto ?? '',
-      asignacionSalarial: editing.asignacionSalarial ?? '',
+      valorPunto: editing.valorPunto,
+      asignacionSalarial: editing.asignacionSalarial,
       valorContrato: contract
         ? this.toAmount(contract.valorContrato)
-        : editing.valorContrato ?? '',
+        : editing.valorContrato,
       valorPrestaciones: contract
         ? this.toAmount(contract.valorPrestaciones)
-        : editing.valorPrestaciones ?? '',
+        : editing.valorPrestaciones,
       totalContrato: contract
         ? this.toAmount(contract.totalContrato)
-        : editing.totalContrato ?? '',
+        : editing.totalContrato,
     };
   }
 
@@ -689,11 +691,11 @@ export class ProfessorAddModal {
       : {};
   }
 
-  private valorPuntoString(): string {
+  private resolveValorPunto(): number | null {
     const values = this.valuePointsResource.value() as
       | ValuePointsPreload
       | undefined;
-    return this.toAmount(values ? Number(values.valorPunto) : null);
+    return this.toAmount(values?.valorPunto);
   }
 
   private puntosString(): string {
@@ -701,21 +703,25 @@ export class ProfessorAddModal {
       const values = this.valuePointsResource.value() as
         | ValuePointsPreload
         | undefined;
-      return values?.puntosDocente ?? '';
+      const puntos = values?.puntosDocente;
+      return puntos == null ? '' : String(puntos);
     }
     const puntos = this.manualNumeroPuntos();
     return puntos == null ? '' : String(puntos);
   }
 
-  private valorHoraString(): string {
+  private resolveValorHora(): number | null {
     const values = this.valuePointsResource.value() as
       | ValuePointsPreload
       | undefined;
-    return this.toAmount(values ? Number(values.valorHora) : null);
+    return this.toAmount(values?.valorHora);
   }
 
-  private toAmount(value: number | null | undefined): string {
-    return value == null || Number.isNaN(value) ? '' : value.toFixed(2);
+  private toAmount(value: number | null | undefined): number | null {
+    if (value == null || Number.isNaN(value)) {
+      return null;
+    }
+    return Math.round(value * 100) / 100;
   }
 
   private buildSearchParams(term: string): SearchGeneralPersonParams {

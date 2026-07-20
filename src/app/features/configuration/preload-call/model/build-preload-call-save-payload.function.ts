@@ -85,10 +85,10 @@ export function buildPreloadCallSavePayload(
     resolveFechaId(params.fechasMeta, 'CNV'),
   );
   const cteiFecha = buildFechaIfComplete(
-    'CTI',
+    'CTEI',
     params.fechaInicioCtei,
     params.fechaFinCtei,
-    resolveFechaId(params.fechasMeta, 'CTI'),
+    resolveFechaId(params.fechasMeta, 'CTEI'),
   );
   const isuFecha = buildFechaIfComplete(
     'ISU',

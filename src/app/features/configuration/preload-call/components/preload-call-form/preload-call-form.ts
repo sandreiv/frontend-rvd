@@ -179,7 +179,7 @@ export class PreloadCallForm implements OnInit {
 
   private syncFormFromDetail(detail: PreloadCallDetailResponse): void {
     const cnv = detail.fechas.find((fecha) => fecha.codigo === 'CNV');
-    const cti = detail.fechas.find((fecha) => fecha.codigo === 'CTI');
+    const CTEI = detail.fechas.find((fecha) => fecha.codigo === 'CTEI');
     const isu = detail.fechas.find((fecha) => fecha.codigo === 'ISU');
 
     this.fechasMeta.set(this.mapDetailFechasMeta(detail));
@@ -195,8 +195,8 @@ export class PreloadCallForm implements OnInit {
       nivelEducativo: String(detail.convocatoria.nivelEducativo.id),
       fechaInicio: this.toDateOnly(cnv?.fechaInicio),
       fechaFin: this.toDateOnly(cnv?.fechaFin),
-      fechaInicioCtei: this.toDateOnly(cti?.fechaInicio),
-      fechaFinCtei: this.toDateOnly(cti?.fechaFin),
+      fechaInicioCtei: this.toDateOnly(CTEI?.fechaInicio),
+      fechaFinCtei: this.toDateOnly(CTEI?.fechaFin),
       fechaInicioIsu: this.toDateOnly(isu?.fechaInicio),
       fechaFinIsu: this.toDateOnly(isu?.fechaFin),
     });

@@ -37,7 +37,7 @@ export interface PreloadCallSaveNivelEducativo {
   descripcion: string;
 }
 
-export type PreloadCallFechaCodigo = 'CNV' | 'CTI' | 'ISU';
+export type PreloadCallFechaCodigo = 'CNV' | 'CTEI' | 'ISU';
 
 export interface PreloadCallSaveFecha {
   id?: number | null;

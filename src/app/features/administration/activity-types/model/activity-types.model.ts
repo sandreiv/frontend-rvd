@@ -1,4 +1,4 @@
-export type ActivityTypeCode = 'CTI' | 'AC' | 'FAD' | 'FAI' | 'ISU';
+export type ActivityTypeCode = 'CTEI' | 'AC' | 'FAD' | 'FAI' | 'ISU';
 
 export interface ActivityTypeItem {
   id: number;
@@ -25,7 +25,7 @@ export interface DeleteBulkActivityTypesRequest {
 }
 
 export const ACTIVITY_TYPE_CODE_OPTIONS = [
-  { value: 'CTI', label: 'CTI' },
+  { value: 'CTEI', label: 'CTEI' },
   { value: 'AC', label: 'AC' },
   { value: 'FAD', label: 'FAD' },
   { value: 'FAI', label: 'FAI' },

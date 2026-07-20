@@ -12,11 +12,11 @@ export interface AddProfessorRequest {
   idCategoriaCatedratico: number;
   fechasConvocatoria: ConvocatoriaDates;
   semanas: string;
-  valorPunto?: string;
-  valorContrato?: string;
-  valorPrestaciones?: string;
-  totalContrato?: string;
-  asignacionSalarial?: string;
+  valorPunto?: number | null;
+  valorContrato?: number | null;
+  valorPrestaciones?: number | null;
+  totalContrato?: number | null;
+  asignacionSalarial?: number | null;
   puntos?: string;
-  valorHora?: string;
+  valorHora?: number | null;
 }

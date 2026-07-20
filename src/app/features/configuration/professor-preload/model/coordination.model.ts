@@ -84,10 +84,10 @@ export interface CoordinationItem {
 }
 
 export interface ValuePointsPreload {
-  valorHora: string;
-  valorPunto: string;
-  puntosDocente: string;
-  asignacionSalarial: string;
+  valorHora: number;
+  valorPunto: number;
+  puntosDocente: number | null;
+  asignacionSalarial: number | null;
 }
 
 export const UNASSIGNED_PRELOAD_CALL_FILTER = 'none';
@@ -205,13 +205,13 @@ export interface ModalityProfessor {
   fechaConvocatoriaCodigo: string | null;
   fechaInicio: string;
   fechaFin: string;
-  valorContrato: string | null;
-  valorPrestaciones: string | null;
-  asignacionSalarial: string | null;
-  totalContrato: string | null;
-  valorHora: string | null;
+  valorContrato: number | null;
+  valorPrestaciones: number | null;
+  asignacionSalarial: number | null;
+  totalContrato: number | null;
+  valorHora: number | null;
   puntos: string | null;
-  valorPunto: string | null;
+  valorPunto: number | null;
   semanas: string | null;
   tieneDetalleActividades?: boolean;
 }
