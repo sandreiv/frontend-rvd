@@ -132,6 +132,7 @@ export class ContractModalityDetail {
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
   hasProfessorsChange = output<boolean>();
+  preloadChanged = output<void>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly isProfessorAddModalOpen = signal(false);
@@ -301,6 +302,7 @@ export class ContractModalityDetail {
   onProfessorSaved(): void {
     this.closeProfessorAddModal();
     this.modalityProfessorsResource.reload();
+    this.notifyPreloadChanged();
   }
 
   onExistingLoadSelected(professor: ProfessorSearchResult): void {
@@ -556,6 +558,11 @@ export class ContractModalityDetail {
 
   onActivitiesSaved(): void {
     this.modalityProfessorsResource.reload();
+    this.notifyPreloadChanged();
+  }
+
+  private notifyPreloadChanged(): void {
+    this.preloadChanged.emit();
   }
 
   private openProfessorDetail(professor: ModalityProfessor): void {
@@ -574,6 +581,7 @@ export class ContractModalityDetail {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.modalityProfessorsResource.reload();
+        this.notifyPreloadChanged();
       });
   }
 
@@ -588,6 +596,7 @@ export class ContractModalityDetail {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.modalityProfessorsResource.reload();
+        this.notifyPreloadChanged();
       });
   }
 

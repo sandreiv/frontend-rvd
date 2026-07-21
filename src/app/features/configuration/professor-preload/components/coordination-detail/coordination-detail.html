@@ -120,9 +120,13 @@
       [coordination]="coordination()"
       [coordinationsCatalog]="coordinationsCatalog()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
+      (preloadChanged)="onPreloadChanged()"
     />
 
-    <app-total-coordination [idCarga]="coordination().idCarga" />
+    <app-total-coordination 
+      [idCarga]="coordination().idCarga"
+      [refreshKey]="totalRefreshKey()" 
+    />
   </div>
 </div>
 

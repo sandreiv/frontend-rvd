@@ -35,6 +35,7 @@ export class CoordinationDetail {
 
   readonly isAssignModalOpen = signal(false);
   readonly hasLoadedProfessors = signal(false);
+  readonly totalRefreshKey = signal(0);
 
   readonly canChangePreloadCall = computed(() => !this.hasLoadedProfessors());
 
@@ -42,6 +43,7 @@ export class CoordinationDetail {
     effect(() => {
       this.coordination().id;
       this.hasLoadedProfessors.set(false);
+      this.totalRefreshKey.set(0);
     });
   }
 
@@ -65,4 +67,9 @@ export class CoordinationDetail {
   onHasProfessorsChange(hasProfessors: boolean): void {
     this.hasLoadedProfessors.set(hasProfessors);
   }
+
+  onPreloadChanged(): void {
+    this.totalRefreshKey.update((value) => value + 1);
+  }
+
 }

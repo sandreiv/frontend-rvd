@@ -32,14 +32,18 @@ export class TotalCoordination {
   private readonly coordinationService = inject(CoordinationService);
 
   idCarga = input<number | null>(null);
+  refreshKey = input(0);
 
   private readonly totalResource = rxResource({
     params: () => {
       const idCarga = this.idCarga();
+      const refreshKey = this.refreshKey();
+
       if (idCarga == null) {
         return undefined;
       }
-      return { idCarga };
+
+      return { idCarga, refreshKey };
     },
     stream: ({ params }) =>
       this.coordinationService.getTotalPreload(params.idCarga),
