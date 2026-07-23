@@ -58,6 +58,9 @@ export interface CoordinationApiItem {
   convocatoria: CoordinationPreloadCallApi | null;
   carga: PreloadCargaApi | null;
   centroCosto?: CoordinationCentroCosto | null;
+  canEditPreassignment?: boolean | string | null;
+  editBlockReason?: string | null;
+  editionMode?: string | null;
 }
 
 export interface CoordinationItem {
@@ -81,6 +84,9 @@ export interface CoordinationItem {
   convocatoriaNombre: string;
   modalidadesContratacion: CoordinationContractModality[];
   centroCosto: CoordinationCentroCosto | null;
+  canEditPreassignment: boolean;
+  editBlockReason: string | null;
+  editionMode: string;
 }
 
 export interface ValuePointsPreload {
@@ -149,6 +155,12 @@ function normalizeCentroCosto(centroCosto: CoordinationCentroCosto | null | unde
   };
 }
 
+function normalizeCanEditPreassignment(
+  value: boolean | string | null | undefined,
+): boolean {
+  return value === true || value === '1' || value === 'true';
+}
+
 function resolveConvocatoriaNombre(convocatoria: CoordinationPreloadCallApi | null | undefined): string {
   if (!convocatoria) {
     return '';
@@ -189,6 +201,11 @@ export function normalizeCoordinationItem(item: CoordinationApiItem): Coordinati
     modalidadesContratacion:
       item.convocatoria?.modalidadesContratacion ?? [],
     centroCosto: normalizeCentroCosto(item.centroCosto),
+    canEditPreassignment: normalizeCanEditPreassignment(
+      item.canEditPreassignment,
+    ),
+    editBlockReason: item.editBlockReason?.trim() || null,
+    editionMode: item.editionMode?.trim() || 'NORMAL_ACTIVE',
   };
 }
 

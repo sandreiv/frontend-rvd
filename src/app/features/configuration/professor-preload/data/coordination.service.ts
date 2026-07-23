@@ -43,6 +43,12 @@ export class CoordinationService {
     );
   }
 
+  getAssignablePreloadCalls(): Observable<CoordinationPreloadCallApi[]> {
+    return this.webRequestService.get<CoordinationPreloadCallApi[]>(
+      `${this.endpoint}/list-assignable-preload-calls`,
+    );
+  }
+
   getCoordinations(idConvocatoria?: number): Observable<CoordinationItem[]> {
     const params = idConvocatoria != null ? { idConvocatoria: String(idConvocatoria) } : undefined;
     

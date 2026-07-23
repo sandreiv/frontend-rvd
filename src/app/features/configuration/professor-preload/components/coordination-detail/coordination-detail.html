@@ -100,16 +100,23 @@
               </p>
             </div>
 
-            @if (canChangePreloadCall()) {
-              <button
-                type="button"
-                aria-label="Asignar o cambiar convocatoria de la coordinación"
-                title="Asignar o cambiar convocatoria"
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 dark:bg-white/10 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-white/5"
-                (click)="openAssignModal()"
+            @if (canShowPreloadCallButton()) {
+              <span
+                [appTooltip]="canChangePreloadCall() ? '' : editBlockReason()"
+                tooltipPlacement="left"
               >
-                <app-icon name="plus" size="sm" />
-              </button>
+                <button
+                  type="button"
+                  aria-label="Asignar o cambiar convocatoria de la coordinación"
+                  title="Asignar o cambiar convocatoria"
+                  class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 dark:bg-white/10 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-white/5"
+                  [class.cursor-not-allowed]="!canChangePreloadCall()"
+                  [class.opacity-50]="!canChangePreloadCall()"
+                  (click)="openAssignModal()"
+                >
+                  <app-icon name="plus" size="sm" />
+                </button>
+              </span>
             }
           </div>
         </div>
@@ -119,6 +126,8 @@
     <app-contract-modality-detail
       [coordination]="coordination()"
       [coordinationsCatalog]="coordinationsCatalog()"
+      [canEditPreassignment]="canEditPreassignment()"
+      [editBlockReason]="editBlockReason()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
       (preloadChanged)="onPreloadChanged()"
     />

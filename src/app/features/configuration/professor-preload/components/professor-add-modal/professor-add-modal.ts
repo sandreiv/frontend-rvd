@@ -84,6 +84,8 @@ export class ProfessorAddModal {
   contractModality = input<CoordinationContractModality | null>(null);
   mode = input<'create' | 'edit'>('create');
   editingProfessor = input<ModalityProfessor | null>(null);
+  readOnly = input(false);
+  readOnlyReason = input<string | null>(null);
   close = output<void>();
   saved = output<void>();
   existingLoadSelected = output<ProfessorSearchResult>();
@@ -100,9 +102,13 @@ export class ProfessorAddModal {
       : 'Agregar un docente nuevo a la precarga.',
   );
 
-  readonly saveButtonLabel = computed(() =>
-    this.isEditMode() ? 'Actualizar' : 'Guardar detalle de precarga',
-  );
+  readonly saveButtonLabel = computed(() => {
+    if (this.readOnly()) {
+      return 'Solo lectura';
+    }
+
+    return this.isEditMode() ? 'Actualizar' : 'Guardar detalle de precarga';
+  });
 
   readonly editingDisplayName = computed(() => {
     const editing = this.editingProfessor();
@@ -282,6 +288,17 @@ export class ProfessorAddModal {
         ]),
       );
       this.professorForm.set(new FormGroup(controls));
+    });
+
+    effect(() => {
+      const form = this.professorForm();
+
+      if (this.readOnly()) {
+        form.disable({ emitEvent: false });
+        return;
+      }
+
+      form.enable({ emitEvent: false });
     });
 
     effect(() => {
@@ -551,6 +568,11 @@ export class ProfessorAddModal {
   }
 
   onSubmit(): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+    
     if (this.isSaving()) {
       return;
     }

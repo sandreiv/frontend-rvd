@@ -25,7 +25,8 @@
             <input
               type="checkbox"
               [checked]="isProfessorActive()"
-              (change)="isProfessorActive.set(!isProfessorActive())"
+              [disabled]="readOnly()"
+              (change)="!readOnly() && isProfessorActive.set(!isProfessorActive())"
               class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
             />
             <span class="text-sm font-medium text-gray-800 dark:text-white/90">
@@ -139,8 +140,17 @@
     <app-button type="button" variant="outline" (btnClick)="close.emit()">
       Cancelar
     </app-button>
-    <app-button type="button" [disabled]="isSaving()" (btnClick)="onSubmit()">
-      {{ saveButtonLabel() }}
-    </app-button>
+    <span
+      [appTooltip]="readOnly() ? (readOnlyReason() ?? '') : ''"
+      tooltipPlacement="top"
+    >
+      <app-button
+        type="button"
+        [disabled]="isSaving() || readOnly()"
+        (btnClick)="onSubmit()"
+      >
+        {{ saveButtonLabel() }}
+      </app-button>
+    </span>
   </div>
 </app-modal>

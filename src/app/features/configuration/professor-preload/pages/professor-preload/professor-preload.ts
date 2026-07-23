@@ -43,6 +43,11 @@ export class ProfessorPreload implements OnInit {
     defaultValue: [] as CoordinationPreloadCallApi[],
   });
 
+  readonly assignablePreloadCallsResource = rxResource({
+    stream: () => this.coordinationService.getAssignablePreloadCalls(),
+    defaultValue: [] as CoordinationPreloadCallApi[],
+  });
+
   readonly selectedPreloadCallId = signal(UNASSIGNED_PRELOAD_CALL_FILTER);
   readonly appliedFilterPreloadCallId = signal<string | null>(null);
   readonly selectedCoordinationIds = signal<string[]>([]);
@@ -104,6 +109,7 @@ export class ProfessorPreload implements OnInit {
     this.appliedFilterPreloadCallId.set(this.selectedPreloadCallId());
     this.selectedCoordinationIds.set([]);
     this.coordinationsResource.reload();
+    this.assignablePreloadCallsResource.reload();
   }
 
   onRefreshCoordinations(): void {
@@ -122,7 +128,7 @@ export class ProfessorPreload implements OnInit {
       return;
     }
 
-    const defaultPreloadCall = this.activePreloadCallsResource.value()[0];
+    const defaultPreloadCall = this.assignablePreloadCallsResource.value()[0];
 
     if (!defaultPreloadCall?.id) {
       this.openCoordinationDetail(coordination);

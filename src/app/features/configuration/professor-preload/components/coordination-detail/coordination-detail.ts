@@ -13,6 +13,7 @@ import { CoordinationItem } from '../../model/coordination.model';
 import { CoordinationPreloadCallModal } from '../coordination-preload-call-modal/coordination-preload-call-modal';
 import { ContractModalityDetail } from '../contract-modality-detail/contract-modality-detail';
 import { TotalCoordination } from '../total-coordination/total-coordination';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 @Component({
   selector: 'app-coordination-detail',
@@ -22,6 +23,7 @@ import { TotalCoordination } from '../total-coordination/total-coordination';
     CoordinationPreloadCallModal,
     ContractModalityDetail,
     TotalCoordination,
+    Tooltip,
   ],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +39,21 @@ export class CoordinationDetail {
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
 
-  readonly canChangePreloadCall = computed(() => !this.hasLoadedProfessors());
+  readonly canEditPreassignment = computed(
+    () => this.coordination().canEditPreassignment === true,
+  );
+
+  readonly editBlockReason = computed(
+    () =>
+      this.coordination().editBlockReason ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
+
+  readonly canShowPreloadCallButton = computed(() => !this.hasLoadedProfessors());
+
+  readonly canChangePreloadCall = computed(
+    () => this.canShowPreloadCallButton() && this.canEditPreassignment(),
+  );
 
   constructor() {
     effect(() => {

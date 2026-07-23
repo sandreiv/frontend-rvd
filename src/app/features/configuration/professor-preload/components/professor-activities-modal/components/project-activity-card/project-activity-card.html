@@ -68,14 +68,19 @@
     </div>
 
     <div class="flex justify-end">
-      <app-button
-        type="button"
-        size="sm"
-        [disabled]="!hasSelection()"
-        (btnClick)="onAssociateSelected()"
+      <span
+        [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+        tooltipPlacement="left"
       >
-        Asociar
-      </app-button>
+        <app-button
+          type="button"
+          size="sm"
+          [disabled]="readOnly() || !hasSelection()"
+          (btnClick)="onAssociateSelected()"
+        >
+          Asociar
+        </app-button>
+      </span>
     </div>
 
     <div class="flex flex-col gap-2">
@@ -132,14 +137,20 @@
                     }
                   </td>
                   <td class="px-4 py-3 text-center">
-                    <app-button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      (btnClick)="onDisassociate(row.idPersonaProyecto)"
+                    <span
+                      [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+                      tooltipPlacement="left"
                     >
-                      Desasociar
-                    </app-button>
+                      <app-button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        [disabled]="readOnly()"
+                        (btnClick)="onDisassociate(row.idPersonaProyecto)"
+                      >
+                        Desasociar
+                      </app-button>
+                    </span>
                   </td>
                 </tr>
               }

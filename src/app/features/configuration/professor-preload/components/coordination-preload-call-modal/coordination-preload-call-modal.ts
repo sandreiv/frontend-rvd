@@ -43,7 +43,7 @@ export class CoordinationPreloadCallModal {
   readonly saveError = signal<string | null>(null);
 
   readonly activePreloadCallsResource = rxResource({
-    stream: () => this.coordinationService.getActivePreloadCall(),
+    stream: () => this.coordinationService.getAssignablePreloadCalls(),
     defaultValue: [] as CoordinationPreloadCallApi[],
   });
 

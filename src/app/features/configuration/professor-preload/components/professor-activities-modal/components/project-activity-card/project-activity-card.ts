@@ -9,11 +9,12 @@ import {
 import { Checkbox } from '../../../../../../../shared/components/form/input/checkbox';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { TipoActividad } from '../../../../model/professor-activities.model';
-import { ProfessorProjectRow } from '../../../../model/professor-projects.model';
+import { ProfessorProjectRow } from '../../../../model/professor-projects.model'
+import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';;
 
 @Component({
   selector: 'app-project-activity-card',
-  imports: [Checkbox, Button],
+  imports: [Checkbox, Button, Tooltip,],
   templateUrl: './project-activity-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -22,6 +23,14 @@ export class ProjectActivityCard {
   projectRows = input<ProfessorProjectRow[]>([]);
   associatedRows = input<ProfessorProjectRow[]>([]);
   isLoading = input(false);
+  readOnly = input(false);
+  readOnlyReason = input<string | null>(null);
+
+  readonly readOnlyMessage = computed(
+    () =>
+      this.readOnlyReason() ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
 
   associatedRowsChange = output<ProfessorProjectRow[]>();
 
@@ -46,6 +55,7 @@ export class ProjectActivityCard {
 
   isCheckboxDisabled(row: ProfessorProjectRow): boolean {
     return (
+      this.readOnly() ||
       !row.esSeleccionable ||
       this.isAssociated(row.idPersonaProyecto)
     );
@@ -55,6 +65,11 @@ export class ProjectActivityCard {
     row: ProfessorProjectRow,
     checked: boolean,
   ): void {
+    
+    if (this.readOnly()) {
+      return;
+    }
+
     if (this.isCheckboxDisabled(row)) {
       return;
     }
@@ -71,6 +86,11 @@ export class ProjectActivityCard {
   }
 
   onAssociateSelected(): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+
     const selected = this.selectedIds();
     if (!selected.size) {
       return;
@@ -97,6 +117,11 @@ export class ProjectActivityCard {
   }
 
   onDisassociate(idPersonaProyecto: number): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+    
     this.associatedRowsChange.emit(
       this.associatedRows().filter(
         (row) => row.idPersonaProyecto !== idPersonaProyecto,

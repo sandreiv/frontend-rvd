@@ -58,6 +58,7 @@ import {
   ProyectoDocenteDto,
 } from '../../model/professor-projects.model';
 import { parseMaxWeeklyHours } from '../../model/professor-form.config';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 const NN_LABEL = 'NN';
 
@@ -77,6 +78,7 @@ type ProjectActivityCategoryCodigo = Extract<
     DirectActivityCard,
     CriteriaActivityCard,
     ProjectActivityCard,
+    Tooltip,
   ],
   templateUrl: './professor-activities-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,11 +93,20 @@ export class ProfessorActivitiesModal {
   contractModality = input<CoordinationContractModality | null>(null);
   coordination = input<CoordinationItem | null>(null);
 
+  readOnly = input(false);
+  readOnlyReason = input<string | null>(null);
+
   close = output<void>();
   saved = output<void>();
 
   readonly isSaving = signal(false);
   readonly hasSavedDetail = signal(false);
+
+  readonly readOnlyMessage = computed(
+    () =>
+      this.readOnlyReason() ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
 
   readonly actividadesFAD = signal<DirectLearningActivity[]>([]);
   readonly actividadesFAI = signal<SimpleActivity[]>([]);
@@ -317,6 +328,7 @@ export class ProfessorActivitiesModal {
 
   readonly canSaveDistribution = computed(
     () =>
+      !this.readOnly() &&
       !this.isLoadingDetail() &&
       !this.exceedsWeeklyLimit() &&
       hasSaveableActivities(
@@ -390,6 +402,10 @@ export class ProfessorActivitiesModal {
     codigo: ActivityCategoryCodigo,
     isFormOpen: boolean,
   ): void {
+    if (this.readOnly() && isFormOpen) {
+      return;
+    }
+
     this.addFormOpen.update((current) => ({
       ...current,
       [codigo]: isFormOpen,
@@ -425,19 +441,38 @@ export class ProfessorActivitiesModal {
     return [];
   }
 
-  setAssociatedProjectsForCodigo(codigo: ActivityCategoryCodigo, rows: ProfessorProjectRow[]): void {
+  setAssociatedProjectsForCodigo(
+    codigo: ActivityCategoryCodigo,
+    rows: ProfessorProjectRow[],
+  ): void {
+    if (this.readOnly()) {
+      return;
+    }
+
     if (codigo === 'CTEI' || codigo === 'ISU') {
       this.associatedProjectsByCodigo[codigo].set(rows);
     }
   }
 
-  setCriteriaActivitiesForCodigo(codigo: ActivityCategoryCodigo, activities: SimpleActivity[]): void {
+  setCriteriaActivitiesForCodigo(
+    codigo: ActivityCategoryCodigo,
+    activities: SimpleActivity[],
+  ): void {
+    if (this.readOnly()) {
+      return;
+    }
+
     if (codigo === 'FAI' || codigo === 'AC') {
       this.criteriaActivitiesByCodigo[codigo].set(activities);
     }
   }
 
   onSubmit(): void {
+ 
+    if (this.readOnly()) {
+      return;
+    }
+ 
     const professor = this.professor();
     if (professor?.idCargaDocente == null) {
       this.notificationService.error(

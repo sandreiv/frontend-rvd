@@ -126,6 +126,8 @@
                 [idPeriodoUniversidad]="context.idPeriodoUniversidad"
                 [addFormOpen]="isAddFormOpen(item.codigo)"
                 [activities]="actividadesFAD()"
+                [readOnly]="readOnly()"
+                [readOnlyReason]="readOnlyMessage()"
                 (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
                 (activitiesChange)="actividadesFAD.set($event)"
               />
@@ -136,6 +138,8 @@
               [tipoActividad]="item.tipoActividad ?? null"
               [addFormOpen]="isAddFormOpen(item.codigo)"
               [activities]="criteriaActivitiesForCodigo(item.codigo)"
+              [readOnly]="readOnly()"
+              [readOnlyReason]="readOnlyMessage()"
               (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
               (activitiesChange)="setCriteriaActivitiesForCodigo(item.codigo, $event)"
             />
@@ -146,6 +150,8 @@
               [projectRows]="projectHierarchyRowsForCodigo(item.codigo)"
               [associatedRows]="associatedProjectsForCodigo(item.codigo)"
               [isLoading]="professorProjectsResource.isLoading()"
+              [readOnly]="readOnly()"
+              [readOnlyReason]="readOnlyMessage()"
               (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
             />
           }
@@ -185,13 +191,18 @@
       <app-button type="button" variant="outline" (btnClick)="close.emit()">
         Cancelar
       </app-button>
-      <app-button
-        type="button"
-        [disabled]="isSaving() || isLoadingDetail() || !canSaveDistribution()"
-        (btnClick)="onSubmit()"
+      <span
+        [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+        tooltipPlacement="top"
       >
-        Guardar
-      </app-button>
+        <app-button
+          type="button"
+          [disabled]="readOnly() || isSaving() || isLoadingDetail() || !canSaveDistribution()"
+          (btnClick)="onSubmit()"
+        >
+          {{ readOnly() ? 'Solo lectura' : 'Guardar' }}
+        </app-button>
+      </span>
     </div>
   </footer>
 </app-modal>

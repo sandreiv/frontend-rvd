@@ -40,6 +40,7 @@ import {
   UnidadRegional,
 } from '../../../../model/professor-activities.model';
 import { DirectLearningActivity } from '../../../../model/professor-activities-modal.models';
+import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 
 @Component({
   selector: 'app-direct-activity-card',
@@ -50,6 +51,7 @@ import { DirectLearningActivity } from '../../../../model/professor-activities-m
     InputField,
     Button,
     Icon,
+    Tooltip,
   ],
   templateUrl: './direct-activity-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +66,15 @@ export class DirectActivityCard {
   idPeriodoUniversidad = input.required<number>();
   addFormOpen = input(false);
   activities = input<DirectLearningActivity[]>([]);
+
+  readOnly = input(false);
+  readOnlyReason = input<string | null>(null);
+
+  readonly readOnlyMessage = computed(
+    () =>
+      this.readOnlyReason() ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
 
   addFormOpenChange = output<boolean>();
   activitiesChange = output<DirectLearningActivity[]>();
@@ -227,6 +238,10 @@ export class DirectActivityCard {
   }
 
   toggleAddForm(): void {
+    if (this.readOnly()) {
+      return;
+    }
+
     this.addFormOpenChange.emit(!this.addFormOpen());
   }
 
@@ -236,6 +251,11 @@ export class DirectActivityCard {
   }
 
   onAddActivity(): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -252,6 +272,11 @@ export class DirectActivityCard {
   }
 
   removeActivity(activityId: string): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+
     const activity = this.activities().find((item) => item.id === activityId);
     if(activity?.idDetalleCargaDocente == null){
       this.withoutActivity(activityId);
@@ -289,6 +314,11 @@ export class DirectActivityCard {
   }
 
   isSelectDisabled(fieldKey: DirectActivityFieldConfig['key']): boolean {
+
+    if (this.readOnly()) {
+      return true;
+    }
+
     if (fieldKey === 'idCriterio' || fieldKey === 'idUnidadRegional') {
       return false;
     }

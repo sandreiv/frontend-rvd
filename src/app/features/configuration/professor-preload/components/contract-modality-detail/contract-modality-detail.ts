@@ -131,6 +131,8 @@ export class ContractModalityDetail {
 
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
+  canEditPreassignment = input(true);
+  editBlockReason = input<string | null>(null);
   hasProfessorsChange = output<boolean>();
   preloadChanged = output<void>();
 
@@ -145,6 +147,11 @@ export class ContractModalityDetail {
   readonly isExistingLoadAlertOpen = signal(false);
   readonly pendingExistingLoadProfessor = signal<ProfessorSearchResult | null>(null);
   readonly openMenuKey = signal<string | null>(null);
+  readonly writeBlockReason = computed(
+    () =>
+      this.editBlockReason() ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
 
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
@@ -288,6 +295,10 @@ export class ContractModalityDetail {
   }
 
   onProfessorAddModalOpen(): void {
+    if (!this.canEditPreassignment()) {
+      return;
+    }
+
     this.professorModalMode.set('create');
     this.editingModalityProfessor.set(null);
     this.isProfessorAddModalOpen.set(true);
@@ -458,11 +469,17 @@ export class ContractModalityDetail {
     tieneDetalleActividades?: boolean;
     tieneCarga?: boolean;
   }): ProfessorMenuAction[] {
+    const canEdit = this.canEditPreassignment();
     const hasDetail = professor.tieneDetalleActividades === true;
+
     const activitiesAction: ProfessorMenuAction = {
       id: 'actividades',
-      label: hasDetail ? 'Gestionar actividades' : 'Agregar actividades',
-      icon: hasDetail ? 'pencil' : 'plus',
+      label: canEdit
+        ? hasDetail
+          ? 'Gestionar actividades'
+          : 'Agregar actividades'
+        : 'Ver actividades',
+      icon: canEdit ? (hasDetail ? 'pencil' : 'plus') : 'eyeOpen',
     };
 
     if (this.isPlantaSelected()) {
@@ -472,10 +489,12 @@ export class ContractModalityDetail {
             id: 'activar-carga',
             label: 'Activar carga',
             icon: 'briefcase',
-            tooltip: ACTIVATE_LOAD_TOOLTIP,
+            tooltip: canEdit ? ACTIVATE_LOAD_TOOLTIP : this.writeBlockReason(),
+            className: canEdit ? undefined : 'cursor-not-allowed opacity-50',
           },
         ];
       }
+
       return [activitiesAction];
     }
 
@@ -490,7 +509,10 @@ export class ContractModalityDetail {
         id: 'eliminar',
         label: 'Eliminar',
         icon: 'delete',
-        className: 'text-error-600 dark:text-error-400',
+        tooltip: canEdit ? undefined : this.writeBlockReason(),
+        className: canEdit
+          ? 'text-error-600 dark:text-error-400'
+          : 'cursor-not-allowed opacity-50 text-error-600 dark:text-error-400',
       },
     ];
   }
@@ -512,9 +534,13 @@ export class ContractModalityDetail {
     this.openMenuKey.set(null);
   }
 
-  onProfessorMenuAction(actionId: string, professor: ModalityProfessor,
-  ): void {
+  onProfessorMenuAction(actionId: string, professor: ModalityProfessor): void {
     this.closeProfessorMenu();
+
+    const writeActions = ['activar-carga', 'eliminar'];
+    if (writeActions.includes(actionId) && !this.canEditPreassignment()) {
+      return;
+    }
 
     if (actionId === 'detalle') {
       this.openProfessorDetail(professor);

@@ -29,6 +29,7 @@ import {
   TipoActividadCriterio,
 } from '../../../../model/professor-activities.model';
 import { SimpleActivity } from '../../../../model/professor-activities-modal.models';
+import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 
 @Component({
   selector: 'app-criteria-activity-card',
@@ -39,6 +40,7 @@ import { SimpleActivity } from '../../../../model/professor-activities-modal.mod
     InputField,
     Button,
     Icon,
+    Tooltip,
   ],
   templateUrl: './criteria-activity-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +52,15 @@ export class CriteriaActivityCard {
   tipoActividad = input<TipoActividad | null>(null);
   addFormOpen = input(false);
   activities = input<SimpleActivity[]>([]);
+
+  readOnly = input(false);
+  readOnlyReason = input<string | null>(null);
+
+  readonly readOnlyMessage = computed(
+    () =>
+      this.readOnlyReason() ??
+      'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
 
   addFormOpenChange = output<boolean>();
   activitiesChange = output<SimpleActivity[]>();
@@ -87,6 +98,10 @@ export class CriteriaActivityCard {
   );
 
   toggleAddForm(): void {
+    if (this.readOnly()) {
+      return;
+    }
+
     this.addFormOpenChange.emit(!this.addFormOpen());
   }
 
@@ -96,6 +111,11 @@ export class CriteriaActivityCard {
   }
 
   onAddActivity(): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -112,6 +132,11 @@ export class CriteriaActivityCard {
   }
 
   removeActivity(activityId: string): void {
+
+    if (this.readOnly()) {
+      return;
+    }
+
     const activity = this.activities().find((item) => item.id === activityId);
     if(activity?.idDetalleCargaDocente == null){
       this.withoutActivity(activityId);

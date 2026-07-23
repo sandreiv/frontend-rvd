@@ -17,17 +17,23 @@
 
   @if (hasAnyModality()) {
     <div class="mt-4">
-      @if (!isPlantaSelected()) {
+          @if (!isPlantaSelected()) {
+      <span
+        [appTooltip]="canEditPreassignment() ? '' : writeBlockReason()"
+        tooltipPlacement="right"
+      >
         <app-button
           type="button"
           size="sm"
           className="h-11 shrink-0 whitespace-nowrap"
-          (click)="onProfessorAddModalOpen()"
+          [disabled]="!canEditPreassignment()"
+          (btnClick)="onProfessorAddModalOpen()"
         >
           <app-icon name="plus" size="sm" />
           Agregar docente
         </app-button>
-      }
+      </span>
+    }
 
       @if (currentProfessorRows().length) {
         <div
@@ -133,6 +139,8 @@
   [contractModality]="selectedModalityForModals()"
   [mode]="professorModalMode()"
   [editingProfessor]="editingModalityProfessor()"
+  [readOnly]="!canEditPreassignment()"
+  [readOnlyReason]="writeBlockReason()"
   (close)="closeProfessorAddModal()"
   (saved)="onProfessorSaved()"
   (existingLoadSelected)="onExistingLoadSelected($event)"
@@ -154,6 +162,8 @@
   [professor]="activitiesProfessor()"
   [contractModality]="activitiesModalContractModality()"
   [coordination]="activitiesModalCoordination()"
+  [readOnly]="!canEditPreassignment()"
+  [readOnlyReason]="writeBlockReason()"
   (close)="closeActivitiesModal()"
   (saved)="onActivitiesSaved()"
 />

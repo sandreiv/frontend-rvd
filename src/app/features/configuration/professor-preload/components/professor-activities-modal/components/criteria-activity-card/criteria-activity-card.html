@@ -5,15 +5,21 @@
     <p class="text-sm text-gray-500 dark:text-gray-400">
       {{ tipoActividad()?.descripcion ?? '' }}
     </p>
-    <app-button
-      type="button"
-      size="sm"
-      className="h-10 shrink-0 whitespace-nowrap"
-      (btnClick)="toggleAddForm()"
+    <span
+      [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+      tooltipPlacement="left"
     >
-      <app-icon name="plus" size="sm" />
-      Agregar actividad
-    </app-button>
+      <app-button
+        type="button"
+        size="sm"
+        className="h-10 shrink-0 whitespace-nowrap"
+        [disabled]="readOnly()"
+        (btnClick)="toggleAddForm()"
+      >
+        <app-icon name="plus" size="sm" />
+        Agregar actividad
+      </app-button>
+    </span>
   </div>
 
   @if (addFormOpen()) {
@@ -28,6 +34,7 @@
             formControlName="idCriterio"
             [options]="criteriaOptions()"
             [placeholder]="formFields[0].placeholder ?? ''"
+            [disabled]="readOnly()"
           />
         </div>
         <div>
@@ -37,6 +44,7 @@
             formControlName="horasDedicacion"
             [placeholder]="formFields[1].placeholder ?? ''"
             [min]="'1'"
+            [disabled]="readOnly()"
           />
         </div>
       </div>
@@ -50,7 +58,12 @@
         >
           Cancelar
         </app-button>
-        <app-button type="button" size="sm" (btnClick)="onAddActivity()">
+        <app-button
+          type="button"
+          size="sm"
+          [disabled]="readOnly()"
+          (btnClick)="onAddActivity()"
+        >
           Agregar
         </app-button>
       </div>
@@ -89,14 +102,20 @@
                 {{ activity.horasDedicacion }}
               </td>
               <td class="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-error-500 dark:hover:bg-white/5"
-                  aria-label="Eliminar actividad"
-                  (click)="removeActivity(activity.id)"
+                <span
+                  [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+                  tooltipPlacement="left"
                 >
-                  <app-icon name="delete" size="sm" />
-                </button>
+                  <button
+                    type="button"
+                    class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-error-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5"
+                    aria-label="Eliminar actividad"
+                    [disabled]="readOnly()"
+                    (click)="removeActivity(activity.id)"
+                  >
+                    <app-icon name="delete" size="sm" />
+                  </button>
+                </span>
               </td>
             </tr>
           }
