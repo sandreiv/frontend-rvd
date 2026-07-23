@@ -131,6 +131,11 @@ export class ContractModalityDetail {
 
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
+  /**
+   * Permisos de edición recibidos desde el detalle de coordinación.
+   * Estos valores permiten evitar condiciones repetidas en la vista y centralizan
+   * el bloqueo de acciones de escritura en precarga docente.
+   */
   canEditPreassignment = input(true);
   editBlockReason = input<string | null>(null);
   hasProfessorsChange = output<boolean>();

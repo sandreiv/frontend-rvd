@@ -25,6 +25,13 @@ export class PreloadCallService {
   private readonly webRequestService = inject(WebRequestService);
   private readonly endpoint = '/configuration/preload-call';
 
+  /**
+   * Obtiene las convocatorias de precarga asociadas a un periodo universitario.
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @returns Observable con la lista de convocatorias de precarga.
+   */
+
   getPreloadCallList(idPeriodoUniversidad: number): Observable<PreloadCallItem[]> {
     return this.webRequestService
       .get<PreloadCallListApiItem[]>(`${this.endpoint}/list`, {
@@ -117,6 +124,14 @@ export class PreloadCallService {
     );
   }
 
+  /**
+   * Guarda una restricción de coordinación para una convocatoria de precarga.
+   * Al registrar la restricción, el backend sincroniza el estado de la convocatoria.
+   *
+   * @param payload Información de la coordinación, fechas y estado de la restricción.
+   * @returns Observable con la restricción registrada.
+   */
+
   saveCoordinationRestriction(payload: RestrictCoordinationFormData): Observable<RestrictCoordinationItem> {
     console.log('payload', payload);
     return this.webRequestService.post<RestrictCoordinationItem>(
@@ -124,6 +139,13 @@ export class PreloadCallService {
       payload,
     );
   }
+
+  /**
+   * Lista las restricciones de coordinación asociadas a una convocatoria.
+   *
+   * @param idConvocatoria Identificador opcional de la convocatoria.
+   * @returns Observable con la lista de restricciones por coordinación.
+   */
 
   listCoordinationRestriction(idConvocatoria?: number,): Observable<RestrictCoordinationItem[]> {
     const query: Record<string, string> = {};
@@ -138,12 +160,30 @@ export class PreloadCallService {
     );
   }
 
+  /**
+   * Actualiza una restricción de coordinación existente.
+   * El backend sincroniza nuevamente el estado de la convocatoria al finalizar la actualización.
+   *
+   * @param id Identificador de la restricción.
+   * @param payload Información actualizada de la restricción.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+
   updateCoordinationRestriction(id: number, payload: RestrictCoordinationFormData): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/update-coordination-restriction/${id}`,
       payload,
     );
   }
+
+  /**
+ * Elimina una restricción de coordinación.
+ * El backend valida si la convocatoria debe permanecer activa o pasar a estado inactivo.
+ *
+ * @param id Identificador de la restricción.
+ * @param payload Información requerida para la eliminación.
+ * @returns Observable sin contenido cuando la eliminación finaliza correctamente.
+ */
 
   deleteCoordinationRestriction(id: number, payload: RestrictCoordinationDeleteRequest): Observable<void> {
     return this.webRequestService.post<void>(

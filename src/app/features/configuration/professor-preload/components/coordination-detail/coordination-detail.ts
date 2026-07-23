@@ -39,9 +39,19 @@ export class CoordinationDetail {
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
 
+  /**
+ * Determina si la coordinación seleccionada puede ejecutar acciones de edición.
+ * Este valor viene calculado desde backend según convocatoria, restricción y fechas.
+ */
+
   readonly canEditPreassignment = computed(
     () => this.coordination().canEditPreassignment === true,
   );
+
+  /**
+ * Mensaje que explica por qué la coordinación se encuentra en modo solo lectura.
+ * Se utiliza en tooltips y botones deshabilitados.
+ */
 
   readonly editBlockReason = computed(
     () =>
