@@ -29,6 +29,7 @@ import { Icon } from '../icon/icon';
 import { Item } from '../dropdown/item/item';
 import { Checkbox } from '../../components/form/input/checkbox';
 import { formatSentenceValue } from '../../utils/normalized-text.util';
+import { formatCurrencyValue } from '../../utils/currency.util';
 
 @Component({
   selector: 'app-data-table',
@@ -519,11 +520,19 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
       formattedValue = this.formatDateValue(formattedValue);
     }
 
+    if (column.formatAsCurrency) {
+      formattedValue = this.formatCurrencyCellValue(formattedValue);
+    }
+
     if (column.formatAsSentence) {
       formattedValue = formatSentenceValue(formattedValue);
     }
 
     return formattedValue || '-';
+  }
+
+  private formatCurrencyCellValue(value: string): string {
+    return formatCurrencyValue(value);
   }
 
   private formatDateValue(value: string): string {

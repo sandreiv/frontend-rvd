@@ -29,5 +29,20 @@ export class AdministrationView {
       icon: 'bookOpen',
       path: 'tipo-actividades',
     },
+    {
+      label: 'Convocatorias de proyecto',
+      icon: 'bookOpen',
+      path: 'convocatorias-de-proyecto',
+    },
+    {
+      label: 'Tipos de proyecto',
+      icon: 'briefcase',
+      path: 'tipos-de-proyecto',
+    },
+    {
+      label: 'Proyectos',
+      icon: 'documentPlus',
+      path: 'proyectos',
+    },
   ];
 }

@@ -44,34 +44,15 @@ export class CoordinationService {
  * @returns Observable con la lista de convocatorias activas.
  */
 
+  /**
+   * Obtiene las convocatorias de precarga activas
+   * @returns Observable<CoordinationPreloadCallApi[]>
+   */
   getActivePreloadCall(): Observable<CoordinationPreloadCallApi[]> {
     return this.webRequestService.get<CoordinationPreloadCallApi[]>(
       `${this.endpoint}/list-active-preload-calls`,
     );
   }
-
-  /**
-   * Obtiene las convocatorias activas asignables.
-   * Excluye las convocatorias que tienen restricciones vigentes o no vencidas.
-   * Se utiliza para la autoasignación y para el modal del botón "+".
-   *
-   * @returns Observable con la lista de convocatorias disponibles para asignación libre.
-   */
-
-  getAssignablePreloadCalls(): Observable<CoordinationPreloadCallApi[]> {
-    return this.webRequestService.get<CoordinationPreloadCallApi[]>(
-      `${this.endpoint}/list-assignable-preload-calls`,
-    );
-  }
-
-  /**
-   * Obtiene las coordinaciones de precarga docente.
-   * Cuando se envía idConvocatoria, consulta las coordinaciones asociadas a esa convocatoria.
-   * Cuando no se envía idConvocatoria, consulta coordinaciones sin convocatoria asignada.
-   *
-   * @param idConvocatoria Identificador opcional de la convocatoria.
-   * @returns Observable con la lista de coordinaciones normalizadas para la vista.
-   */
 
   getCoordinations(idConvocatoria?: number): Observable<CoordinationItem[]> {
     const params = idConvocatoria != null ? { idConvocatoria: String(idConvocatoria) } : undefined;

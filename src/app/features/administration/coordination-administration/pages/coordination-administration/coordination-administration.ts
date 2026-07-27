@@ -531,7 +531,7 @@ export class CoordinationAdministration implements OnInit {
 
 
   async ngOnInit(): Promise<void> {
-    this.breadcrumbTitle.setPageTitle('Administración / Coordinaciones');
+    this.breadcrumbTitle.setPageTitle('Coordinaciones');
     await this.loadInitialData();
   }
 

@@ -21,6 +21,7 @@ export interface DataTableColumn<T> {
   cellKind?: DataTableColumnCellKind;
   formatAsDate?: boolean;
   formatAsSentence?: boolean;
+  formatAsCurrency?: boolean;
   allowHtml?: boolean;
   headerClassName?: string;
   cellClassName?: string;

@@ -92,7 +92,7 @@ export class ActivityTypesPage implements OnInit {
     );  
 
   async ngOnInit(): Promise<void> {
-    this.breadcrumbTitle.setPageTitle('Administración / Tipo actividades');
+    this.breadcrumbTitle.setPageTitle('Tipo actividades');
     await this.refreshActivityTypes();
   }
 

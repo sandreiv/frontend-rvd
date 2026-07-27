@@ -25,7 +25,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       [disabled]="disabled"
       [ngClass]="inputClasses"
       (input)="onInput($event)"
-      (blur)="onTouched()"
+      (blur)="handleBlur()"
+      (focus)="focus.emit()"
     />
 
     @if (hint) {
@@ -60,6 +61,7 @@ export class InputField implements ControlValueAccessor {
 
   @Output() valueChange = new EventEmitter<string | number>();
   @Output() focus = new EventEmitter<void>();
+  @Output() blurred = new EventEmitter<void>();
 
   private onChange: (value: any) => void = () => {};
   onTouched: () => void = () => {};
@@ -101,6 +103,10 @@ export class InputField implements ControlValueAccessor {
     this.value = value;
     this.onChange(value);
     this.valueChange.emit(value);
-    this.focus.emit();
+  }
+
+  handleBlur(): void {
+    this.onTouched();
+    this.blurred.emit();
   }
 }

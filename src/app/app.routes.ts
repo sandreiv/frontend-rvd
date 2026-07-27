@@ -4,6 +4,8 @@ import { configurationRoutes } from './features/configuration/configuration.rout
 import { PreloadCall } from './features/configuration/preload-call/pages/preload-call/preload-call';
 import { ProfessorPreload } from './features/configuration/professor-preload/pages/professor-preload/professor-preload';
 import { administrationRoutes } from './features/administration/administration.routes';
+import { ProjectCalls } from './features/administration/project-calls/pages/project-calls/project-calls';
+import { ProjectTypes } from './features/administration/project-types/pages/project-types/project-types';
 
 
 
@@ -23,6 +25,8 @@ export const routes: Routes = [
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
       { path: 'administracion', children: administrationRoutes },
+      { path: 'convocatorias-de-proyecto', component: ProjectCalls },
+      { path: 'tipos-de-proyecto', component: ProjectTypes },
     ],
   }
 ];
