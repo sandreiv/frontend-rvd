@@ -1,0 +1,95 @@
+<app-section-frame
+  title="Proyectos"
+  description="Administra proyectos, productos asociados y personas del proyecto."
+  iconName="briefcase"
+  iconVariant="brand"
+>
+  <div class="space-y-5">
+    @if (isProductsView() || isPersonsView()) {
+      <div
+        class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+            {{ nestedBannerTitle() }}
+          </h4>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ nestedBannerDescription() }}
+          </p>
+        </div>
+
+        <app-button
+          type="button"
+          variant="outline"
+          size="sm"
+          (btnClick)="backToProjects()"
+        >
+          Volver a proyectos
+        </app-button>
+      </div>
+    }
+
+    @if (isPersonsView()) {
+      @if (showForm()) {
+        <app-project-person-form
+          [person]="selectedPerson()"
+          [projectId]="parentProject()!.id"
+          [isSaving]="isSaving()"
+          (cancel)="closeForm()"
+          (savePerson)="onSavePerson($event)"
+        />
+      } @else {
+        <app-project-person-table
+          [persons]="persons()"
+          [selectedPersonIds]="selectedPersonIds()"
+          (selectedPersonIdsChange)="onSelectedPersonIdsChange($event)"
+          (refreshPersons)="refreshPersons()"
+          (addPerson)="openCreateForm()"
+          (editPerson)="openEditPerson($event)"
+          (deletePerson)="requestDeletePerson($event)"
+          (deleteAll)="requestBulkDeletePersons($event)"
+        />
+      }
+    } @else {
+      @if (showForm()) {
+        <app-project-form
+          [project]="selectedProject()"
+          [isSaving]="isSaving()"
+          [title]="formTitle()"
+          [editTitle]="formEditTitle()"
+          [description]="formDescription()"
+          [parentProjectId]="parentProject()?.id ?? null"
+          (cancel)="closeForm()"
+          (saveProject)="onSaveProject($event)"
+        />
+      } @else {
+        <app-project-table
+          [projects]="displayedProjects()"
+          [selectedProjectIds]="displayedSelectedIds()"
+          [emptyMessage]="tableEmptyMessage()"
+          [searchPlaceholder]="tableSearchPlaceholder()"
+          [showNestedActions]="!isProductsView()"
+          (selectedProjectIdsChange)="onSelectedProjectIdsChange($event)"
+          (refreshProjects)="refreshCurrentList()"
+          (addProject)="openCreateForm()"
+          (editProject)="openEditProject($event)"
+          (deleteProject)="requestDeleteProject($event)"
+          (deleteAll)="requestBulkDeleteProjects($event)"
+          (viewPersons)="openPersonsView($event)"
+          (viewProducts)="openProductsView($event)"
+        />
+      }
+    }
+  </div>
+</app-section-frame>
+
+<app-new-modal
+  [isOpen]="showDeleteModal()"
+  [title]="deleteModalTitle()"
+  [message]="deleteModalMessage()"
+  [buttonText]="deleteModalButtonText()"
+  [showCancelButton]="true"
+  cancelButtonText="No, cancelar"
+  (confirm)="confirmDelete()"
+  (close)="closeDeleteModal()"
+/>
