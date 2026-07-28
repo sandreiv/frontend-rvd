@@ -54,6 +54,19 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Obtiene las convocatorias activas asignables.
+   * Excluye las convocatorias que tienen restricciones vigentes o no vencidas.
+   * Se utiliza para la autoasignación y para el modal del botón "+".
+   *
+   * @returns Observable con la lista de convocatorias disponibles para asignación libre.
+   */
+  getAssignablePreloadCalls(): Observable<CoordinationPreloadCallApi[]> {
+    return this.webRequestService.get<CoordinationPreloadCallApi[]>(
+      `${this.endpoint}/list-assignable-preload-calls`,
+    );
+  }
+
   getCoordinations(idConvocatoria?: number): Observable<CoordinationItem[]> {
     const params = idConvocatoria != null ? { idConvocatoria: String(idConvocatoria) } : undefined;
     

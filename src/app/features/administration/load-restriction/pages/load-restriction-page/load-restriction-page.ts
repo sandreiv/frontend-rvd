@@ -17,7 +17,6 @@ import {
 import { firstValueFrom } from 'rxjs';
 
 import { BreadcrumbTitle } from '../../../../../core/service/breadcrumb-title';
-import { Button } from '../../../../../shared/ui/button/button';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
 import { LoadRestrictionForm } from '../../components/load-restriction-form/load-restriction-form';
 import { LoadRestrictionTable } from '../../components/load-restriction-table/load-restriction-table';
@@ -31,7 +30,7 @@ import {
 
 @Component({
   selector: 'app-load-restriction-page',
-  imports: [SectionFrame, LoadRestrictionTable, Button, LoadRestrictionForm],
+  imports: [SectionFrame, LoadRestrictionTable, LoadRestrictionForm],
   templateUrl: './load-restriction-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
