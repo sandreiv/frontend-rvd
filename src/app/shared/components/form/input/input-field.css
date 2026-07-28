@@ -1,6 +1,23 @@
-input {
-    background-color: transparent;
-  }
+input:not(:disabled) {
+  background-color: transparent;
+}
+
+input:disabled {
+  background-color: #f9fafb !important;
+  color: #9ca3af !important;
+  cursor: default !important;
+}
+
+input:disabled::placeholder {
+  color: #d1d5db !important;
+}
+
+:host-context(.dark) input:disabled {
+  background-color: #111827 !important;
+  color: #6b7280 !important;
+  cursor: default !important;
+}
+
   /* Evita el fondo azul/amarillo del autofill en Chromium */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,

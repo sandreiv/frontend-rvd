@@ -44,5 +44,10 @@ export class AdministrationView {
       icon: 'documentPlus',
       path: 'proyectos',
     },
+    {
+      label: 'Restricción de carga',
+      icon: 'lock',
+      path: 'restriccion-carga',
+    },
   ];
 }

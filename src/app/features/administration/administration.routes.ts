@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AdministrationView } from './administration-view/administration-view';
 import { CoordinationAdministration } from './coordination-administration/pages/coordination-administration/coordination-administration';
 import { ActivityTypesPage } from './activity-types/pages/activity-types-page/activity-types-page';
+import { LoadRestrictionPage } from './load-restriction/pages/load-restriction-page/load-restriction-page';
 import { ProjectCalls } from './project-calls/pages/project-calls/project-calls';
 import { ProjectTypes } from './project-types/pages/project-types/project-types';
 import { Projects } from './projects/pages/projects/projects';
@@ -20,6 +21,11 @@ export const administrationRoutes: Routes = [
         path: 'tipo-actividades',
         component: ActivityTypesPage,
         title: 'Tipo actividades - RVD',
+      },
+      {
+        path: 'restriccion-carga',
+        component: LoadRestrictionPage,
+        title: 'Restricción de carga - RVD',
       },
       {
         path: '',
