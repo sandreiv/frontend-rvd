@@ -133,10 +133,29 @@ export class ProfessorAddModal {
   readonly fields = computed<ProfessorFieldConfig[]>(() => {
     const kind = resolveModalityKind(this.contractModality()?.nombre);
     const baseFields = kind ? PROFESSOR_FIELDS[kind] : [];
+
+   
+    if (this.isEditMode() && kind === 'catedra') {
+      return baseFields.map((field) => {
+        if (field.key === 'categoriaCatedratico') {
+          return {
+            ...field,
+            control: 'select' as const,
+            readonly: false,
+            placeholder: 'Seleccione la categoría',
+          };
+        }
+
+        return field;
+      });
+    }
+
+    
     if (this.isProfessorActive()) {
       return baseFields;
     }
 
+    
     return baseFields.map((field) => {
       if (field.key === 'categoriaCatedratico') {
         return {
@@ -146,9 +165,11 @@ export class ProfessorAddModal {
           placeholder: 'Seleccione la categoría',
         };
       }
+
       if (field.key === 'numeroPuntos') {
         return { ...field, readonly: false };
       }
+
       return field;
     });
   });
@@ -292,13 +313,27 @@ export class ProfessorAddModal {
 
     effect(() => {
       const form = this.professorForm();
+      const fields = this.fields();
 
       if (this.readOnly()) {
         form.disable({ emitEvent: false });
         return;
       }
 
-      form.enable({ emitEvent: false });
+      fields.forEach((field) => {
+        const control = form.get(field.key);
+
+        if (!control) {
+          return;
+        }
+
+        if (field.readonly) {
+          control.disable({ emitEvent: false });
+          return;
+        }
+
+        control.enable({ emitEvent: false });
+      });
     });
 
     effect(() => {
@@ -508,9 +543,13 @@ export class ProfessorAddModal {
       (item) => item.id === editing.idCategoriaCatedratico,
     );
 
+    const categoriaValue =
+      this.modalityKind() === 'catedra'
+        ? String(editing.idCategoriaCatedratico)
+        : categoria?.descripcion ?? String(editing.idCategoriaCatedratico);
+
     form.patchValue({
-      categoriaCatedratico:
-        categoria?.descripcion ?? String(editing.idCategoriaCatedratico),
+      categoriaCatedratico: categoriaValue,
       fechaLabor: String(editing.idFechasConvocatoria),
     });
     this.patchWorkDateFields(form, workDate);
