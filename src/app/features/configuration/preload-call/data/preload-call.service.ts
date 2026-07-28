@@ -117,10 +117,21 @@ export class PreloadCallService {
     );
   }
 
-  searchCoordination(nombre: string): Observable<CoordinationOption[]> {
+  searchCoordination(
+    nombre: string,
+    idConvocatoria?: number | null,
+  ): Observable<CoordinationOption[]> {
+    const params: Record<string, string> = {
+      nombre,
+    };
+
+    if (idConvocatoria != null) {
+      params['idConvocatoria'] = String(idConvocatoria);
+    }
+
     return this.webRequestService.get<CoordinationOption[]>(
       `${this.endpoint}/search-coordination`,
-      { nombre },
+      params,
     );
   }
 

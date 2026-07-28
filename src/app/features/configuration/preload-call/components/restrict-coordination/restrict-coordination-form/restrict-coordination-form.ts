@@ -62,6 +62,7 @@ export class RestrictCoordinationForm {
 
   readonly restriction = input<RestrictCoordinationItem | null>(null);
   readonly isSaving = input(false);
+  readonly idConvocatoria = input<number | null>(null);
 
   readonly cancel = output<void>();
   readonly saveRestriction = output<RestrictCoordinationFormData>();
@@ -92,7 +93,7 @@ export class RestrictCoordinationForm {
         distinctUntilChanged(),
         switchMap((term) =>
           this.preloadCallService
-            .searchCoordination(term)
+            .searchCoordination(term, this.idConvocatoria())
             .pipe(catchError(() => of([] as CoordinationOption[]))),
         ),
         takeUntilDestroyed(),

@@ -31,6 +31,7 @@
     @if (showForm()) {
       <app-restrict-coordination-form
         [restriction]="editingRestriction()"
+        [idConvocatoria]="preloadCall()?.id ?? null"
         [isSaving]="isSaving()"
         (cancel)="closeRestrictionForm()"
         (saveRestriction)="onSaveRestriction($event)"
