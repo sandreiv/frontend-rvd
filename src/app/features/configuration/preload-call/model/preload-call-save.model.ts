@@ -55,9 +55,9 @@ export interface PreloadCallSaveCotc {
 export interface PreloadCallSaveCotcFecha {
   id?: number | null;
   vacaciones: number | null;
-  fechaInicio: string;
-  fechaFin: string;
-  semanas: number;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  semanas: number | null;
 }
 
 export interface BuildPreloadCallSavePayloadParams {

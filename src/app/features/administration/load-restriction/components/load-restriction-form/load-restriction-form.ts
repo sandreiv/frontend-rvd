@@ -49,6 +49,8 @@ type LoadRestrictionFormGroup = FormGroup<{
   investigacion: FormControl<boolean>;
   formaPagoEnabled: FormControl<boolean>;
   formaPago: FormControl<string>;
+  tipoContratoEnabled: FormControl<boolean>;
+  tipoContrato: FormControl<string>;
   tipoHorasEnabled: FormControl<boolean>;
   tipoHoras: FormControl<string>;
   excepcionEnabled: FormControl<boolean>;
@@ -69,6 +71,11 @@ const restrictionValidator: ValidatorFn = (
 
   const formaPagoEnabled = control.get('formaPagoEnabled')?.value === true;
   const formaPago = String(control.get('formaPago')?.value ?? '');
+
+  const tipoContratoEnabled = Boolean(
+    control.get('tipoContratoEnabled')?.value,
+  );
+  const tipoContrato = String(control.get('tipoContrato')?.value ?? '');
 
   const tipoHorasEnabled = control.get('tipoHorasEnabled')?.value === true;
   const tipoHoras = String(control.get('tipoHoras')?.value ?? '');
@@ -102,6 +109,10 @@ const restrictionValidator: ValidatorFn = (
 
   if (formaPagoEnabled && !formaPago) {
     errors['formaPagoRequired'] = true;
+  }
+
+  if (tipoContratoEnabled && !tipoContrato) {
+    errors['tipoContratoRequired'] = true;
   }
 
   if (tipoHorasEnabled && !tipoHoras) {
@@ -156,6 +167,11 @@ export class LoadRestrictionForm implements OnChanges {
     { value: 'CATEDRA', label: 'Cátedra' },
   ];
 
+  readonly tipoContratoOptions: Option[] = [
+    { value: 'CONTRATO', label: 'Contrato' },
+    { value: 'NORMA', label: 'Norma' },
+  ];
+
   readonly tipoHorasOptions: Option[] = [
     { value: 'SEMANAL', label: 'Semanal' },
     { value: 'SEMESTRAL', label: 'Semestral' },
@@ -169,6 +185,8 @@ export class LoadRestrictionForm implements OnChanges {
       investigacion: new FormControl(false, { nonNullable: true }),
       formaPagoEnabled: new FormControl(false, { nonNullable: true }),
       formaPago: new FormControl('', { nonNullable: true }),
+      tipoContratoEnabled: new FormControl(false, { nonNullable: true }),
+      tipoContrato: new FormControl('', { nonNullable: true }),
       tipoHorasEnabled: new FormControl(false, { nonNullable: true }),
       tipoHoras: new FormControl('', { nonNullable: true }),
       excepcionEnabled: new FormControl(false, { nonNullable: true }),
@@ -229,6 +247,13 @@ export class LoadRestrictionForm implements OnChanges {
     return this.submitted() && this.form.hasError('formaPagoRequired');
   }
 
+  get showTipoContratoRequired(): boolean {
+    return (
+      this.submitted() &&
+      this.form.hasError('tipoContratoRequired')
+    );
+  }
+
   get showTipoHorasRequired(): boolean {
     return this.submitted() && this.form.hasError('tipoHorasRequired');
   }
@@ -272,6 +297,16 @@ export class LoadRestrictionForm implements OnChanges {
     if (!checked) {
       this.form.controls.formaPago.setValue('');
     }
+    this.form.updateValueAndValidity();
+  }
+
+  onToggleTipoContrato(checked: boolean): void {
+    this.form.controls.tipoContratoEnabled.setValue(checked);
+
+    if (!checked) {
+      this.form.controls.tipoContrato.setValue('');
+    }
+
     this.form.updateValueAndValidity();
   }
 
@@ -437,6 +472,7 @@ export class LoadRestrictionForm implements OnChanges {
       maximo: raw.horasEnabled && raw.maximo != null ? String(raw.maximo) : null,
       investigacion: raw.investigacion ? '1' : '0',
       formaPago: raw.formaPagoEnabled ? raw.formaPago : null,
+      tipoContrato: raw.tipoContratoEnabled ? raw.tipoContrato : null,
       tipoHoras: raw.tipoHorasEnabled ? raw.tipoHoras : null,
       idsProgramasExcepcion: raw.excepcionEnabled
       ? this.selectedPrograms().map((item) => item.id)
@@ -471,6 +507,8 @@ export class LoadRestrictionForm implements OnChanges {
       investigacion: this.isMarked(item?.investigacion),
       formaPagoEnabled: !!item?.formaPago,
       formaPago: item?.formaPago ?? '',
+      tipoContratoEnabled: !!item?.tipoContrato,
+      tipoContrato: item?.tipoContrato ?? '',
       tipoHorasEnabled: !!item?.tipoHoras,
       tipoHoras: item?.tipoHoras ?? '',
       excepcionEnabled,

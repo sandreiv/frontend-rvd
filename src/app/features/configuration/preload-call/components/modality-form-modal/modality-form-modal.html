@@ -38,7 +38,10 @@
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div class="flex flex-col gap-3">
+      <div
+        class="flex flex-col gap-3"
+        [class.pointer-events-none]="isPlantSelected()"
+      >
         <app-date-range-picker
           [formGroup]="form"
           startControlName="fechaInicio"
@@ -50,18 +53,20 @@
           [showLabels]="true"
         />
       </div>
-      <div>
-        <div class="">
-          <app-label>Semanas</app-label>
-          <app-input-field
-            type="number"
-            formControlName="semanas"
-            placeholder="Se calcula automáticamente"
-            [step]="1"
-            [min]="'1'"
-            (valueChange)="onSemanasManualEdit()"
-          />
-        </div>
+
+      <div
+        [class.pointer-events-none]="isPlantSelected()"
+      >
+        <app-label>Semanas</app-label>
+        <app-input-field
+          type="number"
+          formControlName="semanas"
+          placeholder="Se calcula automáticamente"
+          [step]="1"
+          [min]="'1'"
+          [disabled]="isPlantSelected()"
+          (valueChange)="onSemanasManualEdit()"
+        />
       </div>
     </div>
 

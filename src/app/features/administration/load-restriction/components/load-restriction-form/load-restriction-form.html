@@ -62,7 +62,7 @@
     </div>
   </div>
 
-  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
       <app-checkbox
         label="Investigación"
@@ -93,6 +93,29 @@
         @if (showFormaPagoRequired) {
           <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
             La forma de pago es obligatoria.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
+      <app-checkbox
+        label="Tipo contrato"
+        [checked]="form.controls.tipoContratoEnabled.value"
+        (checkedChange)="onToggleTipoContrato($event)"
+      />
+
+      <div class="mt-3">
+        <app-select
+          formControlName="tipoContrato"
+          [options]="tipoContratoOptions"
+          placeholder="Seleccione tipo contrato"
+          [disabled]="!form.controls.tipoContratoEnabled.value"
+        />
+
+        @if (showTipoContratoRequired) {
+          <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+            El tipo de contrato es obligatorio.
           </p>
         }
       </div>

@@ -7,6 +7,7 @@ import {
   inject,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -62,6 +63,8 @@ export class ModalityFormModal {
     this.isEditMode() ? 'Actualizar' : 'Agregar',
   );
 
+  readonly isPlantSelected = signal(false);
+
   readonly form = this.fb.group({
     tipoModalidad: ['', Validators.required],
     diasVacaciones: [''],
@@ -78,12 +81,14 @@ export class ModalityFormModal {
       if (!open) {
         this.form.reset();
         this.semanasManuallyEdited = false;
+        this.syncPlantModalityState();
         return;
       }
 
       if (!item) {
         this.form.reset();
         this.semanasManuallyEdited = false;
+        this.syncPlantModalityState();
         return;
       }
 
@@ -92,11 +97,17 @@ export class ModalityFormModal {
         tipoModalidad: item.tipoModalidad,
         diasVacaciones:
           item.diasVacaciones != null ? String(item.diasVacaciones) : '',
-        fechaInicio: item.fechaInicio,
-        fechaFin: item.fechaFin,
+        fechaInicio: item.fechaInicio ?? '',
+        fechaFin: item.fechaFin ?? '',
         semanas: item.semanas != null ? String(item.semanas) : '',
       });
+
+      this.syncPlantModalityState();
     });
+
+    this.form.controls.tipoModalidad.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncPlantModalityState());
 
     merge(
       this.form.controls.fechaInicio.valueChanges,
@@ -127,6 +138,8 @@ export class ModalityFormModal {
 
     const editing = this.editingItem();
 
+    const isPlant = this.isPlantSelected();
+
     this.saved.emit({
       id: editing?.id ?? '',
       cotcId: editing?.cotcId,
@@ -134,14 +147,19 @@ export class ModalityFormModal {
       tipoModalidad,
       tipoModalidadLabel: label,
       diasVacaciones,
-      fechaInicio: this.form.controls.fechaInicio.value ?? '',
-      fechaFin: this.form.controls.fechaFin.value ?? '',
-      semanas,
+      fechaInicio: isPlant ? null : this.form.controls.fechaInicio.value ?? '',
+      fechaFin: isPlant ? null : this.form.controls.fechaFin.value ?? '',
+      semanas: isPlant ? null : semanas,
     });
+
     this.close.emit();
   }
 
   private syncSemanasFromDates(): void {
+    if (this.isPlantSelected()) {
+      return;
+    }
+
     if (this.semanasManuallyEdited) {
       return;
     }
@@ -178,4 +196,65 @@ export class ModalityFormModal {
     const whole = Math.floor(weeks);
     return fraction >= 0.5 ? whole + 1 : whole;
   }
+
+  private syncPlantModalityState(): void {
+    const isPlant = this.isPlantModality(this.form.controls.tipoModalidad.value);
+
+    this.isPlantSelected.set(isPlant);
+
+    const fechaInicio = this.form.controls.fechaInicio;
+    const fechaFin = this.form.controls.fechaFin;
+    const semanas = this.form.controls.semanas;
+
+    if (isPlant) {
+      fechaInicio.clearValidators();
+      fechaFin.clearValidators();
+      semanas.clearValidators();
+
+      fechaInicio.setValue('', { emitEvent: false });
+      fechaFin.setValue('', { emitEvent: false });
+      semanas.setValue('', { emitEvent: false });
+
+      fechaInicio.disable({ emitEvent: false });
+      fechaFin.disable({ emitEvent: false });
+      semanas.disable({ emitEvent: false });
+
+      fechaInicio.updateValueAndValidity({ emitEvent: false });
+      fechaFin.updateValueAndValidity({ emitEvent: false });
+      semanas.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    fechaInicio.enable({ emitEvent: false });
+    fechaFin.enable({ emitEvent: false });
+    semanas.enable({ emitEvent: false });
+
+    fechaInicio.setValidators(Validators.required);
+    fechaFin.setValidators(Validators.required);
+    semanas.setValidators(Validators.required);
+
+    fechaInicio.updateValueAndValidity({ emitEvent: false });
+    fechaFin.updateValueAndValidity({ emitEvent: false });
+    semanas.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private isPlantModality(value: string | null | undefined): boolean {
+    const selectedOption = this.modalityOptions().find(
+      (option) => option.value === value,
+    );
+
+    const label = selectedOption?.label ?? '';
+    return this.normalizeText(label).includes('planta');
+  }
+
+  private normalizeText(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+
+
 }

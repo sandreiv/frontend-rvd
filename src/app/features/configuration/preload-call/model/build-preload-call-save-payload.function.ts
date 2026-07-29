@@ -46,9 +46,9 @@ function mapCotcFecha(row: ModalityFormItem): PreloadCallSaveCotcFecha {
   return {
     id: row.fechaId ?? null,
     vacaciones: row.diasVacaciones ?? null,
-    fechaInicio: row.fechaInicio,
-    fechaFin: row.fechaFin,
-    semanas: row.semanas ?? 0,
+    fechaInicio: row.fechaInicio ?? null,
+    fechaFin: row.fechaFin ?? null,
+    semanas: row.semanas ?? null,
   };
 }
 

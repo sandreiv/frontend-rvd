@@ -34,6 +34,7 @@ export interface LoadRestrictionDetail {
   maximo: string | null;
   investigacion: string | null;
   formaPago: string | null;
+  tipoContrato: string | null;
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];
@@ -47,6 +48,7 @@ export interface LoadRestrictionFormData {
   maximo: string | null;
   investigacion: string;
   formaPago: string | null;
+  tipoContrato: string | null;
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];

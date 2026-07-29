@@ -118,8 +118,8 @@ export interface ModalityFormItem {
   fechaId?: number;
   tipoModalidad: string;
   tipoModalidadLabel: string;
-  fechaInicio: string;
-  fechaFin: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
   diasVacaciones: number | null;
   semanas: number | null;
 }
