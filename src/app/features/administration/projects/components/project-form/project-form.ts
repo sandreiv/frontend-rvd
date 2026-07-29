@@ -6,14 +6,18 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  computed,
   inject,
   input,
   signal,
 } from '@angular/core';
 import {
+  AbstractControl,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -40,14 +44,17 @@ import {
 } from '../../../../../shared/components/form/typeahead-select/typeahead-select';
 import {
   formatCurrencyInput,
+  formatCurrencyValue,
   parseCurrencyToNumber,
 } from '../../../../../shared/utils/currency.util';
 import { ProjectCallsService } from '../../../project-calls/data/project-calls.service';
 import { ProjectTypesService } from '../../../project-types/data/project-types.service';
+import { ProjectTypeItem } from '../../../project-types/model/project-types.model';
 import { PreloadCallService } from '../../../../configuration/preload-call/data/preload-call.service';
 import {
   ProjectFormData,
   ProjectItem,
+  resolveProjectTypeLimits,
   toDateOnly,
 } from '../../model/projects.model';
 
@@ -100,7 +107,21 @@ export class ProjectForm implements OnInit, OnChanges {
 
   readonly convocatoriaOptions = signal<Option[]>([]);
   readonly tipoProyectoOptions = signal<Option[]>([]);
+  readonly projectTypes = signal<ProjectTypeItem[]>([]);
+  readonly selectedProjectType = signal<ProjectTypeItem | null>(null);
   readonly filteredCoordinations = signal<CoordinationOption[]>([]);
+
+  readonly selectedTypeLimits = computed(() =>
+    resolveProjectTypeLimits(this.selectedProjectType()),
+  );
+
+  readonly montoMaximoLabel = computed(() => {
+    const max = this.selectedTypeLimits().montoMaximo;
+    if (max == null) {
+      return '';
+    }
+    return formatCurrencyValue(max);
+  });
 
   readonly form: ProjectFormGroup = new FormGroup({
     nombre: new FormControl('', {
@@ -113,7 +134,7 @@ export class ProjectForm implements OnInit, OnChanges {
     }),
     monto: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required],
+      validators: [Validators.required, this.montoMaximoValidator()],
     }),
     fechaInicio: new FormControl('', {
       nonNullable: true,
@@ -150,6 +171,18 @@ export class ProjectForm implements OnInit, OnChanges {
         takeUntilDestroyed(),
       )
       .subscribe((rows) => this.filteredCoordinations.set(rows.slice(0, 20)));
+
+    this.form.controls.idTipoProyecto.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.onTipoProyectoChange(id));
+
+    this.form.controls.monto.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        this.form.controls.monto.updateValueAndValidity({
+          emitEvent: false,
+        });
+      });
   }
 
   async ngOnInit(): Promise<void> {
@@ -162,6 +195,13 @@ export class ProjectForm implements OnInit, OnChanges {
       this.ensureSelectedCoordination();
       this.patchForm();
     }
+  }
+
+  get montoMaximoInvalid(): boolean {
+    const control = this.form.controls.monto;
+    return (
+      control.hasError('montoMaximo') && (control.touched || control.dirty)
+    );
   }
 
   readonly coordinationOptionAdapter = (item: unknown): TypeaheadOption => {
@@ -195,6 +235,7 @@ export class ProjectForm implements OnInit, OnChanges {
       formatCurrencyInput(this.form.controls.monto.value),
       { emitEvent: false },
     );
+    this.form.controls.monto.updateValueAndValidity({ emitEvent: false });
   }
 
   onSubmit(): void {
@@ -222,6 +263,26 @@ export class ProjectForm implements OnInit, OnChanges {
     });
   }
 
+  private montoMaximoValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const monto = parseCurrencyToNumber(control.value);
+      const max = this.selectedTypeLimits().montoMaximo;
+
+      if (monto == null || max == null) {
+        return null;
+      }
+
+      return monto > max ? { montoMaximo: { max, actual: monto } } : null;
+    };
+  }
+
+  private onTipoProyectoChange(id: string): void {
+    const type =
+      this.projectTypes().find((item) => String(item.id) === id) ?? null;
+    this.selectedProjectType.set(type);
+    this.form.controls.monto.updateValueAndValidity({ emitEvent: false });
+  }
+
   private async loadSelectOptions(): Promise<void> {
     try {
       const [calls, types] = await Promise.all([
@@ -229,6 +290,7 @@ export class ProjectForm implements OnInit, OnChanges {
         firstValueFrom(this.projectTypesService.listProjectTypes()),
       ]);
 
+      this.projectTypes.set(types ?? []);
       this.convocatoriaOptions.set(
         (calls ?? []).map((item) => ({
           value: String(item.id),
@@ -243,6 +305,7 @@ export class ProjectForm implements OnInit, OnChanges {
       );
     } catch (error) {
       console.error(error);
+      this.projectTypes.set([]);
       this.convocatoriaOptions.set([]);
       this.tipoProyectoOptions.set([]);
     }
@@ -271,6 +334,8 @@ export class ProjectForm implements OnInit, OnChanges {
 
   private patchForm(): void {
     const item = this.project();
+    const tipoId =
+      item?.idTipoProyecto != null ? String(item.idTipoProyecto) : '';
 
     this.form.reset({
       nombre: item?.nombre ?? '',
@@ -282,10 +347,11 @@ export class ProjectForm implements OnInit, OnChanges {
         item?.idConvocatoriaProyectos != null
           ? String(item.idConvocatoriaProyectos)
           : '',
-      idTipoProyecto:
-        item?.idTipoProyecto != null ? String(item.idTipoProyecto) : '',
+      idTipoProyecto: tipoId,
       idCoordinacion:
         item?.idCoordinacion != null ? String(item.idCoordinacion) : '',
     });
+
+    this.onTipoProyectoChange(tipoId);
   }
 }

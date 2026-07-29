@@ -10,6 +10,8 @@ import { Button } from '../../../../../shared/ui/button/button';
 import {
   ActivityTypeFormData,
   ActivityTypeItem,
+  parseActivityHours,
+  sumChildrenMaxHours,
 } from '../../model/activity-types.model';
 
 @Component({
@@ -89,7 +91,74 @@ export class ActivityTypesPage implements OnInit {
     this.isChildrenView()
         ? `Registra una actividad hija para ${this.parentActivityType()?.nombre ?? ''}. El orden se calculará automáticamente.`
         : 'Registra actividades padre. El orden se calculará automáticamente.',
-    );  
+    );
+
+    readonly parentMinHoras = computed(() =>
+      parseActivityHours(this.parentActivityType()?.minimoHoras),
+    );
+
+    readonly parentMaxHoras = computed(() =>
+      parseActivityHours(this.parentActivityType()?.maximoHoras),
+    );
+
+    readonly siblingsMaxHoursSum = computed(() =>
+      sumChildrenMaxHours(
+        this.childActivityTypes(),
+        this.selectedActivityType()?.id ?? null,
+      ),
+    );
+
+    readonly remainingParentHours = computed(() => {
+      const parentMax = this.parentMaxHoras();
+      if (parentMax == null) {
+        return null;
+      }
+
+      return Math.max(parentMax - this.siblingsMaxHoursSum(), 0);
+    });
+
+    readonly childrenHoursSoftAlert = computed(() => {
+      if (!this.isChildrenView() || this.showForm()) {
+        return null;
+      }
+
+      const parentMin = this.parentMinHoras();
+      const parentMax = this.parentMaxHoras();
+      if (parentMin == null && parentMax == null) {
+        return null;
+      }
+
+      const assigned = sumChildrenMaxHours(this.childActivityTypes());
+      const parts: string[] = [];
+
+      if (parentMin != null) {
+        parts.push(
+          `Horas mínimas que una actividad puede tener: ${parentMin}.`,
+        );
+      }
+
+      if (parentMax != null) {
+        const remaining = Math.max(parentMax - assigned, 0);
+        parts.push(
+          `Horas asignadas: ${assigned}/${parentMax}. Disponibles: ${remaining}.`,
+        );
+      }
+
+      return parts.join(' ');
+    });
+
+    readonly canAddChildActivity = computed(() => {
+      if (!this.isChildrenView()) {
+        return true;
+      }
+
+      const remaining = this.remainingParentHours();
+      if (remaining == null) {
+        return true;
+      }
+
+      return remaining > 0;
+    });
 
   async ngOnInit(): Promise<void> {
     this.breadcrumbTitle.setPageTitle('Tipo actividades');
@@ -97,6 +166,10 @@ export class ActivityTypesPage implements OnInit {
   }
 
   openCreateForm(): void {
+    if (this.isChildrenView() && !this.canAddChildActivity()) {
+      return;
+    }
+
     this.selectedActivityType.set(null);
     this.showForm.set(true);
   }

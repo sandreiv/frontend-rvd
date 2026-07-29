@@ -12,6 +12,15 @@
     </p>
   </div>
 
+  @if (isCreateBlocked()) {
+    <div
+      class="mb-4 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300"
+    >
+      Se alcanzó el máximo de participantes permitido para este tipo de
+      proyecto ({{ maxParticipantes() }}).
+    </div>
+  }
+
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div>
       <app-label>Nombre completo persona</app-label>
@@ -69,7 +78,11 @@
     >
       Cancelar
     </app-button>
-    <app-button type="submit" size="sm" [disabled]="form.invalid || isSaving()">
+    <app-button
+      type="submit"
+      size="sm"
+      [disabled]="form.invalid || isSaving() || isCreateBlocked()"
+    >
       {{ isSaving() ? 'Guardando...' : 'Guardar' }}
     </app-button>
   </div>

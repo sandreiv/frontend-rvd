@@ -68,10 +68,7 @@ export class ProjectsService {
     );
   }
 
-  updateProjectPerson(
-    id: number,
-    payload: ProjectPersonFormData,
-  ): Observable<void> {
+  updateProjectPerson(id: number, payload: ProjectPersonFormData): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/update-person/${id}`,
       payload,
@@ -84,9 +81,7 @@ export class ProjectsService {
     );
   }
 
-  deleteBulkProjectPersons(
-    payload: DeleteBulkProjectsRequest,
-  ): Observable<void> {
+  deleteBulkProjectPersons(payload: DeleteBulkProjectsRequest): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/delete-persons-bulk`,
       payload,

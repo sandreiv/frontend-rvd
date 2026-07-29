@@ -5,6 +5,7 @@ import {
   OnChanges,
   Output,
   SimpleChanges,
+  computed,
   input,
 } from '@angular/core';
 import {
@@ -60,12 +61,26 @@ export class ActivityTypeForm implements OnChanges {
   isSaving = input(false);
   title = input('Nuevo tipo de actividad');
   editTitle = input('Editar tipo de actividad');
-  description = input('Registra actividades padre. El orden se calculará automáticamente.');
+  description = input(
+    'Registra actividades padre. El orden se calculará automáticamente.',
+  );
+  parentMinHoras = input<number | null>(null);
+  parentMaxHoras = input<number | null>(null);
+  siblingsMaxHoursSum = input(0);
 
   @Output() cancel = new EventEmitter<void>();
   @Output() saveActivityType = new EventEmitter<ActivityTypeFormData>();
 
   readonly codeOptions: Option[] = ACTIVITY_TYPE_CODE_OPTIONS;
+
+  readonly remainingParentHours = computed(() => {
+    const parentMax = this.parentMaxHoras();
+    if (parentMax == null) {
+      return null;
+    }
+
+    return Math.max(parentMax - this.siblingsMaxHoursSum(), 0);
+  });
 
   readonly form: ActivityTypeFormGroup = new FormGroup(
     {
@@ -85,7 +100,7 @@ export class ActivityTypeForm implements OnChanges {
         validators: [Validators.required],
       }),
       maximoHoras: new FormControl<number | null>(null, {
-        validators: [Validators.required],
+        validators: [Validators.required, this.parentMaxHoursValidator()],
       }),
       estado: new FormControl(true, {
         nonNullable: true,
@@ -95,8 +110,15 @@ export class ActivityTypeForm implements OnChanges {
   );
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['activityType']) {
+    if (
+      changes['activityType'] ||
+      changes['parentMaxHoras'] ||
+      changes['siblingsMaxHoursSum']
+    ) {
       this.patchForm();
+      this.form.controls.maximoHoras.updateValueAndValidity({
+        emitEvent: false,
+      });
     }
   }
 
@@ -108,10 +130,18 @@ export class ActivityTypeForm implements OnChanges {
     );
   }
 
+  get parentMaxHoursInvalid(): boolean {
+    const control = this.form.controls.maximoHoras;
+    return (
+      control.hasError('parentMaxHours') &&
+      (control.touched || control.dirty)
+    );
+  }
+
   onSubmit(): void {
     this.form.markAllAsTouched();
 
-    if (this.form.invalid) {
+    if (this.form.invalid || this.isSaving()) {
       return;
     }
 
@@ -125,6 +155,31 @@ export class ActivityTypeForm implements OnChanges {
       maximoHoras: Number(raw.maximoHoras),
       estado: raw.estado ? '1' : '0',
     });
+  }
+
+  private parentMaxHoursValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const parentMax = this.parentMaxHoras();
+      if (parentMax == null) {
+        return null;
+      }
+
+      const maximo = Number(control.value);
+      if (!Number.isFinite(maximo)) {
+        return null;
+      }
+
+      const total = this.siblingsMaxHoursSum() + maximo;
+      return total > parentMax
+        ? {
+            parentMaxHours: {
+              parentMax,
+              remaining: Math.max(parentMax - this.siblingsMaxHoursSum(), 0),
+              total,
+            },
+          }
+        : null;
+    };
   }
 
   private patchForm(): void {

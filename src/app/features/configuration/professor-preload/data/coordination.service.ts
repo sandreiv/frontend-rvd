@@ -37,12 +37,6 @@ export class CoordinationService {
   private readonly webRequestService = inject(WebRequestService);
   private readonly endpoint = '/configuration/coordination';
 
- /**
- * Obtiene las convocatorias activas de precarga docente.
- * Se utiliza para cargar el filtro principal de convocatorias.
- *
- * @returns Observable con la lista de convocatorias activas.
- */
 
   /**
    * Obtiene las convocatorias de precarga activas

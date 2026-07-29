@@ -31,3 +31,28 @@ export const ACTIVITY_TYPE_CODE_OPTIONS = [
   { value: 'FAI', label: 'FAI' },
   { value: 'ISU', label: 'ISU' },
 ];
+
+export function parseActivityHours(
+  value: string | number | null | undefined,
+): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+export function sumChildrenMaxHours(
+  children: ActivityTypeItem[],
+  excludeId?: number | null,
+): number {
+  return children.reduce((total, child) => {
+    if (excludeId != null && child.id === excludeId) {
+      return total;
+    }
+
+    const hours = parseActivityHours(child.maximoHoras);
+    return total + (hours ?? 0);
+  }, 0);
+}

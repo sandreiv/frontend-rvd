@@ -12,6 +12,26 @@
     </p>
   </div>
 
+  @if (parentMinHoras() != null || parentMaxHoras() != null) {
+    <div
+      class="mb-4 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
+    >
+      @if (parentMinHoras() != null) {
+        <p>
+          Horas mínimas que una actividad puede tener:
+          {{ parentMinHoras() }}.
+        </p>
+      }
+      @if (remainingParentHours() != null) {
+        <p class="mt-1">
+          Horas máximas disponibles para asignar:
+          {{ remainingParentHours() }}
+          (tope del padre: {{ parentMaxHoras() }}).
+        </p>
+      }
+    </div>
+  }
+
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div>
       <app-label>Nombre</app-label>
@@ -34,7 +54,9 @@
         placeholder="Ingrese la descripción"
       />
 
-      @if (form.controls.descripcion.touched && form.controls.descripcion.invalid) {
+      @if (
+        form.controls.descripcion.touched && form.controls.descripcion.invalid
+      ) {
         <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
           La descripción es obligatoria.
         </p>
@@ -67,7 +89,9 @@
         min="0"
       />
 
-      @if (form.controls.minimoHoras.touched && form.controls.minimoHoras.invalid) {
+      @if (
+        form.controls.minimoHoras.touched && form.controls.minimoHoras.invalid
+      ) {
         <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
           El mínimo de horas es obligatorio.
         </p>
@@ -83,7 +107,9 @@
         min="0"
       />
 
-      @if (form.controls.maximoHoras.touched && form.controls.maximoHoras.invalid) {
+      @if (
+        form.controls.maximoHoras.touched && form.controls.maximoHoras.invalid
+      ) {
         <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
           El máximo de horas es obligatorio.
         </p>
@@ -92,6 +118,14 @@
       @if (hoursRangeInvalid) {
         <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
           El máximo de horas debe ser mayor al mínimo de horas.
+        </p>
+      }
+
+      @if (parentMaxHoursInvalid) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          La suma de máximos de las hijas no puede superar
+          {{ parentMaxHoras() }} horas del padre. Disponibles:
+          {{ remainingParentHours() }}.
         </p>
       }
     </div>
@@ -103,7 +137,8 @@
         Estado del tipo de actividad
       </h5>
       <p class="text-xs text-gray-500 dark:text-gray-400">
-        Define si este tipo de actividad estará activo para su uso en el sistema.
+        Define si este tipo de actividad estará activo para su uso en el
+        sistema.
       </p>
     </div>
 
@@ -115,7 +150,12 @@
   </div>
 
   <div class="mt-5 flex justify-end gap-3">
-    <app-button type="button" variant="outline" size="sm" (btnClick)="cancel.emit()">
+    <app-button
+      type="button"
+      variant="outline"
+      size="sm"
+      (btnClick)="cancel.emit()"
+    >
       Cancelar
     </app-button>
 

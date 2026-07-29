@@ -6,6 +6,7 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  computed,
   inject,
   input,
   signal,
@@ -74,12 +75,29 @@ export class ProjectPersonForm implements OnInit, OnChanges {
   person = input<ProjectPersonItem | null>(null);
   projectId = input.required<number>();
   isSaving = input(false);
+  currentPersonCount = input(0);
+  maxParticipantes = input<number | null>(null);
 
   @Output() cancel = new EventEmitter<void>();
   @Output() savePerson = new EventEmitter<ProjectPersonFormData>();
 
   readonly activityTypeOptions = signal<Option[]>([]);
   readonly filteredPeople = signal<PersonaAutorizaConvocatoriaItem[]>([]);
+
+  readonly isCreateMode = computed(() => this.person() == null);
+
+  readonly isCreateBlocked = computed(() => {
+    if (!this.isCreateMode()) {
+      return false;
+    }
+
+    const max = this.maxParticipantes();
+    if (max == null) {
+      return false;
+    }
+
+    return this.currentPersonCount() >= max;
+  });
 
   readonly form: ProjectPersonFormGroup = new FormGroup({
     idPersonaGeneral: new FormControl('', {
@@ -157,7 +175,7 @@ export class ProjectPersonForm implements OnInit, OnChanges {
   onSubmit(): void {
     this.form.markAllAsTouched();
 
-    if (this.form.invalid || this.isSaving()) {
+    if (this.isCreateBlocked() || this.form.invalid || this.isSaving()) {
       return;
     }
 
@@ -222,7 +240,8 @@ export class ProjectPersonForm implements OnInit, OnChanges {
       idTipoActividad:
         item?.idTipoActividad != null ? String(item.idTipoActividad) : '',
       tipo: item?.tipo ?? '',
-      horas: item?.horas != null && item.horas !== '' ? Number(item.horas) : null,
+      horas:
+        item?.horas != null && item.horas !== '' ? Number(item.horas) : null,
       observacion: item?.observacion ?? '',
     });
   }

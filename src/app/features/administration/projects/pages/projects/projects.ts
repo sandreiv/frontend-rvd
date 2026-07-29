@@ -27,7 +27,9 @@ import {
   ProjectItem,
   ProjectPersonFormData,
   ProjectPersonItem,
+  resolveProjectTypeLimits,
 } from '../../model/projects.model';
+import { ProjectTypeItem } from '../../../project-types/model/project-types.model';
 
 type ProjectsView = 'projects' | 'products' | 'persons';
 
@@ -79,9 +81,66 @@ export class Projects implements OnInit, OnDestroy {
   private tipoMap = new Map<number, string>();
   private coordinacionMap = new Map<number, string>();
   private activityTypeMap = new Map<number, string>();
+  private projectTypesById = new Map<number, ProjectTypeItem>();
 
   readonly isProductsView = computed(() => this.activeView() === 'products');
   readonly isPersonsView = computed(() => this.activeView() === 'persons');
+
+  readonly parentTypeLimits = computed(() => {
+    const parent = this.parentProject();
+    if (!parent) {
+      return null;
+    }
+
+    return resolveProjectTypeLimits(
+      this.projectTypesById.get(parent.idTipoProyecto),
+    );
+  });
+
+  readonly participantsSoftAlert = computed(() => {
+    if (!this.isPersonsView()) {
+      return null;
+    }
+
+    const min = this.parentTypeLimits()?.minimoParticipantes;
+    if (min == null) {
+      return null;
+    }
+
+    const missing = min - this.persons().length;
+    if (missing <= 0) {
+      return null;
+    }
+
+    return `Faltan ${missing} para cumplir con el mínimo de participantes.`;
+  });
+
+  readonly productsSoftAlert = computed(() => {
+    if (!this.isProductsView()) {
+      return null;
+    }
+
+    const min = this.parentTypeLimits()?.minimoProductos;
+    if (min == null) {
+      return null;
+    }
+
+    const missing = min - this.products().length;
+    if (missing <= 0) {
+      return null;
+    }
+
+    return `Faltan ${missing} productos para cumplir con el mínimo requerido.`;
+  });
+
+  readonly canAddPerson = computed(() => {
+    const max = this.parentTypeLimits()?.maximoParticipantes;
+    if (max == null) {
+      return true;
+    }
+
+    return this.persons().length < max;
+  });
 
   readonly displayedProjects = computed(() =>
     this.isProductsView() ? this.products() : this.projects(),
@@ -106,7 +165,7 @@ export class Projects implements OnInit, OnDestroy {
 
   readonly nestedBannerDescription = computed(() => {
     if (this.isProductsView()) {
-      return 'Administra los productos (proyectos hijos) del proyecto seleccionado.';
+      return 'Administra los productos del proyecto seleccionado.';
     }
     if (this.isPersonsView()) {
       return 'Administra las personas asociadas al proyecto seleccionado.';
@@ -193,6 +252,10 @@ export class Projects implements OnInit, OnDestroy {
   }
 
   openCreateForm(): void {
+    if (this.isPersonsView() && !this.canAddPerson()) {
+      return;
+    }
+
     this.selectedProject.set(null);
     this.selectedPerson.set(null);
     this.showForm.set(true);
@@ -453,6 +516,9 @@ export class Projects implements OnInit, OnDestroy {
 
       this.convocatoriaMap = new Map(
         (calls ?? []).map((item) => [item.id, item.nombre]),
+      );
+      this.projectTypesById = new Map(
+        (types ?? []).map((item) => [item.id, item]),
       );
       this.tipoMap = new Map(
         (types ?? []).map((item) => [item.id, item.nombre]),

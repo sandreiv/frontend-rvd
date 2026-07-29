@@ -52,6 +52,16 @@
         (focus)="onMontoFocus()"
         (blurred)="onMontoBlur()"
       />
+      @if (montoMaximoLabel()) {
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Monto máximo del tipo: {{ montoMaximoLabel() }}
+        </p>
+      }
+      @if (montoMaximoInvalid) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          El monto no puede superar el máximo permitido del tipo de proyecto.
+        </p>
+      }
     </div>
 
     <div>
