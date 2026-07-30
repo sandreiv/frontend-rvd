@@ -17,6 +17,7 @@ import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
 import { SearchGeneralPersonParams } from '../../preload-call/model/preload-call.model';
 import {
+  ActividadModalidadDTO,
   GrupoMateria,
   MateriaAcademica,
   ProgramaAcademico,
@@ -228,6 +229,20 @@ export class CoordinationService {
   listActivityTypes(): Observable<TipoActividad[]> {
     return this.webRequestService.get<TipoActividad[]>(
       `${this.endpoint}/list-activity-types`,
+    );
+  }
+
+  /**
+   * Lista los tipos de actividad permitidos según la modalidad de contratación.
+   * Fuente de verdad desde RESTRICCIONCARGA / TIPOACTIVIDADMODALIDAD.
+   *
+   * @param idModalidadContratacion Identificador de la modalidad.
+   * @returns Observable con los tipos de actividad de la modalidad.
+   */
+  listActivitiesModality(idModalidadContratacion: number): Observable<ActividadModalidadDTO> {
+    return this.webRequestService.get<ActividadModalidadDTO>(
+      `${this.endpoint}/list-activities-modality`,
+      { idModalidadContratacion },
     );
   }
 

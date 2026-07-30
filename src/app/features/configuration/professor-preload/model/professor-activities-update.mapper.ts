@@ -17,33 +17,37 @@ export function buildUpdateDetailProfessorPreloadRequests(
 ): DetailProfessorPreloadItemApi[] {
   const requests: DetailProfessorPreloadItemApi[] = [];
 
-  collectFadUpdates(input, loadedDetails, requests);
-  collectCriteriaUpdates(
-    input.actividadesFAI,
-    findActivityType(input.activityTypes, 'FAI'),
-    input,
-    loadedDetails,
-    requests,
-  );
-  collectCriteriaUpdates(
-    input.actividadesAC,
-    findActivityType(input.activityTypes, 'AC'),
-    input,
-    loadedDetails,
-    requests,
-  );
-  collectProjectUpdates(
-    input.associatedProjectsCTEI,
-    input,
-    loadedDetails,
-    requests,
-  );
-  collectProjectUpdates(
-    input.associatedProjectsISU,
-    input,
-    loadedDetails,
-    requests,
-  );
+  const directCodigos = Object.keys(input.directByCodigo);
+  for (let index = 0; index < directCodigos.length; index += 1) {
+    collectDirectUpdates(
+      input.directByCodigo[directCodigos[index]] ?? [],
+      input,
+      loadedDetails,
+      requests,
+    );
+  }
+
+  const criteriaCodigos = Object.keys(input.criteriaByCodigo);
+  for (let index = 0; index < criteriaCodigos.length; index += 1) {
+    const codigo = criteriaCodigos[index];
+    collectCriteriaUpdates(
+      input.criteriaByCodigo[codigo] ?? [],
+      findActivityType(input.activityTypes, codigo),
+      input,
+      loadedDetails,
+      requests,
+    );
+  }
+
+  const projectCodigos = Object.keys(input.projectsByCodigo);
+  for (let index = 0; index < projectCodigos.length; index += 1) {
+    collectProjectUpdates(
+      input.projectsByCodigo[projectCodigos[index]] ?? [],
+      input,
+      loadedDetails,
+      requests,
+    );
+  }
 
   return requests;
 }
@@ -52,15 +56,19 @@ export function hasUpdateDetailProfessorPreloadRequests(
   input: SaveDetailProfessorPreloadInput,
   loadedDetails: Map<number, DetailProfessorPreloadItemApi>,
 ): boolean {
-  return buildUpdateDetailProfessorPreloadRequests(input, loadedDetails).length > 0;
+  return (
+    buildUpdateDetailProfessorPreloadRequests(input, loadedDetails).length > 0
+  );
 }
 
-function collectFadUpdates(
+function collectDirectUpdates(
+  activities: DirectLearningActivity[],
   input: SaveDetailProfessorPreloadInput,
   loadedDetails: Map<number, DetailProfessorPreloadItemApi>,
   requests: DetailProfessorPreloadItemApi[],
 ): void {
-  for (const activity of input.actividadesFAD) {
+  for (let index = 0; index < activities.length; index += 1) {
+    const activity = activities[index];
     if (activity.idDetalleCargaDocente == null) {
       continue;
     }
@@ -84,7 +92,8 @@ function collectCriteriaUpdates(
   loadedDetails: Map<number, DetailProfessorPreloadItemApi>,
   requests: DetailProfessorPreloadItemApi[],
 ): void {
-  for (const activity of activities) {
+  for (let index = 0; index < activities.length; index += 1) {
+    const activity = activities[index];
     if (activity.idDetalleCargaDocente == null) {
       continue;
     }
@@ -112,7 +121,8 @@ function collectProjectUpdates(
   loadedDetails: Map<number, DetailProfessorPreloadItemApi>,
   requests: DetailProfessorPreloadItemApi[],
 ): void {
-  for (const project of projects) {
+  for (let index = 0; index < projects.length; index += 1) {
+    const project = projects[index];
     if (project.idDetalleCargaDocente == null) {
       continue;
     }

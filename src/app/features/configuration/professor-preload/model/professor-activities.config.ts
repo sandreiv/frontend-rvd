@@ -1,32 +1,18 @@
 import { AppIconName } from '../../../../shared/ui/icon/icons';
-import { TipoActividad } from './professor-activities.model';
 import {
-  ContractModalityKind,
-  resolveModalityKind,
-} from './professor-form.config';
+  ActivityFormType,
+  TipoActividad,
+  TipoActividadModalidad,
+} from './professor-activities.model';
 
-export type ActivityCategoryCodigo =
-  | 'FAD'
-  | 'FAI'
-  | 'AC'
-  | 'CTEI'
-  | 'ISU';
+export type { ActivityFormType };
 
-export type ActivityFormType = 'direct' | 'criteria' | 'project';
+const ACTIVE_ACTIVITY_STATE = '1';
 
-export type ProjectActivityCodigo = Extract<ActivityCategoryCodigo, 'CTEI' | 'ISU'>;
-
-export const ALL_ACTIVITY_CODIGOS: ActivityCategoryCodigo[] = [
-  'FAD',
-  'FAI',
-  'AC',
-  'CTEI',
-  'ISU',
-];
-
-export const PROJECT_ACTIVITY_CODIGOS: ProjectActivityCodigo[] = [
-  'CTEI',
-  'ISU',
+const ACTIVITY_FORM_TYPES: ActivityFormType[] = [
+  'direct',
+  'criteria',
+  'project',
 ];
 
 export interface ActivityUiConfig {
@@ -37,76 +23,92 @@ export interface ActivityUiConfig {
 }
 
 export interface ActivityVisibleItem extends ActivityUiConfig {
-  codigo: ActivityCategoryCodigo;
+  codigo: string;
   tipoActividad?: TipoActividad;
 }
 
-export const ACTIVITY_UI_CONFIG: Record<ActivityCategoryCodigo, ActivityUiConfig> = {
-  FAD: {
+export const FORM_TYPE_UI_CONFIG: Record<
+  ActivityFormType,
+  ActivityUiConfig
+> = {
+  direct: {
     formType: 'direct',
     icon: 'bookOpen',
     iconBgClass: 'bg-gray-100 dark:bg-gray-800',
     iconColorClass: 'text-gray-600 dark:text-gray-300',
   },
-  FAI: {
+  criteria: {
     formType: 'criteria',
     icon: 'brain',
     iconBgClass: 'bg-purple-50 dark:bg-purple-500/10',
     iconColorClass: 'text-purple-600 dark:text-purple-400',
   },
-  AC: {
-    formType: 'criteria',
-    icon: 'briefcase',
-    iconBgClass: 'bg-warning-50 dark:bg-warning-500/10',
-    iconColorClass: 'text-warning-600 dark:text-warning-400',
-  },
-  CTEI: {
+  project: {
     formType: 'project',
     icon: 'beaker',
     iconBgClass: 'bg-success-50 dark:bg-success-500/10',
     iconColorClass: 'text-success-600 dark:text-success-400',
   },
+};
+
+/** Overrides visuales opcionales por código conocido. */
+const CODE_UI_OVERRIDES: Record<string, Partial<ActivityUiConfig>> = {
+  FAD: {
+    icon: 'bookOpen',
+    iconBgClass: 'bg-gray-100 dark:bg-gray-800',
+    iconColorClass: 'text-gray-600 dark:text-gray-300',
+  },
+  FAI: {
+    icon: 'brain',
+    iconBgClass: 'bg-purple-50 dark:bg-purple-500/10',
+    iconColorClass: 'text-purple-600 dark:text-purple-400',
+  },
+  AC: {
+    icon: 'briefcase',
+    iconBgClass: 'bg-warning-50 dark:bg-warning-500/10',
+    iconColorClass: 'text-warning-600 dark:text-warning-400',
+  },
+  CTEI: {
+    icon: 'beaker',
+    iconBgClass: 'bg-success-50 dark:bg-success-500/10',
+    iconColorClass: 'text-success-600 dark:text-success-400',
+  },
   ISU: {
-    formType: 'project',
     icon: 'heart',
     iconBgClass: 'bg-error-50 dark:bg-error-500/10',
     iconColorClass: 'text-error-500 dark:text-error-400',
   },
 };
 
-export const TCO_BASE_ACTIVITY_CARDS: ActivityCategoryCodigo[] = [
-  'FAD',
-  'FAI',
-  'AC',
-];
+export function isActivityFormType(
+  value: string | null | undefined,
+): value is ActivityFormType {
+  return (
+    value != null &&
+    ACTIVITY_FORM_TYPES.includes(value as ActivityFormType)
+  );
+}
 
-export const TCO_ACTIVITY_CARDS: ActivityCategoryCodigo[] = [
-  ...TCO_BASE_ACTIVITY_CARDS,
-  ...PROJECT_ACTIVITY_CODIGOS,
-];
+export function buildComponenteByCodigo(
+  modalityTypes: TipoActividadModalidad[],
+): Record<string, ActivityFormType> {
+  const map: Record<string, ActivityFormType> = {};
 
-export const VISIBLE_ACTIVITY_CARDS: Record<
-  ContractModalityKind,
-  ActivityCategoryCodigo[]
-> = {
-  catedra: ['FAD'],
-  tiempoCompletoOcasional: TCO_ACTIVITY_CARDS,
-};
-
-export function resolveVisibleActivityCodigos(
-  modalityNombre: string | null | undefined,
-  esPlanta = false,
-): ActivityCategoryCodigo[] {
-  if (esPlanta) {
-    return [...TCO_ACTIVITY_CARDS];
+  for (let index = 0; index < modalityTypes.length; index += 1) {
+    const item = modalityTypes[index];
+    if (!isActivityFormType(item.componente)) {
+      continue;
+    }
+    map[item.codigo] = item.componente;
   }
 
-  const kind = resolveModalityKind(modalityNombre);
-  if (!kind) {
-    return [];
-  }
+  return map;
+}
 
-  return [...VISIBLE_ACTIVITY_CARDS[kind]];
+function isActiveModalityActivity(
+  item: TipoActividadModalidad,
+): boolean {
+  return item.estado == null || item.estado === ACTIVE_ACTIVITY_STATE;
 }
 
 function compareActivityOrden(
@@ -118,61 +120,116 @@ function compareActivityOrden(
   return ordenA - ordenB;
 }
 
+function toTipoActividadFallback(
+  item: TipoActividadModalidad,
+  index: number,
+): TipoActividad {
+  return {
+    id: item.id,
+    idPadre: null,
+    nombre: item.nombre,
+    descripcion: item.nombre,
+    orden: String(index),
+    codigo: item.codigo,
+    componente: item.componente,
+  };
+}
+
+function resolveUiConfig(
+  formType: ActivityFormType,
+  codigo: string,
+): ActivityUiConfig {
+  const base = FORM_TYPE_UI_CONFIG[formType];
+  const override = CODE_UI_OVERRIDES[codigo];
+
+  return {
+    ...base,
+    ...override,
+    formType,
+  };
+}
+
+/**
+ * Construye las tarjetas visibles a partir de los tipos de actividad
+ * permitidos por modalidad. El formType sale de `componente`.
+ */
 export function buildVisibleActivityItems(
-  visibleCodigos: ActivityCategoryCodigo[],
+  modalityTypes: TipoActividadModalidad[],
   activityTypes: TipoActividad[],
 ): ActivityVisibleItem[] {
   const items: ActivityVisibleItem[] = [];
-  for (const codigo of visibleCodigos) {
-    const ui = ACTIVITY_UI_CONFIG[codigo];
-    if (!ui) {
+  const seen = new Set<string>();
+
+  for (let index = 0; index < modalityTypes.length; index += 1) {
+    const modalityType = modalityTypes[index];
+    if (!isActiveModalityActivity(modalityType)) {
       continue;
     }
+    if (!isActivityFormType(modalityType.componente)) {
+      continue;
+    }
+    if (seen.has(modalityType.codigo)) {
+      continue;
+    }
+
+    seen.add(modalityType.codigo);
+    const catalogType = activityTypes.find(
+      (type) => type.codigo === modalityType.codigo,
+    );
+    const ui = resolveUiConfig(
+      modalityType.componente,
+      modalityType.codigo,
+    );
+
     items.push({
-      codigo,
+      codigo: modalityType.codigo,
       ...ui,
-      tipoActividad: activityTypes.find((type) => type.codigo === codigo),
+      tipoActividad:
+        catalogType ?? toTipoActividadFallback(modalityType, index),
     });
   }
+
   return items.sort(compareActivityOrden);
 }
 
-export function resolveInitialExpandedCategories(
-  projectRowsByCodigo: Record<ProjectActivityCodigo, readonly unknown[]>,
-): Record<ActivityCategoryCodigo, boolean> {
-  const state = createInitialExpandedCategories();
-
-  for (const codigo of PROJECT_ACTIVITY_CODIGOS) {
-    state[codigo] = projectRowsByCodigo[codigo].length > 0;
+export function createBooleanMap(
+  codigos: readonly string[],
+): Record<string, boolean> {
+  const state: Record<string, boolean> = {};
+  for (let index = 0; index < codigos.length; index += 1) {
+    state[codigos[index]] = false;
   }
-
   return state;
 }
 
-export function createInitialExpandedCategories(): Record<
-  ActivityCategoryCodigo,
-  boolean
-> {
-  return ALL_ACTIVITY_CODIGOS.reduce(
-    (state, codigo) => ({
-      ...state,
-      [codigo]: false,
-    }),
-    {} as Record<ActivityCategoryCodigo, boolean>,
-  );
+export function createInitialExpandedCategories(
+  codigos: readonly string[] = [],
+): Record<string, boolean> {
+  return createBooleanMap(codigos);
 }
 
-export function createInitialAddFormOpen(): Record<
-  ActivityCategoryCodigo,
-  boolean
-> {
-  return ALL_ACTIVITY_CODIGOS.reduce(
-    (state, codigo) => ({
-      ...state,
-      [codigo]: false,
-    }),
-    {} as Record<ActivityCategoryCodigo, boolean>,
-  );
+export function createInitialAddFormOpen(
+  codigos: readonly string[] = [],
+): Record<string, boolean> {
+  return createBooleanMap(codigos);
+}
+
+export function resolveInitialExpandedCategories(
+  visibleCodigos: readonly string[],
+  projectRowsByCodigo: Record<string, readonly unknown[]>,
+): Record<string, boolean> {
+  const state = createBooleanMap(visibleCodigos);
+  const projectCodigos = Object.keys(projectRowsByCodigo);
+
+  for (let index = 0; index < projectCodigos.length; index += 1) {
+    const codigo = projectCodigos[index];
+    if (!(codigo in state)) {
+      continue;
+    }
+    state[codigo] = (projectRowsByCodigo[codigo]?.length ?? 0) > 0;
+  }
+
+  return state;
 }
 
 export type DirectActivityFormFieldKey =

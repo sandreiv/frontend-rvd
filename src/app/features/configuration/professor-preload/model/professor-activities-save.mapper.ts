@@ -1,7 +1,4 @@
 import {
-  ActivityCategoryCodigo,
-} from './professor-activities.config';
-import {
   DirectLearningActivity,
   SimpleActivity,
 } from './professor-activities-modal.models';
@@ -22,46 +19,59 @@ export interface SaveDetailProfessorPreloadInput {
   idCentroCosto: number | null;
   centroCostoDescripcion: string | null;
   activityTypes: TipoActividad[];
-  actividadesFAD: DirectLearningActivity[];
-  actividadesFAI: SimpleActivity[];
-  actividadesAC: SimpleActivity[];
-  associatedProjectsCTEI: ProfessorProjectRow[];
-  associatedProjectsISU: ProfessorProjectRow[];
+  directByCodigo: Record<string, DirectLearningActivity[]>;
+  criteriaByCodigo: Record<string, SimpleActivity[]>;
+  projectsByCodigo: Record<string, ProfessorProjectRow[]>;
 }
 
 export function buildSaveActivityDistributionRequest(
   input: SaveDetailProfessorPreloadInput,
 ): SaveDetailProfessorPreloadRequest {
-  const fadType = findActivityType(input.activityTypes, 'FAD');
-  const faiType = findActivityType(input.activityTypes, 'FAI');
-  const acType = findActivityType(input.activityTypes, 'AC');
   const idCentroCosto = input.idCentroCosto ?? undefined;
   const detalles: DetalleCargaDocenteRequest[] = [];
 
-  for (const activity of filterNewItems(input.actividadesFAD)) {
-    detalles.push(
-      withCentroCosto(mapFadDetalle(activity, fadType), idCentroCosto),
-    );
+  const directCodigos = Object.keys(input.directByCodigo);
+  for (let index = 0; index < directCodigos.length; index += 1) {
+    const codigo = directCodigos[index];
+    const categoryType = findActivityType(input.activityTypes, codigo);
+    const activities = filterNewItems(input.directByCodigo[codigo] ?? []);
+
+    for (let itemIndex = 0; itemIndex < activities.length; itemIndex += 1) {
+      detalles.push(
+        withCentroCosto(
+          mapFadDetalle(activities[itemIndex], categoryType),
+          idCentroCosto,
+        ),
+      );
+    }
   }
 
-  for (const activity of filterNewItems(input.actividadesFAI)) {
-    detalles.push(
-      withCentroCosto(mapCriteriaDetalle(activity, faiType), idCentroCosto),
-    );
+  const criteriaCodigos = Object.keys(input.criteriaByCodigo);
+  for (let index = 0; index < criteriaCodigos.length; index += 1) {
+    const codigo = criteriaCodigos[index];
+    const categoryType = findActivityType(input.activityTypes, codigo);
+    const activities = filterNewItems(input.criteriaByCodigo[codigo] ?? []);
+
+    for (let itemIndex = 0; itemIndex < activities.length; itemIndex += 1) {
+      detalles.push(
+        withCentroCosto(
+          mapCriteriaDetalle(activities[itemIndex], categoryType),
+          idCentroCosto,
+        ),
+      );
+    }
   }
 
-  for (const activity of filterNewItems(input.actividadesAC)) {
-    detalles.push(
-      withCentroCosto(mapCriteriaDetalle(activity, acType), idCentroCosto),
-    );
-  }
+  const projectCodigos = Object.keys(input.projectsByCodigo);
+  for (let index = 0; index < projectCodigos.length; index += 1) {
+    const codigo = projectCodigos[index];
+    const projects = filterNewItems(input.projectsByCodigo[codigo] ?? []);
 
-  for (const project of filterNewItems(input.associatedProjectsCTEI)) {
-    detalles.push(withCentroCosto(mapProjectDetalle(project), idCentroCosto));
-  }
-
-  for (const project of filterNewItems(input.associatedProjectsISU)) {
-    detalles.push(withCentroCosto(mapProjectDetalle(project), idCentroCosto));
+    for (let itemIndex = 0; itemIndex < projects.length; itemIndex += 1) {
+      detalles.push(
+        withCentroCosto(mapProjectDetalle(projects[itemIndex]), idCentroCosto),
+      );
+    }
   }
 
   return {
@@ -88,12 +98,12 @@ function filterNewItems<T extends { idDetalleCargaDocente?: number }>(
 
 function mapFadDetalle(
   activity: DirectLearningActivity,
-  fadType: TipoActividad | undefined,
+  categoryType: TipoActividad | undefined,
 ): DetalleCargaDocenteRequest {
   return {
-    idTipoActividad: activity.idTipoActividad ?? fadType?.id ?? 0,
+    idTipoActividad: activity.idTipoActividad ?? categoryType?.id ?? 0,
     codigoTipoActividad:
-      activity.codigoTipoActividad ?? fadType?.codigo ?? 'FAD',
+      activity.codigoTipoActividad ?? categoryType?.codigo ?? '',
     horas: activity.horasPresenciales,
     idUnidadRegional: activity.idUnidadRegional,
     idPrograma: activity.idPrograma,
@@ -139,7 +149,7 @@ function mapProjectDetalle(
 
 function findActivityType(
   activityTypes: TipoActividad[],
-  codigo: ActivityCategoryCodigo,
+  codigo: string,
 ): TipoActividad | undefined {
   return activityTypes.find((type) => type.codigo === codigo);
 }

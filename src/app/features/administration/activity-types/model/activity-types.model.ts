@@ -1,5 +1,11 @@
 export type ActivityTypeCode = 'CTEI' | 'AC' | 'FAD' | 'FAI' | 'ISU';
 
+/**
+ * Tipo de tarjeta/formulario asociado al tipo de actividad.
+ * Debe coincidir con los formType del modal de precarga docente.
+ */
+export type ActivityTypeComponente = 'direct' | 'criteria' | 'project';
+
 export interface ActivityTypeItem {
   id: number;
   nombre: string;
@@ -9,6 +15,8 @@ export interface ActivityTypeItem {
   maximoHoras: string | null;
   orden: string | null;
   estado: '1' | '0' | 'ACTIVO' | 'INACTIVO' | string;
+  /** Presente cuando el backend exponga tiac_componente. */
+  componente?: ActivityTypeComponente | string | null;
 }
 
 export interface ActivityTypeFormData {
@@ -18,6 +26,7 @@ export interface ActivityTypeFormData {
   minimoHoras: number;
   maximoHoras: number;
   estado: '1' | '0';
+  componente: ActivityTypeComponente | string;
 }
 
 export interface DeleteBulkActivityTypesRequest {
@@ -30,6 +39,25 @@ export const ACTIVITY_TYPE_CODE_OPTIONS = [
   { value: 'FAD', label: 'FAD' },
   { value: 'FAI', label: 'FAI' },
   { value: 'ISU', label: 'ISU' },
+];
+
+export const ACTIVITY_TYPE_COMPONENTE_OPTIONS = [
+  {
+    value: 'direct',
+    label: 'Actividades directas',
+  },
+  {
+    value: 'criteria',
+    label: 'Actividades indirectas',
+  },
+  {
+    value: 'criteria',
+    label: 'Actividades administrativas',
+  },
+  {
+    value: 'project',
+    label: 'Proyectos',
+  },
 ];
 
 export function parseActivityHours(

@@ -24,6 +24,7 @@ import { Label } from '../../../../../shared/components/form/label/label';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
 import {
   ACTIVITY_TYPE_CODE_OPTIONS,
+  ACTIVITY_TYPE_COMPONENTE_OPTIONS,
   ActivityTypeFormData,
   ActivityTypeItem,
 } from '../../model/activity-types.model';
@@ -32,6 +33,7 @@ type ActivityTypeFormGroup = FormGroup<{
   nombre: FormControl<string>;
   descripcion: FormControl<string>;
   codigo: FormControl<string>;
+  componente: FormControl<string>;
   minimoHoras: FormControl<number | null>;
   maximoHoras: FormControl<number | null>;
   estado: FormControl<boolean>;
@@ -72,6 +74,7 @@ export class ActivityTypeForm implements OnChanges {
   @Output() saveActivityType = new EventEmitter<ActivityTypeFormData>();
 
   readonly codeOptions: Option[] = ACTIVITY_TYPE_CODE_OPTIONS;
+  readonly componenteOptions: Option[] = ACTIVITY_TYPE_COMPONENTE_OPTIONS;
 
   readonly remainingParentHours = computed(() => {
     const parentMax = this.parentMaxHoras();
@@ -93,6 +96,10 @@ export class ActivityTypeForm implements OnChanges {
         validators: [Validators.required],
       }),
       codigo: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      componente: new FormControl('', {
         nonNullable: true,
         validators: [Validators.required],
       }),
@@ -151,6 +158,7 @@ export class ActivityTypeForm implements OnChanges {
       nombre: raw.nombre.trim(),
       descripcion: raw.descripcion.trim(),
       codigo: raw.codigo,
+      componente: raw.componente,
       minimoHoras: Number(raw.minimoHoras),
       maximoHoras: Number(raw.maximoHoras),
       estado: raw.estado ? '1' : '0',
@@ -189,6 +197,7 @@ export class ActivityTypeForm implements OnChanges {
       nombre: item?.nombre ?? '',
       descripcion: item?.descripcion ?? '',
       codigo: item?.codigo ?? '',
+      componente: item?.componente ?? '',
       minimoHoras: item?.minimoHoras != null ? Number(item.minimoHoras) : null,
       maximoHoras: item?.maximoHoras != null ? Number(item.maximoHoras) : null,
       estado: this.isActive(item?.estado),

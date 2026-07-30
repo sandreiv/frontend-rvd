@@ -1,5 +1,7 @@
 import { CoordinationCentroCosto } from './coordination.model';
 
+export type ActivityFormType = 'direct' | 'criteria' | 'project';
+
 export interface TipoActividad {
   id: number;
   idPadre: number | null;
@@ -7,6 +9,20 @@ export interface TipoActividad {
   descripcion: string;
   orden: string;
   codigo: string;
+  componente?: ActivityFormType | string | null;
+}
+
+export interface TipoActividadModalidad {
+  id: number;
+  nombre: string;
+  codigo: string;
+  estado: string;
+  componente: ActivityFormType | string;
+}
+
+export interface ActividadModalidadDTO {
+  idModalidadContratacion: number;
+  tipoActividades: TipoActividadModalidad[];
 }
 
 export interface TipoActividadCriterio {
@@ -24,7 +40,6 @@ export interface ProgramaAcademico {
   id: number;
   nombre: string;
 }
-
 
 export interface MateriaAcademica {
   codigoMateria: string;

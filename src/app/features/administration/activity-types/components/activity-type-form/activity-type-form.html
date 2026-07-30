@@ -64,7 +64,7 @@
     </div>
   </div>
 
-  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div>
       <app-label>Código</app-label>
       <app-select
@@ -80,6 +80,29 @@
       }
     </div>
 
+    <div>
+      <app-label>Componente</app-label>
+      <app-select
+        formControlName="componente"
+        [options]="componenteOptions"
+        placeholder="Seleccione el componente"
+      />
+
+      @if (
+        form.controls.componente.touched && form.controls.componente.invalid
+      ) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          El componente es obligatorio.
+        </p>
+      }
+
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Define la tarjeta de precarga docente asociada a este tipo.
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div>
       <app-label>Mínimo de horas</app-label>
       <app-input-field

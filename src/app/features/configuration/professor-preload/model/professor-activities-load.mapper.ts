@@ -1,3 +1,5 @@
+import { isActivityFormType } from './professor-activities.config';
+import { ActivityFormType } from './professor-activities.model';
 import {
   DetailProfessorPreloadApi,
   DetalleCargaDocenteFormularioApi,
@@ -8,21 +10,19 @@ import {
 } from './professor-activities-modal.models';
 import {
   ProfessorProjectRow,
-  ProjectActivityCodigo,
   ProyectoDocenteDto,
 } from './professor-projects.model';
 
 export interface ProfessorActivitiesModalState {
-  actividadesFAD: DirectLearningActivity[];
-  actividadesFAI: SimpleActivity[];
-  actividadesAC: SimpleActivity[];
-  associatedProjectsCTEI: ProfessorProjectRow[];
-  associatedProjectsISU: ProfessorProjectRow[];
+  directByCodigo: Record<string, DirectLearningActivity[]>;
+  criteriaByCodigo: Record<string, SimpleActivity[]>;
+  projectsByCodigo: Record<string, ProfessorProjectRow[]>;
   hasSavedDetail: boolean;
 }
 
 export function mapDetailProfessorPreloadToModalState(
   response: DetailProfessorPreloadApi | null,
+  componenteByCodigo: Record<string, ActivityFormType> = {},
 ): ProfessorActivitiesModalState {
   const state = createEmptyModalState();
 
@@ -35,43 +35,41 @@ export function mapDetailProfessorPreloadToModalState(
   let fadIndex = 0;
   let criteriaIndex = 0;
 
-  for (const item of response) {
+  for (let index = 0; index < response.length; index += 1) {
+    const item = response[index];
     const detalle = item.detalles[0];
     if (!detalle) {
       continue;
     }
 
     const codigo = detalle.tipoActividad.codigo;
+    const formType = resolveFormType(detalle, codigo, componenteByCodigo);
     const idDetalleCargaDocente = item.idDetalleCargaDocente;
 
-    if (codigo === 'FAD') {
-      state.actividadesFAD.push(
+    if (formType === 'direct') {
+      pushToMap(
+        state.directByCodigo,
+        codigo,
         mapFadDetalle(detalle, fadIndex, idDetalleCargaDocente),
       );
       fadIndex += 1;
       continue;
     }
 
-    if (codigo === 'FAI') {
-      state.actividadesFAI.push(
+    if (formType === 'criteria') {
+      pushToMap(
+        state.criteriaByCodigo,
+        codigo,
         mapCriteriaDetalle(detalle, criteriaIndex, idDetalleCargaDocente),
       );
       criteriaIndex += 1;
       continue;
     }
 
-    if (codigo === 'AC') {
-      state.actividadesAC.push(
-        mapCriteriaDetalle(detalle, criteriaIndex, idDetalleCargaDocente),
-      );
-      criteriaIndex += 1;
-      continue;
-    }
-
-    if (codigo === 'CTEI' || codigo === 'ISU') {
+    if (formType === 'project') {
       const row = mapProjectDetalle(detalle, idDetalleCargaDocente);
       if (row) {
-        state[projectStateKey(codigo)].push(row);
+        pushToMap(state.projectsByCodigo, codigo, row);
       }
     }
   }
@@ -81,13 +79,50 @@ export function mapDetailProfessorPreloadToModalState(
 
 function createEmptyModalState(): ProfessorActivitiesModalState {
   return {
-    actividadesFAD: [],
-    actividadesFAI: [],
-    actividadesAC: [],
-    associatedProjectsCTEI: [],
-    associatedProjectsISU: [],
+    directByCodigo: {},
+    criteriaByCodigo: {},
+    projectsByCodigo: {},
     hasSavedDetail: false,
   };
+}
+
+function resolveFormType(
+  detalle: DetalleCargaDocenteFormularioApi,
+  codigo: string,
+  componenteByCodigo: Record<string, ActivityFormType>,
+): ActivityFormType {
+  const fromMap = componenteByCodigo[codigo];
+  if (fromMap) {
+    return fromMap;
+  }
+
+  const fromTipo = detalle.tipoActividad.componente;
+  if (isActivityFormType(fromTipo)) {
+    return fromTipo;
+  }
+
+  if ((detalle.relacionCargaProyecto?.length ?? 0) > 0) {
+    return 'project';
+  }
+
+  if (detalle.grupo != null || detalle.materia != null) {
+    return 'direct';
+  }
+
+  return 'criteria';
+}
+
+function pushToMap<T>(
+  map: Record<string, T[]>,
+  codigo: string,
+  item: T,
+): void {
+  const current = map[codigo];
+  if (current) {
+    current.push(item);
+    return;
+  }
+  map[codigo] = [item];
 }
 
 function mapFadDetalle(
@@ -171,13 +206,15 @@ function resolveProyectoById(
   proyectos: ProyectoDocenteDto[],
   idProyecto: number,
 ): ProyectoDocenteDto | null {
-  for (const proyecto of proyectos) {
+  for (let index = 0; index < proyectos.length; index += 1) {
+    const proyecto = proyectos[index];
     if (proyecto.id === idProyecto) {
       return proyecto;
     }
 
     const productos = proyecto.productos ?? [];
-    for (const producto of productos) {
+    for (let childIndex = 0; childIndex < productos.length; childIndex += 1) {
+      const producto = productos[childIndex];
       if (producto.id === idProyecto) {
         return producto;
       }
@@ -185,14 +222,6 @@ function resolveProyectoById(
   }
 
   return null;
-}
-
-function projectStateKey(
-  codigo: ProjectActivityCodigo,
-): 'associatedProjectsCTEI' | 'associatedProjectsISU' {
-  return codigo === 'CTEI'
-    ? 'associatedProjectsCTEI'
-    : 'associatedProjectsISU';
 }
 
 function parseHoras(horas: string): number {

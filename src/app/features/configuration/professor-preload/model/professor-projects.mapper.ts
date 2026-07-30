@@ -1,7 +1,3 @@
-import {
-  PROJECT_ACTIVITY_CODIGOS,
-  ProjectActivityCodigo,
-} from './professor-activities.config';
 import { SimpleActivity } from './professor-activities-modal.models';
 import {
   PersonaProyectoDto,
@@ -12,29 +8,43 @@ import {
 export function detectProjectActivityCodigos(
   proyectos: ProyectoDocenteDto[],
   idPersonaGeneral: number | null | undefined,
-): ProjectActivityCodigo[] {
+  allowedCodigos?: readonly string[],
+): string[] {
   if (idPersonaGeneral == null) {
     return [];
   }
 
-  const codigos = new Set<ProjectActivityCodigo>();
-  for (const proyecto of proyectos) {
-    for (const persona of proyecto.personaProyecto) {
+  const allowed =
+    allowedCodigos != null ? new Set(allowedCodigos) : null;
+  const codigos = new Set<string>();
+
+  for (let index = 0; index < proyectos.length; index += 1) {
+    const proyecto = proyectos[index];
+    for (
+      let personaIndex = 0;
+      personaIndex < proyecto.personaProyecto.length;
+      personaIndex += 1
+    ) {
+      const persona = proyecto.personaProyecto[personaIndex];
       if (persona.idPersonaGeneral !== idPersonaGeneral) {
         continue;
       }
-      if (isProjectActivityCodigo(persona.tipoActividad.codigo)) {
-        codigos.add(persona.tipoActividad.codigo);
+
+      const codigo = persona.tipoActividad.codigo;
+      if (allowed && !allowed.has(codigo)) {
+        continue;
       }
+
+      codigos.add(codigo);
     }
   }
 
-  return PROJECT_ACTIVITY_CODIGOS.filter((codigo) => codigos.has(codigo));
+  return Array.from(codigos);
 }
 
 export function buildProjectHierarchyRows(
   proyectos: ProyectoDocenteDto[],
-  activityCodigo: ProjectActivityCodigo,
+  activityCodigo: string,
   idPersonaGeneral: number | null | undefined,
 ): ProfessorProjectRow[] {
   if (idPersonaGeneral == null) {
@@ -42,7 +52,8 @@ export function buildProjectHierarchyRows(
   }
 
   const rows: ProfessorProjectRow[] = [];
-  for (const proyecto of proyectos) {
+  for (let index = 0; index < proyectos.length; index += 1) {
+    const proyecto = proyectos[index];
     const parentPersona = findPersonaProyecto(
       proyecto.personaProyecto,
       idPersonaGeneral,
@@ -56,20 +67,15 @@ export function buildProjectHierarchyRows(
     const tieneHijos = productos.length > 0;
 
     rows.push(
-      mapToProjectRow(
-        proyecto,
-        parentPersona,
-        0,
-        true,
-        true,
-      ),
+      mapToProjectRow(proyecto, parentPersona, 0, true, true),
     );
 
     if (!tieneHijos) {
       continue;
     }
 
-    for (const producto of productos) {
+    for (let childIndex = 0; childIndex < productos.length; childIndex += 1) {
+      const producto = productos[childIndex];
       const childPersona = findPersonaProyecto(
         producto.personaProyecto,
         idPersonaGeneral,
@@ -90,7 +96,7 @@ export function buildProjectHierarchyRows(
 
 export function mapProjectsToActivityRows(
   proyectos: ProyectoDocenteDto[],
-  activityCodigo: ProjectActivityCodigo,
+  activityCodigo: string,
   idPersonaGeneral: number | null | undefined,
 ): SimpleActivity[] {
   const hierarchyRows = buildProjectHierarchyRows(
@@ -111,8 +117,8 @@ export function mapProjectsToActivityRows(
 
 export function sumProjectActivityHours(rows: SimpleActivity[]): number {
   let total = 0;
-  for (const row of rows) {
-    total += row.horasDedicacion ?? 0;
+  for (let index = 0; index < rows.length; index += 1) {
+    total += rows[index].horasDedicacion ?? 0;
   }
   return total;
 }
@@ -120,7 +126,7 @@ export function sumProjectActivityHours(rows: SimpleActivity[]): number {
 function findPersonaProyecto(
   personas: PersonaProyectoDto[],
   idPersonaGeneral: number,
-  activityCodigo: ProjectActivityCodigo,
+  activityCodigo: string,
 ): PersonaProyectoDto | undefined {
   return personas.find(
     (item) =>
@@ -143,19 +149,14 @@ function mapToProjectRow(
     codigoTipoActividad: persona.tipoActividad.codigo,
     nombreProyecto: resolveProjectLabel(proyecto),
     nombreActividad: persona.tipoActividad.nombre,
-    horasDedicacion: nivel === 1
-      ? parseChildProjectHours(persona.horas)
-      : parseProjectHours(persona.horas),
+    horasDedicacion:
+      nivel === 1
+        ? parseChildProjectHours(persona.horas)
+        : parseProjectHours(persona.horas),
     nivel,
     esPadre,
     esSeleccionable,
   };
-}
-
-function isProjectActivityCodigo(
-  codigo: string,
-): codigo is ProjectActivityCodigo {
-  return codigo === 'CTEI' || codigo === 'ISU';
 }
 
 function parseProjectHours(horas: string): number {

@@ -9,7 +9,6 @@ import {
   output,
   signal,
   untracked,
-  WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -30,18 +29,21 @@ import {
   WorkDate,
 } from '../../model/coordination.model';
 import {
-  ActivityCategoryCodigo,
+  buildComponenteByCodigo,
   buildVisibleActivityItems,
   createInitialAddFormOpen,
   createInitialExpandedCategories,
   resolveInitialExpandedCategories,
-  resolveVisibleActivityCodigos,
 } from '../../model/professor-activities.config';
 import {
   DirectLearningActivity,
   SimpleActivity,
 } from '../../model/professor-activities-modal.models';
-import { TipoActividad } from '../../model/professor-activities.model';
+import {
+  ActividadModalidadDTO,
+  ActivityFormType,
+  TipoActividad,
+} from '../../model/professor-activities.model';
 import {
   buildSaveActivityDistributionRequest,
   buildUpdateDetailProfessorPreloadRequests,
@@ -61,12 +63,6 @@ import { parseMaxWeeklyHours } from '../../model/professor-form.config';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 const NN_LABEL = 'NN';
-
-type CriteriaActivityCodigo = Extract<ActivityCategoryCodigo, 'FAI' | 'AC'>;
-type ProjectActivityCategoryCodigo = Extract<
-  ActivityCategoryCodigo,
-  'CTEI' | 'ISU'
->;
 
 @Component({
   selector: 'app-professor-activities-modal',
@@ -108,32 +104,42 @@ export class ProfessorActivitiesModal {
       'La coordinación no está habilitada para edición en esta convocatoria.',
   );
 
-  readonly actividadesFAD = signal<DirectLearningActivity[]>([]);
-  readonly actividadesFAI = signal<SimpleActivity[]>([]);
-  readonly actividadesAC = signal<SimpleActivity[]>([]);
-  readonly associatedProjectsCTEI = signal<ProfessorProjectRow[]>([]);
-  readonly associatedProjectsISU = signal<ProfessorProjectRow[]>([]);
+  readonly directByCodigo = signal<
+    Record<string, DirectLearningActivity[]>
+  >({});
+  readonly criteriaByCodigo = signal<Record<string, SimpleActivity[]>>({});
+  readonly projectsByCodigo = signal<
+    Record<string, ProfessorProjectRow[]>
+  >({});
   private readonly loadedDetailsById = signal<
     Map<number, DetailProfessorPreloadItemApi>
   >(new Map());
-
-  private readonly criteriaActivitiesByCodigo: Record<
-    CriteriaActivityCodigo,
-    WritableSignal<SimpleActivity[]>
-  > = {
-    FAI: this.actividadesFAI,
-    AC: this.actividadesAC,
-  };
-
-  private readonly associatedProjectsByCodigo: Record<ProjectActivityCategoryCodigo, WritableSignal<ProfessorProjectRow[]>> = {
-    CTEI: this.associatedProjectsCTEI,
-    ISU: this.associatedProjectsISU,
-  };
 
   readonly activityTypesResource = rxResource({
     params: () => (this.isOpen() ? true : undefined),
     stream: () => this.coordinationService.listActivityTypes(),
     defaultValue: [] as TipoActividad[],
+  });
+
+  readonly activitiesModalityResource = rxResource({
+    params: () => {
+      if (!this.isOpen()) {
+        return undefined;
+      }
+      const idModalidadContratacion = this.contractModality()?.id;
+      if (idModalidadContratacion == null) {
+        return undefined;
+      }
+      return { idModalidadContratacion };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.listActivitiesModality(
+        params.idModalidadContratacion,
+      ),
+    defaultValue: {
+      idModalidadContratacion: 0,
+      tipoActividades: [],
+    } as ActividadModalidadDTO,
   });
 
   readonly professorProjectsResource = rxResource({
@@ -196,40 +202,41 @@ export class ProfessorActivitiesModal {
     () => this.detailResource.isLoading(),
   );
 
-  readonly expandedCategories = signal(
-    createInitialExpandedCategories(),
+  readonly isLoadingActivityCategories = computed(
+    () => this.activitiesModalityResource.isLoading(),
   );
 
-  readonly addFormOpen = signal(createInitialAddFormOpen());
-
+  readonly expandedCategories = signal<Record<string, boolean>>({});
+  readonly addFormOpen = signal<Record<string, boolean>>({});
   private readonly expandedCategoriesInitialized = signal(false);
+
+  readonly visibleActivityItems = computed(() =>
+    buildVisibleActivityItems(
+      this.activitiesModalityResource.value().tipoActividades ?? [],
+      this.activityTypesResource.value(),
+    ),
+  );
 
   readonly projectHierarchyRowsByCodigo = computed(() => {
     const proyectos = this.professorProjectsResource.value();
     const idPersonaGeneral = this.professor()?.idPersonaGeneral;
-    return {
-      CTEI: buildProjectHierarchyRows(
-        proyectos,
-        'CTEI',
-        idPersonaGeneral,
-      ),
-      ISU: buildProjectHierarchyRows(
-        proyectos,
-        'ISU',
-        idPersonaGeneral,
-      ),
-    };
-  });
+    const items = this.visibleActivityItems();
+    const result: Record<string, ProfessorProjectRow[]> = {};
 
-  readonly visibleActivityItems = computed(() =>
-    buildVisibleActivityItems(
-      resolveVisibleActivityCodigos(
-        this.contractModality()?.nombre,
-        this.contractModality()?.esPlanta === true,
-      ),
-      this.activityTypesResource.value(),
-    ),
-  );
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index];
+      if (item.formType !== 'project') {
+        continue;
+      }
+      result[item.codigo] = buildProjectHierarchyRows(
+        proyectos,
+        item.codigo,
+        idPersonaGeneral,
+      );
+    }
+
+    return result;
+  });
 
   readonly professorDisplayName = computed(() =>
     this.resolveProfessorName(this.professor()),
@@ -279,19 +286,35 @@ export class ProfessorActivitiesModal {
     () => this.coordination()?.periodoUniversidad?.trim() || '',
   );
 
-  readonly categoryHours = computed(
-    (): Record<ActivityCategoryCodigo, number> => ({
-      FAD: this.sumDirectHours(),
-      FAI: this.sumSimpleHours(this.actividadesFAI()),
-      AC: this.sumSimpleHours(this.actividadesAC()),
-      CTEI: this.sumProjectHours(this.associatedProjectsCTEI()),
-      ISU: this.sumProjectHours(this.associatedProjectsISU()),
-    }),
-  );
+  readonly categoryHours = computed((): Record<string, number> => {
+    const hours: Record<string, number> = {};
+    const items = this.visibleActivityItems();
+
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index];
+      if (item.formType === 'direct') {
+        hours[item.codigo] = this.sumDirectHours(
+          this.directByCodigo()[item.codigo] ?? [],
+        );
+        continue;
+      }
+      if (item.formType === 'criteria') {
+        hours[item.codigo] = this.sumSimpleHours(
+          this.criteriaByCodigo()[item.codigo] ?? [],
+        );
+        continue;
+      }
+      hours[item.codigo] = this.sumProjectHours(
+        this.projectsByCodigo()[item.codigo] ?? [],
+      );
+    }
+
+    return hours;
+  });
 
   readonly totalAssignedHours = computed(() =>
     Object.values(this.categoryHours()).reduce(
-      (total, hours) => total + hours,
+      (total, value) => total + value,
       0,
     ),
   );
@@ -330,6 +353,7 @@ export class ProfessorActivitiesModal {
     () =>
       !this.readOnly() &&
       !this.isLoadingDetail() &&
+      !this.isLoadingActivityCategories() &&
       !this.exceedsWeeklyLimit() &&
       hasSaveableActivities(
         this.buildSaveInput(),
@@ -344,13 +368,19 @@ export class ProfessorActivitiesModal {
         return;
       }
 
-      if (this.detailResource.isLoading()) {
+      if (
+        this.detailResource.isLoading() ||
+        this.activitiesModalityResource.isLoading()
+      ) {
         untracked(() => this.clearActivitySignals());
         return;
       }
 
       const detail = this.detailResource.value();
-      untracked(() => this.applyLoadedDetail(detail));
+      const componenteByCodigo = buildComponenteByCodigo(
+        this.activitiesModalityResource.value().tipoActividades ?? [],
+      );
+      untracked(() => this.applyLoadedDetail(detail, componenteByCodigo));
     });
 
     effect(() => {
@@ -359,7 +389,13 @@ export class ProfessorActivitiesModal {
         return;
       }
 
-      if (this.professorProjectsResource.isLoading()) {
+      if (this.isLoadingActivityCategories()) {
+        return;
+      }
+
+      const items = this.visibleActivityItems();
+      const hasProject = items.some((item) => item.formType === 'project');
+      if (hasProject && this.professorProjectsResource.isLoading()) {
         return;
       }
 
@@ -367,41 +403,34 @@ export class ProfessorActivitiesModal {
         return;
       }
 
+      const codigos = items.map((item) => item.codigo);
       const rows = this.projectHierarchyRowsByCodigo();
       untracked(() => {
         this.expandedCategories.set(
-          resolveInitialExpandedCategories({
-            CTEI: rows.CTEI,
-            ISU: rows.ISU,
-          }),
+          resolveInitialExpandedCategories(codigos, rows),
         );
+        this.addFormOpen.set(createInitialAddFormOpen(codigos));
         this.expandedCategoriesInitialized.set(true);
       });
     });
   }
 
-  onCategoryExpandedChange(
-    codigo: ActivityCategoryCodigo,
-    expanded: boolean,
-  ): void {
+  onCategoryExpandedChange(codigo: string, expanded: boolean): void {
     this.expandedCategories.update((current) => ({
       ...current,
       [codigo]: expanded,
     }));
   }
 
-  isCategoryExpanded(codigo: ActivityCategoryCodigo): boolean {
-    return this.expandedCategories()[codigo];
+  isCategoryExpanded(codigo: string): boolean {
+    return this.expandedCategories()[codigo] === true;
   }
 
-  isAddFormOpen(codigo: ActivityCategoryCodigo): boolean {
-    return this.addFormOpen()[codigo];
+  isAddFormOpen(codigo: string): boolean {
+    return this.addFormOpen()[codigo] === true;
   }
 
-  onAddFormOpenChange(
-    codigo: ActivityCategoryCodigo,
-    isFormOpen: boolean,
-  ): void {
+  onAddFormOpenChange(codigo: string, isFormOpen: boolean): void {
     if (this.readOnly() && isFormOpen) {
       return;
     }
@@ -413,66 +442,72 @@ export class ProfessorActivitiesModal {
   }
 
   hoursLabel(hours: number): string {
-    return `${hours}h`;
+    return `${hours ?? 0}h`;
   }
 
-  criteriaActivitiesForCodigo(codigo: ActivityCategoryCodigo): SimpleActivity[] {
-    if (codigo === 'FAI' || codigo === 'AC') {
-      return this.criteriaActivitiesByCodigo[codigo]();
-    }
-    return [];
+  directActivitiesForCodigo(codigo: string): DirectLearningActivity[] {
+    return this.directByCodigo()[codigo] ?? [];
   }
 
-  projectHierarchyRowsForCodigo(codigo: ActivityCategoryCodigo): ProfessorProjectRow[] {
-    const rows = this.projectHierarchyRowsByCodigo();
-    if (codigo === 'CTEI') {
-      return rows.CTEI;
-    }
-    if (codigo === 'ISU') {
-      return rows.ISU;
-    }
-    return [];
-  }
-
-  associatedProjectsForCodigo(codigo: ActivityCategoryCodigo): ProfessorProjectRow[] {
-    if (codigo === 'CTEI' || codigo === 'ISU') {
-      return this.associatedProjectsByCodigo[codigo]();
-    }
-    return [];
-  }
-
-  setAssociatedProjectsForCodigo(
-    codigo: ActivityCategoryCodigo,
-    rows: ProfessorProjectRow[],
+  setDirectActivitiesForCodigo(
+    codigo: string,
+    activities: DirectLearningActivity[],
   ): void {
     if (this.readOnly()) {
       return;
     }
 
-    if (codigo === 'CTEI' || codigo === 'ISU') {
-      this.associatedProjectsByCodigo[codigo].set(rows);
-    }
+    this.directByCodigo.update((current) => ({
+      ...current,
+      [codigo]: activities,
+    }));
+  }
+
+  criteriaActivitiesForCodigo(codigo: string): SimpleActivity[] {
+    return this.criteriaByCodigo()[codigo] ?? [];
   }
 
   setCriteriaActivitiesForCodigo(
-    codigo: ActivityCategoryCodigo,
+    codigo: string,
     activities: SimpleActivity[],
   ): void {
     if (this.readOnly()) {
       return;
     }
 
-    if (codigo === 'FAI' || codigo === 'AC') {
-      this.criteriaActivitiesByCodigo[codigo].set(activities);
-    }
+    this.criteriaByCodigo.update((current) => ({
+      ...current,
+      [codigo]: activities,
+    }));
   }
 
-  onSubmit(): void {
- 
+  projectHierarchyRowsForCodigo(codigo: string): ProfessorProjectRow[] {
+    return this.projectHierarchyRowsByCodigo()[codigo] ?? [];
+  }
+
+  associatedProjectsForCodigo(codigo: string): ProfessorProjectRow[] {
+    return this.projectsByCodigo()[codigo] ?? [];
+  }
+
+  setAssociatedProjectsForCodigo(
+    codigo: string,
+    rows: ProfessorProjectRow[],
+  ): void {
     if (this.readOnly()) {
       return;
     }
- 
+
+    this.projectsByCodigo.update((current) => ({
+      ...current,
+      [codigo]: rows,
+    }));
+  }
+
+  onSubmit(): void {
+    if (this.readOnly()) {
+      return;
+    }
+
     const professor = this.professor();
     if (professor?.idCargaDocente == null) {
       this.notificationService.error(
@@ -490,10 +525,10 @@ export class ProfessorActivitiesModal {
       return;
     }
 
-    if(this.exceedsWeeklyLimit()){
+    if (this.exceedsWeeklyLimit()) {
       this.notificationService.error(
         `El total de horas asignadas (${this.totalAssignedHours()}h) supera el límite semanal de ${this.weeklyHoursLimit()}h.`,
-      )
+      );
     }
 
     const saveRequest = buildSaveActivityDistributionRequest(input);
@@ -534,13 +569,41 @@ export class ProfessorActivitiesModal {
       idCargaDocente: this.professor()?.idCargaDocente ?? 0,
       idCentroCosto: coordination?.centroCosto?.id ?? null,
       centroCostoDescripcion: coordination?.centroCosto?.descripcion ?? null,
-      activityTypes: this.activityTypesResource.value(),
-      actividadesFAD: this.actividadesFAD(),
-      actividadesFAI: this.actividadesFAI(),
-      actividadesAC: this.actividadesAC(),
-      associatedProjectsCTEI: this.associatedProjectsCTEI(),
-      associatedProjectsISU: this.associatedProjectsISU(),
+      activityTypes: this.resolveActivityTypesForSave(),
+      directByCodigo: this.directByCodigo(),
+      criteriaByCodigo: this.criteriaByCodigo(),
+      projectsByCodigo: this.projectsByCodigo(),
     };
+  }
+
+  private resolveActivityTypesForSave(): TipoActividad[] {
+    const catalog = this.activityTypesResource.value();
+    const modalityTypes =
+      this.activitiesModalityResource.value().tipoActividades ?? [];
+    const byCodigo = new Map<string, TipoActividad>();
+
+    for (let index = 0; index < catalog.length; index += 1) {
+      const type = catalog[index];
+      byCodigo.set(type.codigo, type);
+    }
+
+    for (let index = 0; index < modalityTypes.length; index += 1) {
+      const item = modalityTypes[index];
+      if (byCodigo.has(item.codigo)) {
+        continue;
+      }
+      byCodigo.set(item.codigo, {
+        id: item.id,
+        idPadre: null,
+        nombre: item.nombre,
+        descripcion: item.nombre,
+        orden: String(index),
+        codigo: item.codigo,
+        componente: item.componente,
+      });
+    }
+
+    return Array.from(byCodigo.values());
   }
 
   private resetModalState(): void {
@@ -553,20 +616,23 @@ export class ProfessorActivitiesModal {
   }
 
   private clearActivitySignals(): void {
-    this.actividadesFAD.set([]);
-    this.actividadesFAI.set([]);
-    this.actividadesAC.set([]);
-    this.associatedProjectsCTEI.set([]);
-    this.associatedProjectsISU.set([]);
+    this.directByCodigo.set({});
+    this.criteriaByCodigo.set({});
+    this.projectsByCodigo.set({});
   }
 
   private applyLoadedDetail(
     detail: DetailProfessorPreloadApi,
+    componenteByCodigo: Record<string, ActivityFormType>,
   ): void {
-    const state = mapDetailProfessorPreloadToModalState(detail);
+    const state = mapDetailProfessorPreloadToModalState(
+      detail,
+      componenteByCodigo,
+    );
     const loadedDetails = new Map<number, DetailProfessorPreloadItemApi>();
 
-    for (const item of detail) {
+    for (let index = 0; index < detail.length; index += 1) {
+      const item = detail[index];
       loadedDetails.set(
         item.idDetalleCargaDocente,
         structuredClone(item),
@@ -574,11 +640,9 @@ export class ProfessorActivitiesModal {
     }
 
     this.loadedDetailsById.set(loadedDetails);
-    this.actividadesFAD.set(state.actividadesFAD);
-    this.actividadesFAI.set(state.actividadesFAI);
-    this.actividadesAC.set(state.actividadesAC);
-    this.associatedProjectsCTEI.set(state.associatedProjectsCTEI);
-    this.associatedProjectsISU.set(state.associatedProjectsISU);
+    this.directByCodigo.set(state.directByCodigo);
+    this.criteriaByCodigo.set(state.criteriaByCodigo);
+    this.projectsByCodigo.set(state.projectsByCodigo);
     this.hasSavedDetail.set(state.hasSavedDetail);
   }
 
@@ -591,8 +655,8 @@ export class ProfessorActivitiesModal {
     return professor.nombreCompleto?.trim() || NN_LABEL;
   }
 
-  private sumDirectHours(): number {
-    return this.actividadesFAD().reduce(
+  private sumDirectHours(items: DirectLearningActivity[]): number {
+    return items.reduce(
       (total, item) => total + item.horasPresenciales,
       0,
     );
