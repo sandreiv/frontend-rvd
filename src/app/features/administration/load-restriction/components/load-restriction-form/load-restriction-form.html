@@ -15,11 +15,7 @@
   </div>
 
   <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
-    <app-checkbox
-      label="Rango de horas"
-      [checked]="form.controls.horasEnabled.value"
-      (checkedChange)="onToggleHoras($event)"
-    />
+    <app-label>Rango de horas</app-label>
 
     <div class="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div>
@@ -28,7 +24,6 @@
           placeholder="Ingrese el mínimo de horas"
           min="0"
           formControlName="minimo"
-          [disabled]="!form.controls.horasEnabled.value"
         />
 
         @if (showMinimoRequired) {
@@ -44,7 +39,6 @@
           placeholder="Ingrese el máximo de horas"
           min="0"
           formControlName="maximo"
-          [disabled]="!form.controls.horasEnabled.value"
         />
 
         @if (showMaximoRequired) {
@@ -64,30 +58,31 @@
 
   <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
-      <app-checkbox
-        label="Investigación"
-        [checked]="form.controls.investigacion.value"
-        (checkedChange)="form.controls.investigacion.setValue($event)"
-      />
+      <app-label>Investigación</app-label>
 
-      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        Si se marca, se guarda investigación como activa.
-      </p>
+      <div class="mt-3">
+        <app-select
+          formControlName="investigacion"
+          [options]="investigacionOptions"
+          placeholder="Seleccione investigación"
+        />
+
+        @if (showInvestigacionRequired) {
+          <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+            La investigación es obligatoria.
+          </p>
+        }
+      </div>
     </div>
 
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
-      <app-checkbox
-        label="Forma de pago"
-        [checked]="form.controls.formaPagoEnabled.value"
-        (checkedChange)="onToggleFormaPago($event)"
-      />
+      <app-label>Forma de pago</app-label>
 
       <div class="mt-3">
         <app-select
           formControlName="formaPago"
           [options]="formaPagoOptions"
           placeholder="Seleccione forma de pago"
-          [disabled]="!form.controls.formaPagoEnabled.value"
         />
 
         @if (showFormaPagoRequired) {
@@ -99,18 +94,13 @@
     </div>
 
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
-      <app-checkbox
-        label="Tipo contrato"
-        [checked]="form.controls.tipoContratoEnabled.value"
-        (checkedChange)="onToggleTipoContrato($event)"
-      />
+      <app-label>Tipo contrato</app-label>
 
       <div class="mt-3">
         <app-select
           formControlName="tipoContrato"
           [options]="tipoContratoOptions"
           placeholder="Seleccione tipo contrato"
-          [disabled]="!form.controls.tipoContratoEnabled.value"
         />
 
         @if (showTipoContratoRequired) {
@@ -122,18 +112,13 @@
     </div>
 
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
-      <app-checkbox
-        label="Tipo de horas"
-        [checked]="form.controls.tipoHorasEnabled.value"
-        (checkedChange)="onToggleTipoHoras($event)"
-      />
+      <app-label>Tipo de horas</app-label>
 
       <div class="mt-3">
         <app-select
           formControlName="tipoHoras"
           [options]="tipoHorasOptions"
           placeholder="Seleccione tipo de horas"
-          [disabled]="!form.controls.tipoHorasEnabled.value"
         />
 
         @if (showTipoHorasRequired) {
@@ -146,20 +131,12 @@
   </div>
 
   <div class="mt-4 rounded-lg border border-gray-100 p-3 dark:border-white/10">
-        <app-checkbox
-            label="Excepción"
-            [checked]="form.controls.excepcionEnabled.value"
-            (checkedChange)="onToggleExcepcion($event)"
-        />
-
+    <app-label>Excepción</app-label>
         <div class="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
             <app-label>Programas exceptuados</app-label>
 
-            <div
-              [class.opacity-50]="!form.controls.excepcionEnabled.value"
-              [class.pointer-events-none]="!form.controls.excepcionEnabled.value"
-            >
+            <div>
               @if (showProgramSearch()) {
                 <app-typeahead-select
                   formControlName="idProgramaBusqueda"
@@ -167,7 +144,6 @@
                   [optionAdapter]="catalogOptionAdapter"
                   placeholder="Buscar programa..."
                   emptyText="Sin resultados"
-                  [disabled]="!form.controls.excepcionEnabled.value"
                   (queryChange)="onSearchProgram($event)"
                   (itemSelected)="onProgramSelected($event)"
                 />
@@ -199,10 +175,7 @@
             <div>
             <app-label>Personas exceptuadas</app-label>
 
-            <div
-              [class.opacity-50]="!form.controls.excepcionEnabled.value"
-              [class.pointer-events-none]="!form.controls.excepcionEnabled.value"
-            >
+            <div>
               @if (showPersonSearch()) {
                 <app-typeahead-select
                   formControlName="idPersonaBusqueda"
@@ -210,7 +183,6 @@
                   [optionAdapter]="catalogOptionAdapter"
                   placeholder="Buscar persona..."
                   emptyText="Sin resultados"
-                  [disabled]="!form.controls.excepcionEnabled.value"
                   (queryChange)="onSearchPerson($event)"
                   (itemSelected)="onPersonSelected($event)"
                 />
@@ -255,20 +227,46 @@
         (checkedChange)="onToggleCategoria($event)"
       />
 
-      <div class="mt-3">
+      <div
+        class="mt-3"
+        [class.opacity-50]="!form.controls.categoriaEnabled.value"
+        [class.pointer-events-none]="!form.controls.categoriaEnabled.value"
+      >
         <app-select
           formControlName="idCategoriaCatedratico"
           [options]="categoriaOptions"
           placeholder="Seleccione categoría"
           [disabled]="!form.controls.categoriaEnabled.value"
+          (valueChange)="onCategoriaSelected($event)"
         />
-
-        @if (showCategoriaRequired) {
-          <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-            La categoría es obligatoria.
-          </p>
-        }
       </div>
+
+      @if (selectedCategories().length > 0) {
+        <div class="mt-3 flex flex-wrap gap-2">
+          @for (category of selectedCategories(); track category.id) {
+            <span
+              class="inline-flex items-center gap-2 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
+            >
+              {{ category.label }}
+
+              <button
+                type="button"
+                class="text-green-700 hover:text-red-600"
+                aria-label="Quitar categoría"
+                (click)="removeCategoria(category.id)"
+              >
+                ×
+              </button>
+            </span>
+          }
+        </div>
+      }
+
+      @if (showCategoriaRequired) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          Debe seleccionar al menos una categoría.
+        </p>
+      }
     </div>
 
     <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
@@ -278,20 +276,46 @@
         (checkedChange)="onToggleTipoActividad($event)"
       />
 
-      <div class="mt-3">
+      <div
+        class="mt-3"
+        [class.opacity-50]="!form.controls.tipoActividadEnabled.value"
+        [class.pointer-events-none]="!form.controls.tipoActividadEnabled.value"
+      >
         <app-select
           formControlName="idTipoActividad"
           [options]="tipoActividadOptions"
           placeholder="Seleccione tipo de actividad"
           [disabled]="!form.controls.tipoActividadEnabled.value"
+          (valueChange)="onTipoActividadSelected($event)"
         />
-
-        @if (showTipoActividadRequired) {
-          <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-            El tipo de actividad es obligatorio.
-          </p>
-        }
       </div>
+
+      @if (selectedActivityTypes().length > 0) {
+        <div class="mt-3 flex flex-wrap gap-2">
+          @for (activityType of selectedActivityTypes(); track activityType.id) {
+            <span
+              class="inline-flex items-center gap-2 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
+            >
+              {{ activityType.codigo ? activityType.codigo + ' - ' + activityType.label : activityType.label }}
+
+              <button
+                type="button"
+                class="text-green-700 hover:text-red-600"
+                aria-label="Quitar tipo actividad"
+                (click)="removeTipoActividad(activityType.id)"
+              >
+                ×
+              </button>
+            </span>
+          }
+        </div>
+      }
+
+      @if (showTipoActividadRequired) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          Debe seleccionar al menos un tipo de actividad.
+        </p>
+      }
     </div>
   </div>
 

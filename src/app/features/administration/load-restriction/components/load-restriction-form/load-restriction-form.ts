@@ -46,7 +46,7 @@ type LoadRestrictionFormGroup = FormGroup<{
   horasEnabled: FormControl<boolean>;
   minimo: FormControl<number | null>;
   maximo: FormControl<number | null>;
-  investigacion: FormControl<boolean>;
+  investigacion: FormControl<string>;
   formaPagoEnabled: FormControl<boolean>;
   formaPago: FormControl<string>;
   tipoContratoEnabled: FormControl<boolean>;
@@ -65,66 +65,48 @@ type LoadRestrictionFormGroup = FormGroup<{
 const restrictionValidator: ValidatorFn = (
   control: AbstractControl,
 ): ValidationErrors | null => {
-  const horasEnabled = control.get('horasEnabled')?.value === true;
   const minimo = control.get('minimo')?.value;
   const maximo = control.get('maximo')?.value;
 
-  const formaPagoEnabled = control.get('formaPagoEnabled')?.value === true;
+  const investigacion = String(control.get('investigacion')?.value ?? '');
   const formaPago = String(control.get('formaPago')?.value ?? '');
-
-  const tipoContratoEnabled = Boolean(
-    control.get('tipoContratoEnabled')?.value,
-  );
   const tipoContrato = String(control.get('tipoContrato')?.value ?? '');
-
-  const tipoHorasEnabled = control.get('tipoHorasEnabled')?.value === true;
   const tipoHoras = String(control.get('tipoHoras')?.value ?? '');
-
-  const excepcionEnabled = control.get('excepcionEnabled')?.value === true;
-  
-  const categoriaEnabled = control.get('categoriaEnabled')?.value === true;
-  const idCategoriaCatedratico = String(control.get('idCategoriaCatedratico')?.value ?? '');
-
-  const tipoActividadEnabled = control.get('tipoActividadEnabled')?.value === true;
-  const idTipoActividad = String(control.get('idTipoActividad')?.value ?? '');
 
   const errors: ValidationErrors = {};
 
-  if (horasEnabled && (minimo == null || minimo === '')) {
+  if (minimo == null || minimo === '') {
     errors['minimoRequired'] = true;
-    }
+  }
 
-    if (horasEnabled && (maximo == null || maximo === '')) {
+  if (maximo == null || maximo === '') {
     errors['maximoRequired'] = true;
-    }
+  }
 
-    if (
-      horasEnabled &&
-      minimo != null &&
-      maximo != null &&
-      Number(maximo) < Number(minimo)
-    ) {
-      errors['hoursRange'] = true;
-    }
+  if (
+    minimo != null &&
+    maximo != null &&
+    minimo !== '' &&
+    maximo !== '' &&
+    Number(maximo) < Number(minimo)
+  ) {
+    errors['hoursRange'] = true;
+  }
 
-  if (formaPagoEnabled && !formaPago) {
+  if (!investigacion) {
+    errors['investigacionRequired'] = true;
+  }
+
+  if (!formaPago) {
     errors['formaPagoRequired'] = true;
   }
 
-  if (tipoContratoEnabled && !tipoContrato) {
+  if (!tipoContrato) {
     errors['tipoContratoRequired'] = true;
   }
 
-  if (tipoHorasEnabled && !tipoHoras) {
+  if (!tipoHoras) {
     errors['tipoHorasRequired'] = true;
-  }
-
-  if (categoriaEnabled && !idCategoriaCatedratico) {
-    errors['categoriaRequired'] = true;
-  }
-
-  if (tipoActividadEnabled && !idTipoActividad) {
-    errors['tipoActividadRequired'] = true;
   }
 
   return Object.keys(errors).length ? errors : null;
@@ -154,11 +136,19 @@ export class LoadRestrictionForm implements OnChanges {
   @Output() saveRestriction = new EventEmitter<LoadRestrictionFormData>();
 
   readonly submitted = signal(false);
+  readonly investigacionOptions: Option[] = [
+    { value: '1', label: 'Sí' },
+    { value: '0', label: 'No' },
+  ];
   readonly filteredPrograms = signal<LoadRestrictionCatalogItem[]>([]);
   readonly filteredPeople = signal<LoadRestrictionCatalogItem[]>([]);
   readonly selectedPrograms = signal<LoadRestrictionCatalogItem[]>([]);
   readonly selectedPeople = signal<LoadRestrictionCatalogItem[]>([]);
   readonly showExcepcionRequired = signal(false);
+  readonly selectedCategories = signal<LoadRestrictionCatalogItem[]>([]);
+  readonly selectedActivityTypes = signal<LoadRestrictionCatalogItem[]>([]);
+  readonly showCategoriaRequiredSignal = signal(false);
+  readonly showTipoActividadRequiredSignal = signal(false);
   readonly showProgramSearch = signal(true);
   readonly showPersonSearch = signal(true);
 
@@ -179,17 +169,21 @@ export class LoadRestrictionForm implements OnChanges {
 
   readonly form: LoadRestrictionFormGroup = new FormGroup(
     {
-      horasEnabled: new FormControl(false, { nonNullable: true }),
-      minimo: new FormControl<number | null>({ value: null, disabled: true }),
-      maximo: new FormControl<number | null>({ value: null, disabled: true }),
-      investigacion: new FormControl(false, { nonNullable: true }),
-      formaPagoEnabled: new FormControl(false, { nonNullable: true }),
+      horasEnabled: new FormControl(true, { nonNullable: true }),
+      minimo: new FormControl<number | null>(null),
+      maximo: new FormControl<number | null>(null),
+      investigacion: new FormControl('', { nonNullable: true }),
+
+      formaPagoEnabled: new FormControl(true, { nonNullable: true }),
       formaPago: new FormControl('', { nonNullable: true }),
-      tipoContratoEnabled: new FormControl(false, { nonNullable: true }),
+
+      tipoContratoEnabled: new FormControl(true, { nonNullable: true }),
       tipoContrato: new FormControl('', { nonNullable: true }),
-      tipoHorasEnabled: new FormControl(false, { nonNullable: true }),
+
+      tipoHorasEnabled: new FormControl(true, { nonNullable: true }),
       tipoHoras: new FormControl('', { nonNullable: true }),
-      excepcionEnabled: new FormControl(false, { nonNullable: true }),
+
+      excepcionEnabled: new FormControl(true, { nonNullable: true }),
       idProgramaBusqueda: new FormControl(
         { value: '', disabled: true },
         { nonNullable: true },
@@ -218,17 +212,29 @@ export class LoadRestrictionForm implements OnChanges {
   };
 
   get categoriaOptions(): Option[] {
-    return (this.catalogs()?.categorias ?? []).map((item) => ({
-      value: String(item.id),
-      label: item.label,
-    }));
+    const selectedIds = new Set(
+      this.selectedCategories().map((item) => item.id),
+    );
+
+    return (this.catalogs()?.categorias ?? [])
+      .filter((item) => !selectedIds.has(item.id))
+      .map((item) => ({
+        value: String(item.id),
+        label: item.label,
+      }));
   }
 
   get tipoActividadOptions(): Option[] {
-    return (this.catalogs()?.tiposActividad ?? []).map((item) => ({
-      value: String(item.id),
-      label: item.codigo ? `${item.codigo} - ${item.label}` : item.label,
-    }));
+    const selectedIds = new Set(
+      this.selectedActivityTypes().map((item) => item.id),
+    );
+
+    return (this.catalogs()?.tiposActividad ?? [])
+      .filter((item) => !selectedIds.has(item.id))
+      .map((item) => ({
+        value: String(item.id),
+        label: item.codigo ? `${item.codigo} - ${item.label}` : item.label,
+      }));
   }
 
   get showMinimoRequired(): boolean {
@@ -241,6 +247,10 @@ export class LoadRestrictionForm implements OnChanges {
 
   get showHoursRangeInvalid(): boolean {
     return this.submitted() && this.form.hasError('hoursRange');
+  }
+
+  get showInvestigacionRequired(): boolean {
+    return this.submitted() && this.form.hasError('investigacionRequired');
   }
 
   get showFormaPagoRequired(): boolean {
@@ -259,11 +269,11 @@ export class LoadRestrictionForm implements OnChanges {
   }
 
   get showCategoriaRequired(): boolean {
-    return this.submitted() && this.form.hasError('categoriaRequired');
+    return this.showCategoriaRequiredSignal();
   }
 
   get showTipoActividadRequired(): boolean {
-    return this.submitted() && this.form.hasError('tipoActividadRequired');
+    return this.showTipoActividadRequiredSignal();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -345,17 +355,25 @@ export class LoadRestrictionForm implements OnChanges {
 
   onToggleCategoria(checked: boolean): void {
     this.form.controls.categoriaEnabled.setValue(checked);
+
     if (!checked) {
       this.form.controls.idCategoriaCatedratico.setValue('');
+      this.selectedCategories.set([]);
     }
+
+    this.showCategoriaRequiredSignal.set(false);
     this.form.updateValueAndValidity();
   }
 
   onToggleTipoActividad(checked: boolean): void {
     this.form.controls.tipoActividadEnabled.setValue(checked);
+
     if (!checked) {
       this.form.controls.idTipoActividad.setValue('');
+      this.selectedActivityTypes.set([]);
     }
+
+    this.showTipoActividadRequiredSignal.set(false);
     this.form.updateValueAndValidity();
   }
 
@@ -445,6 +463,70 @@ export class LoadRestrictionForm implements OnChanges {
     );
     }
 
+    onCategoriaSelected(value: string): void {
+    const id = Number(value);
+
+    if (!id) {
+      return;
+    }
+
+    const category = (this.catalogs()?.categorias ?? []).find(
+      (item) => item.id === id,
+    );
+
+    if (!category) {
+      this.form.controls.idCategoriaCatedratico.setValue('');
+      return;
+    }
+
+    if (this.selectedCategories().some((item) => item.id === category.id)) {
+      this.form.controls.idCategoriaCatedratico.setValue('');
+      return;
+    }
+
+    this.selectedCategories.update((current) => [...current, category]);
+    this.form.controls.idCategoriaCatedratico.setValue('');
+    this.showCategoriaRequiredSignal.set(false);
+  }
+
+  removeCategoria(id: number): void {
+    this.selectedCategories.update((current) =>
+      current.filter((item) => item.id !== id),
+    );
+  }
+
+  onTipoActividadSelected(value: string): void {
+    const id = Number(value);
+
+    if (!id) {
+      return;
+    }
+
+    const activityType = (this.catalogs()?.tiposActividad ?? []).find(
+      (item) => item.id === id,
+    );
+
+    if (!activityType) {
+      this.form.controls.idTipoActividad.setValue('');
+      return;
+    }
+
+    if (this.selectedActivityTypes().some((item) => item.id === activityType.id)) {
+      this.form.controls.idTipoActividad.setValue('');
+      return;
+    }
+
+    this.selectedActivityTypes.update((current) => [...current, activityType]);
+    this.form.controls.idTipoActividad.setValue('');
+    this.showTipoActividadRequiredSignal.set(false);
+  }
+
+  removeTipoActividad(id: number): void {
+    this.selectedActivityTypes.update((current) =>
+      current.filter((item) => item.id !== id),
+    );
+  }
+
   onSubmit(): void {
     this.submitted.set(true);
     this.form.markAllAsTouched();
@@ -461,31 +543,43 @@ export class LoadRestrictionForm implements OnChanges {
     const hasExcepcion =
     this.selectedPrograms().length > 0 || this.selectedPeople().length > 0;
 
-    if (raw.excepcionEnabled && !hasExcepcion) {
-    this.showExcepcionRequired.set(true);
-    return;
+    if (!hasExcepcion) {
+      this.showExcepcionRequired.set(true);
+      return;
+    }
+
+    const hasCategorias = this.selectedCategories().length > 0;
+    const hasTiposActividad = this.selectedActivityTypes().length > 0;
+
+    this.showCategoriaRequiredSignal.set(false);
+    this.showTipoActividadRequiredSignal.set(false);
+
+    if (raw.categoriaEnabled && !hasCategorias) {
+      this.showCategoriaRequiredSignal.set(true);
+      return;
+    }
+
+    if (raw.tipoActividadEnabled && !hasTiposActividad) {
+      this.showTipoActividadRequiredSignal.set(true);
+      return;
     }
 
     this.saveRestriction.emit({
       idModalidadContratacion: modality.id,
-      minimo: raw.horasEnabled && raw.minimo != null ? String(raw.minimo) : null,
-      maximo: raw.horasEnabled && raw.maximo != null ? String(raw.maximo) : null,
-      investigacion: raw.investigacion ? '1' : '0',
-      formaPago: raw.formaPagoEnabled ? raw.formaPago : null,
-      tipoContrato: raw.tipoContratoEnabled ? raw.tipoContrato : null,
-      tipoHoras: raw.tipoHorasEnabled ? raw.tipoHoras : null,
-      idsProgramasExcepcion: raw.excepcionEnabled
-      ? this.selectedPrograms().map((item) => item.id)
-      : [],
-      idsPersonasExcepcion: raw.excepcionEnabled
-      ? this.selectedPeople().map((item) => item.id)
-      : [],
-      idCategoriaCatedratico: raw.categoriaEnabled
-        ? Number(raw.idCategoriaCatedratico)
-        : null,
-      idTipoActividad: raw.tipoActividadEnabled
-        ? Number(raw.idTipoActividad)
-        : null,
+      minimo: raw.minimo != null ? String(raw.minimo) : null,
+      maximo: raw.maximo != null ? String(raw.maximo) : null,
+      investigacion: raw.investigacion,
+      formaPago: raw.formaPago,
+      tipoContrato: raw.tipoContrato,
+      tipoHoras: raw.tipoHoras,
+      idsProgramasExcepcion: this.selectedPrograms().map((item) => item.id),
+      idsPersonasExcepcion: this.selectedPeople().map((item) => item.id),
+      idsCategoriasCatedratico: raw.categoriaEnabled
+        ? this.selectedCategories().map((item) => item.id)
+        : [],
+      idsTiposActividad: raw.tipoActividadEnabled
+        ? this.selectedActivityTypes().map((item) => item.id)
+        : [],
     });
   }
 
@@ -494,48 +588,41 @@ export class LoadRestrictionForm implements OnChanges {
 
   this.submitted.set(false);
 
-  const horasEnabled = item?.minimo != null || item?.maximo != null;
-
-  const excepcionEnabled =
-      (item?.idsProgramasExcepcion?.length ?? 0) > 0 ||
-      (item?.idsPersonasExcepcion?.length ?? 0) > 0;
+  const horasEnabled = true;
+  const excepcionEnabled = true;
 
     this.form.reset({
       horasEnabled,
       minimo: item?.minimo != null ? Number(item.minimo) : null,
       maximo: item?.maximo != null ? Number(item.maximo) : null,
-      investigacion: this.isMarked(item?.investigacion),
-      formaPagoEnabled: !!item?.formaPago,
+      investigacion: item?.investigacion != null
+        ? this.isMarked(item.investigacion) ? '1' : '0'
+        : '',
+      formaPagoEnabled: true,
       formaPago: item?.formaPago ?? '',
-      tipoContratoEnabled: !!item?.tipoContrato,
+      tipoContratoEnabled: true,
       tipoContrato: item?.tipoContrato ?? '',
-      tipoHorasEnabled: !!item?.tipoHoras,
+      tipoHorasEnabled: true,
       tipoHoras: item?.tipoHoras ?? '',
       excepcionEnabled,
       idProgramaBusqueda: '',
       idPersonaBusqueda: '',
-      categoriaEnabled: item?.idCategoriaCatedratico != null,
-      idCategoriaCatedratico:
-        item?.idCategoriaCatedratico != null
-          ? String(item.idCategoriaCatedratico)
-          : '',
-      tipoActividadEnabled: item?.idTipoActividad != null,
-      idTipoActividad:
-        item?.idTipoActividad != null ? String(item.idTipoActividad) : '',
+      categoriaEnabled: (item?.idsCategoriasCatedratico?.length ?? 0) > 0,
+      idCategoriaCatedratico: '',
+      tipoActividadEnabled: (item?.idsTiposActividad?.length ?? 0) > 0,
+      idTipoActividad: '',
     });
 
-    if (horasEnabled) {
-      this.form.controls.minimo.enable({ emitEvent: false });
-      this.form.controls.maximo.enable({ emitEvent: false });
-    } else {
-      this.form.controls.minimo.disable({ emitEvent: false });
-      this.form.controls.maximo.disable({ emitEvent: false });
-    }
-
-    this.syncExcepcionControls(excepcionEnabled);
+    this.form.controls.minimo.enable({ emitEvent: false });
+    this.form.controls.maximo.enable({ emitEvent: false });
+    this.syncExcepcionControls(true);
 
     this.setSelectedPrograms(item?.idsProgramasExcepcion ?? []);
     this.setSelectedPeople(item?.idsPersonasExcepcion ?? []);
+    this.setSelectedCategories(item?.idsCategoriasCatedratico ?? []);
+    this.setSelectedActivityTypes(item?.idsTiposActividad ?? []);
+    this.showCategoriaRequiredSignal.set(false);
+    this.showTipoActividadRequiredSignal.set(false);
     this.form.updateValueAndValidity();
   }
 
@@ -562,6 +649,22 @@ export class LoadRestrictionForm implements OnChanges {
 
     this.selectedPeople.set(
        people.filter((item) => ids.includes(item.id)),
+    );
+  }
+
+  private setSelectedCategories(ids: number[]): void {
+    const categories = this.catalogs()?.categorias ?? [];
+
+    this.selectedCategories.set(
+      categories.filter((item) => ids.includes(item.id)),
+    );
+  }
+
+  private setSelectedActivityTypes(ids: number[]): void {
+    const activityTypes = this.catalogs()?.tiposActividad ?? [];
+
+    this.selectedActivityTypes.set(
+      activityTypes.filter((item) => ids.includes(item.id)),
     );
   }
 

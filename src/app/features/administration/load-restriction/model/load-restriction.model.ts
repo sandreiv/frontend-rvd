@@ -38,8 +38,8 @@ export interface LoadRestrictionDetail {
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];
-  idCategoriaCatedratico: number | null;
-  idTipoActividad: number | null;
+  idsCategoriasCatedratico: number[];
+  idsTiposActividad: number[];
 }
 
 export interface LoadRestrictionFormData {
@@ -52,8 +52,8 @@ export interface LoadRestrictionFormData {
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];
-  idCategoriaCatedratico: number | null;
-  idTipoActividad: number | null;
+  idsCategoriasCatedratico: number[];
+  idsTiposActividad: number[];
 }
 
 export function formatLoadRestrictionStatus(value: string | null | undefined): string {
