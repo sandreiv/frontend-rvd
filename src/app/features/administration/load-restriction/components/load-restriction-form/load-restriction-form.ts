@@ -540,14 +540,6 @@ export class LoadRestrictionForm implements OnChanges {
 
     const raw = this.form.getRawValue();
 
-    const hasExcepcion =
-    this.selectedPrograms().length > 0 || this.selectedPeople().length > 0;
-
-    if (!hasExcepcion) {
-      this.showExcepcionRequired.set(true);
-      return;
-    }
-
     const hasCategorias = this.selectedCategories().length > 0;
     const hasTiposActividad = this.selectedActivityTypes().length > 0;
 

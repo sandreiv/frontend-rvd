@@ -148,6 +148,11 @@
                   (itemSelected)="onProgramSelected($event)"
                 />
               }
+              @if (selectedPrograms().length === 0) {
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  Opcional.
+                </p>
+              }
             </div>
 
             @if (selectedPrograms().length > 0) {
@@ -186,6 +191,11 @@
                   (queryChange)="onSearchPerson($event)"
                   (itemSelected)="onPersonSelected($event)"
                 />
+              }
+              @if (selectedPrograms().length === 0) {
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  Opcional.
+                </p>
               }
             </div>
 
