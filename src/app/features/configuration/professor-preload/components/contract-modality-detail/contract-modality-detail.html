@@ -16,24 +16,66 @@
   }
 
   @if (hasAnyModality()) {
-    <div class="mt-4">
-          @if (!isPlantaSelected()) {
-      <span
-        [appTooltip]="canEditPreassignment() ? '' : writeBlockReason()"
-        tooltipPlacement="right"
-      >
-        <app-button
-          type="button"
-          size="sm"
-          className="h-11 shrink-0 whitespace-nowrap"
-          [disabled]="!canEditPreassignment()"
-          (btnClick)="onProfessorAddModalOpen()"
+  <div class="mt-4">
+    <div
+      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        @if (!isPlantaSelected()) {
+          <span
+            [appTooltip]="canEditPreassignment() ? '' : writeBlockReason()"
+            tooltipPlacement="right"
+          >
+            <app-button
+              type="button"
+              size="sm"
+              className="h-11 shrink-0 whitespace-nowrap"
+              [disabled]="!canEditPreassignment()"
+              (btnClick)="onProfessorAddModalOpen()"
+            >
+              <app-icon name="plus" size="sm" />
+              Agregar docente
+            </app-button>
+          </span>
+        }
+      </div>
+
+      @if (isTiempoCompletoOcasionalSelected()) {
+        <div
+          class="inline-flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-theme-xs dark:border-white/10 dark:bg-white/5"
         >
-          <app-icon name="plus" size="sm" />
-          Agregar docente
-        </app-button>
-      </span>
-    }
+          @for (item of tcoDurationSwitchItems; track item.id) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30"
+              [class.border-brand-600]="tcoDurationFilter() === item.id"
+              [class.bg-brand-600]="tcoDurationFilter() === item.id"
+              [class.text-white]="tcoDurationFilter() === item.id"
+              [class.shadow-theme-xs]="tcoDurationFilter() === item.id"
+              [class.border-transparent]="tcoDurationFilter() !== item.id"
+              [class.bg-transparent]="tcoDurationFilter() !== item.id"
+              [class.text-gray-700]="tcoDurationFilter() !== item.id"
+              [class.hover:bg-gray-100]="tcoDurationFilter() !== item.id"
+              [class.dark:text-gray-200]="tcoDurationFilter() !== item.id"
+              [class.dark:hover:bg-white/10]="tcoDurationFilter() !== item.id"
+              (click)="setTcoDurationFilter(item.id)"
+            >
+              <app-icon
+                [name]="item.icon"
+                size="sm"
+                [classes]="
+                  tcoDurationFilter() === item.id
+                    ? 'text-white'
+                    : 'text-brand-600 dark:text-brand-400'
+                "
+              />
+
+              {{ item.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
 
       @if (currentProfessorRows().length) {
         <div

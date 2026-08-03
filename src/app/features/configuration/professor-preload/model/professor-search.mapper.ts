@@ -37,6 +37,7 @@ export function mapProfessorSearchToModalityProfessor(
     puntos: search.escalafon?.puntos ?? null,
     valorPunto: null,
     semanas: null,
+    onceMeses: null,
     horasDeExcepcion: null,
   };
 }
