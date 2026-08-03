@@ -142,6 +142,7 @@
 <app-coordination-preload-call-modal
   [isOpen]="isAssignModalOpen()"
   [coordination]="coordination()"
+  [idPeriodoUniversidad]="resolvedPeriodId()"
   (close)="closeAssignModal()"
   (saved)="onPreloadCallAssigned($event)"
 />

@@ -8,6 +8,7 @@ export interface PreloadCallItem {
   nombreCompleto: string;
   periodoUniversidad: string;
   nivelEducativo: string;
+  idRelacion: number | null;
 }
 
 /** Item crudo del listado */
@@ -22,6 +23,7 @@ export interface PreloadCallListApiItem {
   nombreCompleto: string;
   periodoUniversidad: string;
   nivelEducativo: string;
+  idRelacion?: number | string | null;
 }
 
 export function resolvePreloadCallListId(
@@ -43,6 +45,21 @@ export function resolvePreloadCallListId(
   return null;
 }
 
+function resolveIdRelacion(
+  value: number | string | null | undefined,
+): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
 export function normalizePreloadCallListItem(item: PreloadCallListApiItem): PreloadCallItem | null {
   const id = resolvePreloadCallListId(item);
   if (id == null) {
@@ -59,6 +76,7 @@ export function normalizePreloadCallListItem(item: PreloadCallListApiItem): Prel
     nombreCompleto: item.nombreCompleto ?? '',
     periodoUniversidad: item.periodoUniversidad ?? '',
     nivelEducativo: item.nivelEducativo ?? '',
+    idRelacion: resolveIdRelacion(item.idRelacion),
   };
 }
 

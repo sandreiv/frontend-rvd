@@ -46,6 +46,42 @@ export class PreloadCallService {
       );
   }
 
+  /**
+   * Lista convocatorias del primer periodo universitario del año indicado.
+   * Se usa para enlazar una convocatoria de periodo 2 con una de periodo 1.
+   *
+   * @param year Año universitario.
+   * @returns Observable con las convocatorias del periodo 1.
+   */
+  listPreloadCallByFirstPeriodByYear(year: number): Observable<PreloadCallItem[]> {
+    return this.webRequestService
+      .get<PreloadCallListApiItem[]>(
+        `${this.endpoint}/list-by-first-period-by-year`,
+        { year: String(year) },
+      )
+      .pipe(
+        map((items) =>
+          items
+            .map((item) => normalizePreloadCallListItem(item))
+            .filter((item): item is PreloadCallItem => item != null),
+        ),
+      );
+  }
+
+  /**
+   * Actualiza o elimina el enlace de una convocatoria (periodo 2)
+   * hacia una convocatoria del periodo 1.
+   *
+   * @param idConvocatoria Identificador de la convocatoria a enlazar.
+   * @param idRelacion Identificador de la convocatoria del periodo 1, o null para quitar el enlace.
+   */
+  updatePreloadCallRelation(idConvocatoria: number, idRelacion: number | null): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/update-relation/${idConvocatoria}`,
+      { idRelacion },
+    );
+  }
+
   searchGeneralPerson(params: SearchGeneralPersonParams): Observable<PersonaAutorizaConvocatoriaItem[]> {
     const query: Record<string, string> = {};
     const documento = params.documento?.trim();

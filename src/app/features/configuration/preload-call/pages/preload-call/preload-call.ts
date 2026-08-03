@@ -15,6 +15,7 @@ import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
 import { PreloadCallForm } from '../../components/preload-call-form/preload-call-form';
 import { PreloadCallTable } from '../../components/preload-call-table/preload-call-table';
+import { LinkPreloadCallModal } from '../../components/link-preload-call-modal/link-preload-call-modal';
 import { PreloadCallService } from '../../data/preload-call.service';
 import {
   PreloadCallDetailResponse,
@@ -42,6 +43,7 @@ import { Button } from "../../../../../shared/ui/button/button";
     RestrictCoordinationTable,
     Select,
     Button,
+    LinkPreloadCallModal,
   ],
   templateUrl: './preload-call.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,6 +80,24 @@ export class PreloadCall implements OnInit, OnDestroy {
   readonly preloadCalls = computed(() => this.preloadCallsResource.value());
   readonly isLoading = computed(() => this.preloadCallsResource.isLoading());
 
+  readonly appliedPeriod = computed(() => {
+    const id = this.appliedPeriodId();
+    if (id == null) {
+      return null;
+    }
+    return (
+      this.universityPeriods().find((item) => item.id === id) ?? null
+    );
+  });
+
+  readonly isSecondPeriodFilter = computed(() => {
+    const period = this.appliedPeriod()?.periodo;
+    if (period == null || period === '') {
+      return false;
+    }
+    return Number(String(period).trim()) === 2;
+  });
+
   readonly periodOptions = computed<Option[]>(() =>
     this.universityPeriods().map((item) => ({
       value: String(item.id),
@@ -111,6 +131,33 @@ export class PreloadCall implements OnInit, OnDestroy {
   readonly restrictionToDelete = signal<RestrictCoordinationItem | null>(null);
   readonly restrictionIdsToDelete = signal<string[]>([]);
   readonly isDeletingRestriction = signal(false);
+
+  readonly isLinkModalOpen = signal(false);
+  readonly preloadCallToLink = signal<PreloadCallItem | null>(null);
+  readonly isSavingLink = signal(false);
+
+  readonly firstPeriodCallsResource = rxResource({
+    params: () => {
+      if (!this.isLinkModalOpen()) {
+        return undefined;
+      }
+      const year = this.appliedPeriod()?.anio;
+      if (year == null) {
+        return undefined;
+      }
+      return { year };
+    },
+    stream: ({ params }) =>
+      this.preloadCallService.listPreloadCallByFirstPeriodByYear(params.year),
+    defaultValue: [] as PreloadCallItem[],
+  });
+
+  readonly firstPeriodCalls = computed(
+    () => this.firstPeriodCallsResource.value(),
+  );
+  readonly isLoadingFirstPeriodCalls = computed(() =>
+    this.firstPeriodCallsResource.isLoading(),
+  );
 
   readonly deleteModalTitle = computed(() =>
     this.deleteMode() === 'single'
@@ -171,6 +218,7 @@ export class PreloadCall implements OnInit, OnDestroy {
       this.selectedPreloadCallIds.set([]);
       this.closePreloadCallForm();
       this.closeRestrictCoordination();
+      this.closeLinkModal();
       return;
     }
 
@@ -182,6 +230,7 @@ export class PreloadCall implements OnInit, OnDestroy {
 
     this.selectedPreloadCallIds.set([]);
     this.closeRestrictCoordination();
+    this.closeLinkModal();
 
     if (this.appliedPeriodId() === nextId) {
       this.preloadCallsResource.reload();
@@ -209,6 +258,7 @@ export class PreloadCall implements OnInit, OnDestroy {
 
   openPreloadCallForm(): void {
     this.closeRestrictCoordination();
+    this.closeLinkModal();
     this.selectedPreloadCall.set(null);
     this.formMode.set('create');
     this.showPreloadCallForm.set(true);
@@ -226,6 +276,7 @@ export class PreloadCall implements OnInit, OnDestroy {
     }
 
     this.closeRestrictCoordination();
+    this.closeLinkModal();
 
     const response = await firstValueFrom(
       this.preloadCallService.getPreloadCallDetails(preloadCall.id),
@@ -251,8 +302,6 @@ export class PreloadCall implements OnInit, OnDestroy {
         await firstValueFrom(
           this.preloadCallService.updatePreloadCall(id, payload),
         );
-
-        
       } else {
         await firstValueFrom(
           this.preloadCallService.savePreloadCall(payload),
@@ -335,7 +384,6 @@ export class PreloadCall implements OnInit, OnDestroy {
       if (this.deleteMode() === 'single') {
         await this.deletePreloadCallById(this.preloadCallToDelete()?.id);
       } else {
-
         await this.bulkDeletePreloadCalls(this.idsToDelete());
       }
       this.preloadCallsResource.reload();
@@ -395,6 +443,70 @@ export class PreloadCall implements OnInit, OnDestroy {
     }
   }
 
+  openLinkPreloadCallModal(preloadCall: PreloadCallItem): void {
+    if (!preloadCall?.id || !this.isSecondPeriodFilter()) {
+      return;
+    }
+
+    this.closePreloadCallForm();
+    this.closeRestrictCoordination();
+    this.preloadCallToLink.set(preloadCall);
+    this.isLinkModalOpen.set(true);
+  }
+
+  closeLinkModal(): void {
+    if (this.isSavingLink()) {
+      return;
+    }
+
+    this.isLinkModalOpen.set(false);
+    this.preloadCallToLink.set(null);
+  }
+
+  async onSavePreloadCallLink(idRelacion: number): Promise<void> {
+    const call = this.preloadCallToLink();
+    if (!call?.id || this.isSavingLink()) {
+      return;
+    }
+
+    this.isSavingLink.set(true);
+
+    try {
+      await firstValueFrom(
+        this.preloadCallService.updatePreloadCallRelation(call.id, idRelacion),
+      );
+      this.preloadCallsResource.reload();
+      this.isLinkModalOpen.set(false);
+      this.preloadCallToLink.set(null);
+    } catch (error) {
+      console.error('Error al enlazar convocatoria:', error);
+    } finally {
+      this.isSavingLink.set(false);
+    }
+  }
+
+  async onUnlinkPreloadCall(): Promise<void> {
+    const call = this.preloadCallToLink();
+    if (!call?.id || call.idRelacion == null || this.isSavingLink()) {
+      return;
+    }
+
+    this.isSavingLink.set(true);
+
+    try {
+      await firstValueFrom(
+        this.preloadCallService.updatePreloadCallRelation(call.id, null),
+      );
+      this.preloadCallsResource.reload();
+      this.isLinkModalOpen.set(false);
+      this.preloadCallToLink.set(null);
+    } catch (error) {
+      console.error('Error al eliminar enlace de convocatoria:', error);
+    } finally {
+      this.isSavingLink.set(false);
+    }
+  }
+
   async openRestrictCoordination(preloadCall: PreloadCallItem): Promise<void> {
     if (!preloadCall?.id) {
       return;
@@ -402,9 +514,9 @@ export class PreloadCall implements OnInit, OnDestroy {
 
     this.preloadCallForRestriction.set(preloadCall);
     this.closePreloadCallForm();
+    this.closeLinkModal();
     this.showRestrictCoordination.set(true);
 
-    // De esta maner al abrir las restricciones se carga el detalle de la convocatoria
     const detail = await firstValueFrom(
       this.preloadCallService.getPreloadCallDetails(preloadCall.id),
     );

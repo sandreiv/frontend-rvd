@@ -20,6 +20,7 @@ import { ProjectsService } from '../../data/projects.service';
 import { ProjectCallsService } from '../../../project-calls/data/project-calls.service';
 import { ProjectTypesService } from '../../../project-types/data/project-types.service';
 import { CoordinationService } from '../../../../configuration/professor-preload/data/coordination.service';
+import { PreloadCallService } from '../../../../configuration/preload-call/data/preload-call.service';
 import { ActivityTypesService } from '../../../activity-types/data/activity-types.service';
 import {
   enrichProjectItem,
@@ -30,6 +31,7 @@ import {
   resolveProjectTypeLimits,
 } from '../../model/projects.model';
 import { ProjectTypeItem } from '../../../project-types/model/project-types.model';
+import { CoordinationItem } from '../../../../configuration/professor-preload/model/coordination.model';
 
 type ProjectsView = 'projects' | 'products' | 'persons';
 
@@ -52,6 +54,7 @@ export class Projects implements OnInit, OnDestroy {
   private readonly projectCallsService = inject(ProjectCallsService);
   private readonly projectTypesService = inject(ProjectTypesService);
   private readonly coordinationService = inject(CoordinationService);
+  private readonly preloadCallService = inject(PreloadCallService);
   private readonly activityTypesService = inject(ActivityTypesService);
   private readonly breadcrumbTitle = inject(BreadcrumbTitle);
 
@@ -510,7 +513,7 @@ export class Projects implements OnInit, OnDestroy {
       const [calls, types, coordinations, activityTypes] = await Promise.all([
         firstValueFrom(this.projectCallsService.listProjectCalls()),
         firstValueFrom(this.projectTypesService.listProjectTypes()),
-        firstValueFrom(this.coordinationService.getCoordinations()),
+        this.loadCoordinationsCatalog(),
         firstValueFrom(this.activityTypesService.listActivityTypes()),
       ]);
 
@@ -535,6 +538,32 @@ export class Projects implements OnInit, OnDestroy {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  private async loadCoordinationsCatalog(): Promise<CoordinationItem[]> {
+    const periods = await firstValueFrom(
+      this.preloadCallService.getUniversityPeriod(),
+    );
+
+    if (!periods?.length) {
+      return [];
+    }
+
+    const lists = await Promise.all(
+      periods.map((period) =>
+        firstValueFrom(
+          this.coordinationService.getCoordinations(period.id),
+        ),
+      ),
+    );
+
+    const byId = new Map<number, CoordinationItem>();
+
+    lists.flat().forEach((item) => {
+      byId.set(item.id, item);
+    });
+
+    return [...byId.values()];
   }
 
   private enrichProjects(rows: ProjectItem[]): ProjectItem[] {

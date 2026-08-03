@@ -79,7 +79,6 @@ export class ProfessorAddModal {
   private readonly destroyRef = inject(DestroyRef);
 
   isOpen = input(false);
-  coordinationId = input<number | null>(null);
   idCarga = input<number | null>(null);
   anioUniversidad = input<number | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
@@ -188,16 +187,16 @@ export class ProfessorAddModal {
 
   private readonly workDatesResource = rxResource({
     params: () => {
-      const coordinationId = this.coordinationId();
+      const idCarga = this.idCarga();
       const modalityId = this.contractModality()?.id;
-      if (coordinationId == null || modalityId == null) {
+      if (idCarga == null || modalityId == null) {
         return undefined;
       }
-      return { coordinationId, modalityId };
+      return { idCarga, modalityId };
     },
     stream: ({ params }) =>
       this.coordinationService.getWorkDates(
-        params.coordinationId,
+        params.idCarga,
         params.modalityId,
       ),
     defaultValue: [] as WorkDate[],
@@ -246,24 +245,44 @@ export class ProfessorAddModal {
     })),
   );
 
-  private readonly valuePointsResource = rxResource<ValuePointsPreload,{ anio: number; idCategoriaCatedratico: number, idPersonaGeneral: number | null } | undefined>({
+  private readonly valuePointsResource = rxResource<
+    ValuePointsPreload,
+    {
+      anio: number;
+      idCategoriaCatedratico: number;
+      idPersonaGeneral: number | null;
+      idModalidadContratacion: number;
+    } | undefined
+  >({
     params: () => {
       if (this.isEditMode() && this.isProfessorActive()) {
         return undefined;
       }
       const anio = this.anioUniversidad();
       const idCategoriaCatedratico = this.effectiveCategoriaId();
-      if (anio == null || idCategoriaCatedratico == null) {
+      const idModalidadContratacion = this.contractModality()?.id;
+      if (
+        anio == null ||
+        idCategoriaCatedratico == null ||
+        idModalidadContratacion == null
+      ) {
         return undefined;
       }
-      const idPersonaGeneral = this.selectedProfessor()?.escalafon?.idPersonaGeneral ?? null;
-      return { anio, idCategoriaCatedratico, idPersonaGeneral };
+      const idPersonaGeneral =
+        this.selectedProfessor()?.escalafon?.idPersonaGeneral ?? null;
+      return {
+        anio,
+        idCategoriaCatedratico,
+        idPersonaGeneral,
+        idModalidadContratacion,
+      };
     },
     stream: ({ params }) =>
       this.coordinationService.getValuePointsPreload(
         params!.anio,
         params!.idCategoriaCatedratico,
         params!.idPersonaGeneral ?? null,
+        params!.idModalidadContratacion,
       ),
   });
 

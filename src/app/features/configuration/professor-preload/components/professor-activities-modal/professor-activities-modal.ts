@@ -166,16 +166,16 @@ export class ProfessorActivitiesModal {
       if (!this.isOpen()) {
         return undefined;
       }
-      const idCoordinacion = this.coordination()?.id;
+      const idCarga = this.coordination()?.idCarga;
       const idModalidadContratacion = this.contractModality()?.id;
-      if (idCoordinacion == null || idModalidadContratacion == null) {
+      if (idCarga == null || idModalidadContratacion == null) {
         return undefined;
       }
-      return { idCoordinacion, idModalidadContratacion };
+      return { idCarga, idModalidadContratacion };
     },
     stream: ({ params }) =>
       this.coordinationService.getWorkDates(
-        params.idCoordinacion,
+        params.idCarga,
         params.idModalidadContratacion,
       ),
     defaultValue: [] as WorkDate[],

@@ -40,6 +40,7 @@
         [preloadCalls]="preloadCalls()"
         [selectedPreloadCallIds]="selectedPreloadCallIds()"
         [emptyMessage]="tableEmptyMessage()"
+        [showLinkCallAction]="isSecondPeriodFilter()"
         (selectedPreloadCallIdsChange)="onSelectedPreloadCallIdsChange($event)"
         (addPreloadCall)="openPreloadCallForm()"
         (editPreloadCall)="openEditPreloadCallForm($event)"
@@ -47,6 +48,7 @@
         (refreshPreloadCall)="onRefreshPreloadCallList()"
         (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
         (restrictCoordination)="openRestrictCoordination($event)"
+        (linkPreloadCall)="openLinkPreloadCallModal($event)"
       />
     </app-section-frame>
   </div>
@@ -87,6 +89,17 @@
     </div>
   }
 </div>
+
+<app-link-preload-call-modal
+  [isOpen]="isLinkModalOpen()"
+  [preloadCall]="preloadCallToLink()"
+  [firstPeriodCalls]="firstPeriodCalls()"
+  [isLoadingOptions]="isLoadingFirstPeriodCalls()"
+  [isSaving]="isSavingLink()"
+  (close)="closeLinkModal()"
+  (save)="onSavePreloadCallLink($event)"
+  (unlink)="onUnlinkPreloadCall()"
+/>
 
 <app-new-modal
   [isOpen]="isDeleteModalOpen()"

@@ -7,13 +7,15 @@ import {
   signal,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { Button } from '../../../../../shared/ui/button/button';
 import {
   Select,
   type Option as SelectOption,
 } from '../../../../../shared/components/form/select/select';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
+import { PreloadCallService } from '../../../preload-call/data/preload-call.service';
+import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.model';
 import { CoordinationDetail } from '../../components/coordination-detail/coordination-detail';
 import { CoordinationTable } from '../../components/coordination-table/coordination-table';
 import { CoordinationService } from '../../data/coordination.service';
@@ -37,16 +39,12 @@ import {
 })
 export class ProfessorPreload implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly preloadCallService = inject(PreloadCallService);
 
-  readonly activePreloadCallsResource = rxResource({
-    stream: () => this.coordinationService.getActivePreloadCall(),
-    defaultValue: [] as CoordinationPreloadCallApi[],
-  });
-
-  readonly assignablePreloadCallsResource = rxResource({
-    stream: () => this.coordinationService.getAssignablePreloadCalls(),
-    defaultValue: [] as CoordinationPreloadCallApi[],
-  });
+  readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
+  readonly selectedPeriodId = signal('');
+  readonly appliedPeriodId = signal<number | null>(null);
+  readonly isLoadingPeriods = signal(false);
 
   readonly selectedPreloadCallId = signal(UNASSIGNED_PRELOAD_CALL_FILTER);
   readonly appliedFilterPreloadCallId = signal<string | null>(null);
@@ -55,22 +53,66 @@ export class ProfessorPreload implements OnInit {
   readonly showCoordinationDetail = signal(false);
   readonly isStartingPreassignment = signal(false);
 
+  readonly activePreloadCallsResource = rxResource({
+    params: () => {
+      const idPeriodoUniversidad = this.resolveSelectedPeriodId();
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+      return { idPeriodoUniversidad };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getActivePreloadCall(
+        params.idPeriodoUniversidad,
+      ),
+    defaultValue: [] as CoordinationPreloadCallApi[],
+  });
+
+  readonly assignablePreloadCallsResource = rxResource({
+    params: () => {
+      const idPeriodoUniversidad = this.appliedPeriodId();
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+      return { idPeriodoUniversidad };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getAssignablePreloadCalls(
+        params.idPeriodoUniversidad,
+      ),
+    defaultValue: [] as CoordinationPreloadCallApi[],
+  });
+
   readonly coordinationsResource = rxResource({
-    stream: () => {
+    params: () => {
+      const idPeriodoUniversidad = this.appliedPeriodId();
       const filterId = this.appliedFilterPreloadCallId();
-      if (filterId === null) {
-        return of([] as CoordinationItem[]);
+
+      if (idPeriodoUniversidad == null || filterId === null) {
+        return undefined;
       }
 
       const idConvocatoria =
         filterId === UNASSIGNED_PRELOAD_CALL_FILTER
-          ? undefined
+          ? null
           : Number(filterId);
 
-      return this.coordinationService.getCoordinations(idConvocatoria);
+      return { idPeriodoUniversidad, idConvocatoria };
     },
+    stream: ({ params }) =>
+      this.coordinationService.getCoordinations(
+        params.idPeriodoUniversidad,
+        params.idConvocatoria,
+      ),
     defaultValue: [] as CoordinationItem[],
   });
+
+  readonly periodOptions = computed<SelectOption[]>(() =>
+    this.universityPeriods().map((item) => ({
+      value: String(item.id),
+      label: `${item.anio} - ${item.periodo}`,
+    })),
+  );
 
   readonly preloadCallOptions = computed<SelectOption[]>(() => [
     {
@@ -94,11 +136,30 @@ export class ProfessorPreload implements OnInit {
   );
 
   readonly hasAppliedFilter = computed(
-    () => this.appliedFilterPreloadCallId() !== null,
+    () =>
+      this.appliedPeriodId() != null &&
+      this.appliedFilterPreloadCallId() !== null,
   );
 
+  readonly tableEmptyMessage = computed(() => {
+    if (this.hasAppliedFilter()) {
+      return 'No hay coordinaciones para mostrar.';
+    }
+
+    if (!this.selectedPeriodId()) {
+      return 'Seleccione un periodo y pulse Filtrar.';
+    }
+
+    return 'Seleccione una convocatoria y pulse Filtrar.';
+  });
+
   ngOnInit(): void {
-    this.onApplyCoordinationFilter();
+    void this.loadUniversityPeriods();
+  }
+
+  onPeriodChange(periodId: string): void {
+    this.selectedPeriodId.set(periodId);
+    this.selectedPreloadCallId.set(UNASSIGNED_PRELOAD_CALL_FILTER);
   }
 
   onPreloadCallChange(preloadCallId: string): void {
@@ -106,24 +167,47 @@ export class ProfessorPreload implements OnInit {
   }
 
   onApplyCoordinationFilter(): void {
+    const periodId = this.selectedPeriodId();
+
+    if (!periodId) {
+      this.appliedPeriodId.set(null);
+      this.appliedFilterPreloadCallId.set(null);
+      this.selectedCoordinationIds.set([]);
+      this.showCoordinationDetail.set(false);
+      this.selectedCoordination.set(null);
+      return;
+    }
+
+    const nextPeriodId = Number(periodId);
+
+    if (Number.isNaN(nextPeriodId)) {
+      return;
+    }
+
+    this.appliedPeriodId.set(nextPeriodId);
     this.appliedFilterPreloadCallId.set(this.selectedPreloadCallId());
     this.selectedCoordinationIds.set([]);
-    this.coordinationsResource.reload();
-    this.assignablePreloadCallsResource.reload();
+    this.showCoordinationDetail.set(false);
+    this.selectedCoordination.set(null);
   }
 
   onRefreshCoordinations(): void {
+    if (this.appliedPeriodId() == null) {
+      return;
+    }
+
     this.coordinationsResource.reload();
   }
 
   async onStartPreassignment(coordination: CoordinationItem): Promise<void> {
+    const idPeriodoUniversidad = this.appliedPeriodId();
     const isUnassignedFilter =
       this.appliedFilterPreloadCallId() === UNASSIGNED_PRELOAD_CALL_FILTER;
 
     const shouldAutoAssignPreloadCall =
       isUnassignedFilter && coordination.idConvocatoria == null;
 
-    if (!shouldAutoAssignPreloadCall) {
+    if (!shouldAutoAssignPreloadCall || idPeriodoUniversidad == null) {
       this.openCoordinationDetail(coordination);
       return;
     }
@@ -146,7 +230,10 @@ export class ProfessorPreload implements OnInit {
       );
 
       const updatedCoordinations = await firstValueFrom(
-        this.coordinationService.getCoordinations(defaultPreloadCall.id),
+        this.coordinationService.getCoordinations(
+          idPeriodoUniversidad,
+          defaultPreloadCall.id,
+        ),
       );
 
       const updatedCoordination =
@@ -192,11 +279,15 @@ export class ProfessorPreload implements OnInit {
       periodoUniversidad: periodoUniversidad
         ? `${periodoUniversidad.anio}-${periodoUniversidad.periodo}`
         : coordination.periodoUniversidad,
-      idPeriodoUniversidad: periodoUniversidad?.id ?? coordination.idPeriodoUniversidad,
-      anioUniversidad: periodoUniversidad?.anio ?? coordination.anioUniversidad,
-      idNivelEducativo: nivelEducativo?.id ?? coordination.idNivelEducativo,
+      idPeriodoUniversidad:
+        periodoUniversidad?.id ?? coordination.idPeriodoUniversidad,
+      anioUniversidad:
+        periodoUniversidad?.anio ?? coordination.anioUniversidad,
+      idNivelEducativo:
+        nivelEducativo?.id ?? coordination.idNivelEducativo,
       modalidadesContratacion:
-        preloadCall.modalidadesContratacion ?? coordination.modalidadesContratacion,
+        preloadCall.modalidadesContratacion ??
+        coordination.modalidadesContratacion,
     };
   }
 
@@ -227,5 +318,31 @@ export class ProfessorPreload implements OnInit {
 
     this.coordinationsResource.reload();
   }
-  
+
+  private resolveSelectedPeriodId(): number | null {
+    const periodId = this.selectedPeriodId();
+
+    if (!periodId) {
+      return null;
+    }
+
+    const parsed = Number(periodId);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private async loadUniversityPeriods(): Promise<void> {
+    this.isLoadingPeriods.set(true);
+
+    try {
+      const periods = await firstValueFrom(
+        this.preloadCallService.getUniversityPeriod(),
+      );
+      this.universityPeriods.set(periods ?? []);
+    } catch (error) {
+      console.error('Error al cargar periodos universitarios:', error);
+      this.universityPeriods.set([]);
+    } finally {
+      this.isLoadingPeriods.set(false);
+    }
+  }
 }

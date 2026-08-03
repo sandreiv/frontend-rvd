@@ -173,11 +173,12 @@ export class ContractModalityDetail {
   readonly modalityProfessorsResource = rxResource({
     params: () => {
       const modalities = this.sortedContractModalities();
-      if (!modalities.length) {
+      const idCarga = this.coordination().idCarga;
+      if (!modalities.length || idCarga == null) {
         return undefined;
       }
       return {
-        idCoordinacion: this.coordination().id,
+        idCarga,
         modalityIds: modalities.map((modality) => modality.id),
       };
     },
@@ -185,7 +186,7 @@ export class ContractModalityDetail {
       forkJoin(
         params.modalityIds.map((id) =>
           this.coordinationService
-            .listProfessorsByModality(params.idCoordinacion, id)
+            .listProfessorsByModality(params.idCarga, id)
             .pipe(map((professors) => ({ id, professors }))),
         ),
       ).pipe(map((entries) => this.toModalityProfessorsMap(entries))),
@@ -671,14 +672,15 @@ export class ContractModalityDetail {
   ): Observable<CoordinationItem> {
     const current = this.coordination();
     const idCoordinacion = carga.idCoordinacion;
+    const idPeriodoUniversidad = current.idPeriodoUniversidad;
 
     if (idCoordinacion === current.id) {
       return of(current);
     }
 
-    if (carga.idConvocatoria != null) {
+    if (carga.idConvocatoria != null && idPeriodoUniversidad != null) {
       return this.coordinationService
-        .getCoordinations(carga.idConvocatoria)
+        .getCoordinations(idPeriodoUniversidad, carga.idConvocatoria)
         .pipe(
           switchMap((items) => {
             const match = this.findCoordinationInList(
@@ -709,11 +711,17 @@ export class ContractModalityDetail {
       return of(catalogMatch);
     }
 
+    const idPeriodoUniversidad = current.idPeriodoUniversidad;
     const idConvocatoria = current.idConvocatoria;
-    const scoped$ =
-      idConvocatoria != null
-        ? this.coordinationService.getCoordinations(idConvocatoria)
-        : of([] as CoordinationItem[]);
+
+    if (idPeriodoUniversidad == null) {
+      return of(current);
+    }
+
+    const scoped$ = this.coordinationService.getCoordinations(
+      idPeriodoUniversidad,
+      idConvocatoria,
+    );
 
     return scoped$.pipe(
       switchMap((scopedItems) => {
@@ -725,13 +733,15 @@ export class ContractModalityDetail {
           return of(scopedMatch);
         }
 
-        return this.coordinationService.getCoordinations().pipe(
-          map(
-            (allItems) =>
-              this.findCoordinationInList(allItems, idCoordinacion) ??
-              current,
-          ),
-        );
+        return this.coordinationService
+          .getCoordinations(idPeriodoUniversidad)
+          .pipe(
+            map(
+              (allItems) =>
+                this.findCoordinationInList(allItems, idCoordinacion) ??
+                current,
+            ),
+          );
       }),
     );
   }

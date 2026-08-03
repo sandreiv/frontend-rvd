@@ -9,13 +9,29 @@
       >
         <div
           sectionFrameHeaderActions
-          class="flex w-full items-center gap-2 sm:w-auto"
+          class="flex w-full items-center gap-2"
         >
-          <div class="min-w-0 flex-1 sm:min-w-[16rem] sm:max-w-sm">
+          <div class="min-w-0 flex-1 sm:flex-none sm:w-48">
+            <app-select
+              [options]="periodOptions()"
+              [value]="selectedPeriodId()"
+              [disabled]="isLoadingPeriods()"
+              placeholder="Seleccione el periodo"
+              searchPlaceholder="Buscar periodo..."
+              emptyText="No hay periodos disponibles"
+              (valueChange)="onPeriodChange($event)"
+            />
+          </div>
+
+          <div class="min-w-0 flex-1 sm:flex-none sm:w-64">
             <app-select
               [options]="preloadCallOptions()"
               [value]="selectedPreloadCallId()"
-              [disabled]="isLoadingPreloadCalls()"
+              [disabled]="
+                isLoadingPeriods() ||
+                !selectedPeriodId() ||
+                isLoadingPreloadCalls()
+              "
               placeholder="Seleccione la convocatoria"
               searchPlaceholder="Buscar convocatoria..."
               emptyText="No hay convocatorias activas"
@@ -27,7 +43,12 @@
             type="button"
             size="sm"
             className="h-11 shrink-0 whitespace-nowrap"
-            [disabled]="isLoadingPreloadCalls() || isLoadingCoordinations()"
+            [disabled]="
+              isLoadingPeriods() ||
+              !selectedPeriodId() ||
+              isLoadingPreloadCalls() ||
+              isLoadingCoordinations()
+            "
             (btnClick)="onApplyCoordinationFilter()"
           >
             Filtrar
@@ -38,9 +59,7 @@
           [coordinations]="coordinations()"
           [(selectedCoordinationIds)]="selectedCoordinationIds"
           [isStartingPreassignment]="isStartingPreassignment()"
-          [emptyMessage]="hasAppliedFilter()
-            ? 'No hay coordinaciones para mostrar.'
-            : 'Seleccione un criterio y pulse Filtrar.'"
+          [emptyMessage]="tableEmptyMessage()"
           (startPreassignment)="onStartPreassignment($event)"
           (refreshCoordination)="onRefreshCoordinations()"
         />
@@ -49,6 +68,7 @@
       <app-coordination-detail
         [coordination]="coordination"
         [coordinationsCatalog]="coordinations()"
+        [idPeriodoUniversidad]="appliedPeriodId()"
         (back)="onBackToCoordinationList()"
         (coordinationUpdated)="onCoordinationUpdated($event)"
       />

@@ -41,31 +41,49 @@ export class CoordinationService {
 
 
   /**
-   * Obtiene las convocatorias de precarga activas
-   * @returns Observable<CoordinationPreloadCallApi[]>
+   * Obtiene las convocatorias de precarga activas del periodo universitario.
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @returns Observable con las convocatorias activas del periodo.
    */
-  getActivePreloadCall(): Observable<CoordinationPreloadCallApi[]> {
+  getActivePreloadCall(idPeriodoUniversidad: number): Observable<CoordinationPreloadCallApi[]> {
     return this.webRequestService.get<CoordinationPreloadCallApi[]>(
       `${this.endpoint}/list-active-preload-calls`,
+      { idPeriodoUniversidad },
     );
   }
 
   /**
-   * Obtiene las convocatorias activas asignables.
-   * Excluye las convocatorias que tienen restricciones vigentes o no vencidas.
-   * Se utiliza para la autoasignación y para el modal del botón "+".
+   * Obtiene las convocatorias activas asignables del periodo.
+   * Excluye las que tienen restricciones vigentes o no vencidas.
+   * Se usa para autoasignación y para el modal del botón "+".
    *
-   * @returns Observable con la lista de convocatorias disponibles para asignación libre.
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @returns Observable con convocatorias disponibles para asignación libre.
    */
-  getAssignablePreloadCalls(): Observable<CoordinationPreloadCallApi[]> {
+  getAssignablePreloadCalls(idPeriodoUniversidad: number): Observable<CoordinationPreloadCallApi[]> {
     return this.webRequestService.get<CoordinationPreloadCallApi[]>(
       `${this.endpoint}/list-assignable-preload-calls`,
+      { idPeriodoUniversidad },
     );
   }
 
-  getCoordinations(idConvocatoria?: number): Observable<CoordinationItem[]> {
-    const params = idConvocatoria != null ? { idConvocatoria: String(idConvocatoria) } : undefined;
-    
+  /**
+   * Lista coordinaciones del periodo. Sin convocatoria, “sin carga”
+   * significa sin CARGA en ese periodo (puede tener carga en otro).
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @param idConvocatoria Identificador opcional de la convocatoria.
+   */
+  getCoordinations(idPeriodoUniversidad: number, idConvocatoria?: number | null): Observable<CoordinationItem[]> {
+    const params: Record<string, number> = {
+      idPeriodoUniversidad,
+    };
+
+    if (idConvocatoria != null) {
+      params['idConvocatoria'] = idConvocatoria;
+    }
+
     return this.webRequestService
       .get<CoordinationApiItem[]>(`${this.endpoint}/list`, params)
       .pipe(map((items) => items.map(normalizeCoordinationItem)));
@@ -100,7 +118,6 @@ export class CoordinationService {
     if (params.idModalidadContratacion != null) {
       query['idModalidadContratacion'] = params.idModalidadContratacion;
     }
-    
 
     return this.webRequestService.get<ProfessorSearchResult[]>(
       `${this.endpoint}/search-professor`,
@@ -108,21 +125,37 @@ export class CoordinationService {
     );
   }
 
-  listProfessorsByModality(idCoordinacion: number, idModalidadContratacion: number,): Observable<ModalityProfessor[]> {
+  /**
+   * Lista docentes de una carga según modalidad de contratación.
+   * Planta: docentes de la coordinación de la carga, con datos de esa carga.
+   * Otras modalidades: solo docentes con CARGADOCENTE en esa carga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @param idModalidadContratacion Identificador de la modalidad.
+   */
+  listProfessorsByModality(
+    idCarga: number,
+    idModalidadContratacion: number,
+  ): Observable<ModalityProfessor[]> {
     return this.webRequestService.get<ModalityProfessor[]>(
       `${this.endpoint}/list-professors-modality`,
-      { idCoordinacion, idModalidadContratacion },
+      { idCarga, idModalidadContratacion },
     );
   }
 
-  getWorkDates(idCoordinacion: number, idModalidadContratacion: number): Observable<WorkDate[]> {
-    const query = {
-      idCoordinacion: idCoordinacion,
-      idModalidadContratacion: idModalidadContratacion,
-    };
+  /**
+   * Obtiene fechas de convocatoria por carga y modalidad.
+   *
+   * @param idCarga Identificador de la carga.
+   * @param idModalidadContratacion Identificador de la modalidad.
+   */
+  getWorkDates(
+    idCarga: number,
+    idModalidadContratacion: number,
+  ): Observable<WorkDate[]> {
     return this.webRequestService.get<WorkDate[]>(
       `${this.endpoint}/work-date`,
-      query,
+      { idCarga, idModalidadContratacion },
     );
   }
 
@@ -134,10 +167,18 @@ export class CoordinationService {
     );
   }
 
-  getValuePointsPreload(anio: number, idCategoriaCatedratico: number, idPersonaGeneral: number | null): Observable<ValuePointsPreload> {
+  getLoadRestrictionByModality(
+    idModalidadContratacion: number,
+  ): Observable<LoadRestrictionPreview> {
+    return this.webRequestService.get<LoadRestrictionPreview>(
+      `/configuration/administration/load-restriction/restriction/${idModalidadContratacion}`,
+    );
+  }
+
+  getValuePointsPreload(anio: number, idCategoriaCatedratico: number, idPersonaGeneral: number | null, idModalidadContratacion: number): Observable<ValuePointsPreload> {
     return this.webRequestService.get<ValuePointsPreload>(
       `${this.endpoint}/value-points-preload`,
-      { anio, idCategoriaCatedratico, idPersonaGeneral },
+      { anio, idCategoriaCatedratico, idPersonaGeneral, idModalidadContratacion },
     );
   }
 
@@ -262,7 +303,6 @@ export class CoordinationService {
    * @param request Distribución de actividades de la precarga docente.
    * @returns Observable sin contenido cuando el guardado finaliza correctamente.
    */
-
   saveActivityDistribution(request: SaveDetailProfessorPreloadRequest): Observable<void> {
     console.log('request', request);
     return this.webRequestService.post<void>(

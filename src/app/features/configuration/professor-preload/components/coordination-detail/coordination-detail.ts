@@ -31,9 +31,16 @@ import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 export class CoordinationDetail {
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
+  idPeriodoUniversidad = input<number | null>(null);
 
   back = output<void>();
   coordinationUpdated = output<CoordinationItem>();
+
+  readonly resolvedPeriodId = computed(
+    () =>
+      this.idPeriodoUniversidad() ??
+      this.coordination().idPeriodoUniversidad,
+  );
 
   readonly isAssignModalOpen = signal(false);
   readonly hasLoadedProfessors = signal(false);

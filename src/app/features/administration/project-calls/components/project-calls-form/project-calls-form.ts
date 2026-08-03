@@ -25,6 +25,10 @@ import {
   Select,
 } from '../../../../../shared/components/form/select/select';
 import { CoordinationService } from '../../../../configuration/professor-preload/data/coordination.service';
+import { PreloadCallService } from '../../../../configuration/preload-call/data/preload-call.service';
+import {
+  CoordinationPreloadCallApi,
+} from '../../../../configuration/professor-preload/model/coordination.model';
 import {
   PROJECT_CALL_CODIGO_OPTIONS,
   ProjectCallFormData,
@@ -47,6 +51,7 @@ type ProjectCallFormGroup = FormGroup<{
 })
 export class ProjectCallsForm implements OnInit, OnChanges {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly preloadCallService = inject(PreloadCallService);
 
   projectCall = input<ProjectCallItem | null>(null);
   isSaving = input(false);
@@ -106,9 +111,7 @@ export class ProjectCallsForm implements OnInit, OnChanges {
 
   private async loadActivePreloadCalls(): Promise<void> {
     try {
-      const calls = await firstValueFrom(
-        this.coordinationService.getActivePreloadCall(),
-      );
+      const calls = await this.loadActivePreloadCallsCatalog();
 
       this.convocatoriaOptions.set(
         (calls ?? []).map((call) => ({
@@ -126,6 +129,34 @@ export class ProjectCallsForm implements OnInit, OnChanges {
       this.ensureSelectedConvocatoriaOption();
       this.patchForm();
     }
+  }
+
+  private async loadActivePreloadCallsCatalog(): Promise<
+    CoordinationPreloadCallApi[]
+  > {
+    const periods = await firstValueFrom(
+      this.preloadCallService.getUniversityPeriod(),
+    );
+
+    if (!periods?.length) {
+      return [];
+    }
+
+    const lists = await Promise.all(
+      periods.map((period) =>
+        firstValueFrom(
+          this.coordinationService.getActivePreloadCall(period.id),
+        ),
+      ),
+    );
+
+    const byId = new Map<number, CoordinationPreloadCallApi>();
+
+    lists.flat().forEach((item) => {
+      byId.set(item.id, item);
+    });
+
+    return [...byId.values()];
   }
 
   private ensureSelectedConvocatoriaOption(): void {

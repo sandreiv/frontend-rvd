@@ -34,6 +34,7 @@ export class CoordinationPreloadCallModal {
 
   isOpen = input(false);
   coordination = input.required<CoordinationItem>();
+  idPeriodoUniversidad = input<number | null>(null);
 
   close = output<void>();
   saved = output<CoordinationItem>();
@@ -42,8 +43,29 @@ export class CoordinationPreloadCallModal {
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
 
+  readonly resolvedPeriodId = computed(
+    () =>
+      this.idPeriodoUniversidad() ??
+      this.coordination().idPeriodoUniversidad,
+  );
+
   readonly activePreloadCallsResource = rxResource({
-    stream: () => this.coordinationService.getAssignablePreloadCalls(),
+    params: () => {
+      if (!this.isOpen()) {
+        return undefined;
+      }
+
+      const idPeriodoUniversidad = this.resolvedPeriodId();
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+
+      return { idPeriodoUniversidad };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getAssignablePreloadCalls(
+        params.idPeriodoUniversidad,
+      ),
     defaultValue: [] as CoordinationPreloadCallApi[],
   });
 
@@ -61,6 +83,7 @@ export class CoordinationPreloadCallModal {
   readonly canSave = computed(
     () =>
       !!this.selectedPreloadCallId() &&
+      this.resolvedPeriodId() != null &&
       !this.isSaving() &&
       !this.isLoadingOptions(),
   );
@@ -78,8 +101,6 @@ export class CoordinationPreloadCallModal {
           ? String(this.coordination().idConvocatoria)
           : '',
       );
-
-      this.activePreloadCallsResource.reload();
     });
   }
 
@@ -90,8 +111,9 @@ export class CoordinationPreloadCallModal {
 
   onSave(): void {
     const idConvocatoria = Number(this.selectedPreloadCallId());
+    const idPeriodoUniversidad = this.resolvedPeriodId();
 
-    if (!idConvocatoria) {
+    if (!idConvocatoria || idPeriodoUniversidad == null) {
       return;
     }
 
@@ -112,7 +134,12 @@ export class CoordinationPreloadCallModal {
     this.coordinationService
       .savePreload(request)
       .pipe(
-        switchMap(() => this.coordinationService.getCoordinations(idConvocatoria)),
+        switchMap(() =>
+          this.coordinationService.getCoordinations(
+            idPeriodoUniversidad,
+            idConvocatoria,
+          ),
+        ),
         map((items) => {
           const updated = items.find((item) => item.id === coordination.id);
 
