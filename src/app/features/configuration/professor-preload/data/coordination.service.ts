@@ -149,27 +149,14 @@ export class CoordinationService {
    * @param idCarga Identificador de la carga.
    * @param idModalidadContratacion Identificador de la modalidad.
    */
-  getWorkDates(
-    idCarga: number,
-    idModalidadContratacion: number,
-  ): Observable<WorkDate[]> {
+  getWorkDates(idCarga: number, idModalidadContratacion: number): Observable<WorkDate[]> {
     return this.webRequestService.get<WorkDate[]>(
       `${this.endpoint}/work-date`,
       { idCarga, idModalidadContratacion },
     );
   }
 
-  getLoadRestrictionByModality(
-    idModalidadContratacion: number,
-  ): Observable<LoadRestrictionPreview> {
-    return this.webRequestService.get<LoadRestrictionPreview>(
-      `/configuration/administration/load-restriction/restriction/${idModalidadContratacion}`,
-    );
-  }
-
-  getLoadRestrictionByModality(
-    idModalidadContratacion: number,
-  ): Observable<LoadRestrictionPreview> {
+  getLoadRestrictionByModality(idModalidadContratacion: number): Observable<LoadRestrictionPreview> {
     return this.webRequestService.get<LoadRestrictionPreview>(
       `/configuration/administration/load-restriction/restriction/${idModalidadContratacion}`,
     );
