@@ -39,6 +39,7 @@ import { CoordinationService } from '../../data/coordination.service';
 import {
   CategoriaCatedratico,
   CoordinationContractModality,
+  LoadRestrictionPreview,
   ModalityProfessor,
   ProfessorSearchResult,
   ValuePointsPreload,
@@ -202,7 +203,41 @@ export class ProfessorAddModal {
     defaultValue: [] as WorkDate[],
   });
 
+  private readonly loadRestrictionResource = rxResource<
+    LoadRestrictionPreview | null,
+    { modalityId: number } | undefined
+  >({
+    params: () => {
+      const modalityId = this.contractModality()?.id;
+
+      if (!this.isOpen() || modalityId == null) {
+        return undefined;
+      }
+
+      return { modalityId };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.getLoadRestrictionByModality(params.modalityId),
+    defaultValue: null,
+  });
+
   readonly workDates = computed(() => this.workDatesResource.value());
+
+  readonly selectedProfessorHorasExcepcion = computed(() => {
+    const idPersona = this.selectedProfessor()?.id;
+
+    if (idPersona == null) {
+      return null;
+    }
+
+    const personException = this.loadRestrictionResource
+      .value()
+      ?.personasExcepcion?.find((item) => item.idPersona === idPersona);
+
+    const value = String(personException?.maximoHoras ?? '').trim();
+
+    return value || null;
+  });
 
   readonly fechaLaborOptions = computed<Option[]>(() =>
     this.workDates().map((workDate) => ({
@@ -350,6 +385,21 @@ export class ProfessorAddModal {
     });
 
     effect(() => {
+      this.isOpen();
+      this.isEditMode();
+      this.selectedProfessorHorasExcepcion();
+      this.selectedWorkDate();
+
+      untracked(() => {
+        if (this.isEditMode()) {
+          return;
+        }
+
+        this.patchPreviewHorasSemanales();
+      });
+    });
+
+    effect(() => {
       const editing = this.editingProfessor();
       const open = this.isOpen();
       const form = this.professorForm();
@@ -470,15 +520,18 @@ export class ProfessorAddModal {
     const workDate = this.workDates().find(
       (item) => String(item.id) === workDateId,
     );
+
     if (!workDate) {
       return;
     }
+
+    const editing = this.isEditMode() ? this.editingProfessor() : null;
 
     this.selectedWorkDate.set(workDate);
     this.professorForm().patchValue({
       semanas: workDate.semanas ?? '',
       vacaciones: workDate.vacaciones ?? '',
-      horasSemanales: workDate.rangoHoras ?? '',
+      horasSemanales: this.resolveHorasSemanalesLabel(workDate, editing),
     });
   }
 
@@ -530,7 +583,7 @@ export class ProfessorAddModal {
       numeroPuntos: editing.puntos ?? '',
       fechaLabor: String(editing.idFechasConvocatoria),
     });
-    this.patchWorkDateFields(form, workDate);
+    this.patchWorkDateFields(form, workDate, editing);
   }
 
   private prefillActiveProfessor(
@@ -552,7 +605,7 @@ export class ProfessorAddModal {
       categoriaCatedratico: categoriaValue,
       fechaLabor: String(editing.idFechasConvocatoria),
     });
-    this.patchWorkDateFields(form, workDate);
+    this.patchWorkDateFields(form, workDate, editing);
 
     if (this.modalityKind() === 'catedra') {
       form.patchValue({ valorHora: formatCurrencyCOP(editing.valorHora) });
@@ -572,6 +625,7 @@ export class ProfessorAddModal {
   private patchWorkDateFields(
     form: FormGroup,
     workDate: WorkDate | null,
+    professor: ModalityProfessor | null,
   ): void {
     if (!workDate) {
       return;
@@ -580,7 +634,42 @@ export class ProfessorAddModal {
     form.patchValue({
       semanas: workDate.semanas ?? '',
       vacaciones: workDate.vacaciones ?? '',
-      horasSemanales: workDate.rangoHoras ?? '',
+      horasSemanales: this.resolveHorasSemanalesLabel(workDate, professor),
+    });
+  }
+
+  private resolveHorasSemanalesLabel(
+    workDate: WorkDate | null,
+    professor: ModalityProfessor | null,
+  ): string {
+    const storedExceptionHours = String(
+      professor?.horasDeExcepcion ?? '',
+    ).trim();
+
+    if (storedExceptionHours) {
+      return storedExceptionHours;
+    }
+
+    const previewExceptionHours = !this.isEditMode()
+      ? String(this.selectedProfessorHorasExcepcion() ?? '').trim()
+      : '';
+
+    if (previewExceptionHours) {
+      return previewExceptionHours;
+    }
+
+    return workDate?.rangoHoras ?? '';
+  }
+
+  private patchPreviewHorasSemanales(): void {
+    const workDate = this.selectedWorkDate();
+
+    if (!workDate) {
+      return;
+    }
+
+    this.professorForm().patchValue({
+      horasSemanales: this.resolveHorasSemanalesLabel(workDate, null),
     });
   }
 
@@ -593,6 +682,7 @@ export class ProfessorAddModal {
 
   onProfessorSelected(option: TypeaheadOption): void {
     const professor = option.data as ProfessorSearchResult;
+
     if (professor.cargaDocente) {
       this.existingLoadSelected.emit(professor);
       return;
@@ -604,6 +694,8 @@ export class ProfessorAddModal {
     this.professorForm().patchValue({
       categoriaCatedratico: descripcion,
     });
+
+    this.patchPreviewHorasSemanales();
   }
 
   onSubmit(): void {

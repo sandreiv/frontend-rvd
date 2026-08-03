@@ -230,6 +230,7 @@ export interface ModalityProfessor {
   puntos: string | null;
   valorPunto: number | null;
   semanas: string | null;
+  horasDeExcepcion: string | null;
   tieneDetalleActividades?: boolean;
 }
 
@@ -266,6 +267,15 @@ export interface WorkDate {
   semanas: string | null;
   vacaciones: string | null;
   rangoHoras: string | null;
+}
+
+export interface LoadRestrictionPersonExceptionPreview {
+  idPersona: number;
+  maximoHoras: string | null;
+}
+
+export interface LoadRestrictionPreview {
+  personasExcepcion: LoadRestrictionPersonExceptionPreview[];
 }
 
 export interface GetWorkDatesParams {

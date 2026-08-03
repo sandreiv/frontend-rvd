@@ -38,6 +38,7 @@ export interface LoadRestrictionDetail {
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];
+  personasExcepcion: LoadRestrictionPersonException[];
   idsCategoriasCatedratico: number[];
   idsTiposActividad: number[];
 }
@@ -52,8 +53,14 @@ export interface LoadRestrictionFormData {
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
   idsPersonasExcepcion: number[];
+  personasExcepcion: LoadRestrictionPersonException[];
   idsCategoriasCatedratico: number[];
   idsTiposActividad: number[];
+}
+
+export interface LoadRestrictionPersonException {
+  idPersona: number;
+  maximoHoras: string | null;
 }
 
 export function formatLoadRestrictionStatus(value: string | null | undefined): string {

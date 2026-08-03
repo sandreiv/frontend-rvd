@@ -164,43 +164,48 @@
   <footer
     class="flex flex-col gap-4 border-t border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 dark:border-white/10"
   >
-    <p class="text-sm text-gray-500 dark:text-gray-400">
-      Total de horas asignadas:
-      <span
-        class="font-semibold"
-        [class.text-gray-900]="!exceedsWeeklyLimit()"
-        [class.dark:text-white/90]="!exceedsWeeklyLimit()"
-        [class.text-error-600]="exceedsWeeklyLimit()"
-        [class.dark:text-error-400]="exceedsWeeklyLimit()"
-      >
-        {{ totalAssignedHours() }} h
-        @if (isLoadingWorkDates()) {
-          / ...
-        } @else if (weeklyHoursLimit() != null) {
-          / {{ weeklyHoursLimit() }} h
-        }
-      </span>
-      semanales
-    </p>
-    @if(exceedsWeeklyLimit()){
-      <p class="text-xs text-error-600 dark:text-error-400">
-        Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
+    <div class="flex flex-col gap-1">
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Total de horas asignadas:
+        <span
+          class="font-semibold"
+          [class.text-gray-900]="!exceedsWeeklyLimit()"
+          [class.dark:text-white/90]="!exceedsWeeklyLimit()"
+          [class.text-error-600]="exceedsWeeklyLimit()"
+          [class.dark:text-error-400]="exceedsWeeklyLimit()"
+        >
+          {{ totalAssignedHours() }} h
+          @if (isLoadingWorkDates()) {
+            / ...
+          } @else if (weeklyHoursLimit() != null) {
+            / {{ weeklyHoursLimit() }} h
+          }
+        </span>
+        semanales
       </p>
-    }
+
+      @if (exceedsWeeklyLimit()) {
+        <p class="text-xs text-error-600 dark:text-error-400">
+          Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
+        </p>
+      }
+    </div>
+
     <div class="flex justify-end gap-3">
       <app-button type="button" variant="outline" (btnClick)="close.emit()">
         Cancelar
       </app-button>
+
       <span
         [appTooltip]="readOnly() ? readOnlyMessage() : ''"
         tooltipPlacement="top"
       >
         <app-button
           type="button"
-          [disabled]="readOnly() || isSaving() || isLoadingDetail() || isLoadingActivityCategories() || !canSaveDistribution()"
+          [disabled]="submitButtonDisabled()"
           (btnClick)="onSubmit()"
         >
-          {{ readOnly() ? 'Solo lectura' : 'Guardar' }}
+          {{ submitButtonText() }}
         </app-button>
       </span>
     </div>

@@ -6,6 +6,7 @@ import {
   CoordinationApiItem,
   CoordinationItem,
   CoordinationPreloadCallApi,
+  LoadRestrictionPreview,
   ModalityProfessor,
   ProfessorSearchResult,
   TotalPreload,
@@ -122,6 +123,14 @@ export class CoordinationService {
     return this.webRequestService.get<WorkDate[]>(
       `${this.endpoint}/work-date`,
       query,
+    );
+  }
+
+  getLoadRestrictionByModality(
+    idModalidadContratacion: number,
+  ): Observable<LoadRestrictionPreview> {
+    return this.webRequestService.get<LoadRestrictionPreview>(
+      `/configuration/administration/load-restriction/restriction/${idModalidadContratacion}`,
     );
   }
 
@@ -320,6 +329,13 @@ export class CoordinationService {
   deleteProfessorActivity(idDetalleCargaDocente: number): Observable<void>{
     return this.webRequestService.delete<void>(
       `${this.endpoint}/delete-professor-activity/${idDetalleCargaDocente}`,
+    );
+  }
+
+  approveProfessorPreassignment(idCargaDocente: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-professor-preassignment/${idCargaDocente}`,
+      {},
     );
   }
 

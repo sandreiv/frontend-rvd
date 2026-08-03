@@ -40,7 +40,12 @@ import {
   LoadRestrictionDetail,
   LoadRestrictionFormData,
   LoadRestrictionModalityItem,
+  LoadRestrictionPersonException,
 } from '../../model/load-restriction.model';
+
+type SelectedPersonExceptionItem = LoadRestrictionCatalogItem & {
+  maximoHoras: string | null;
+};
 
 type LoadRestrictionFormGroup = FormGroup<{
   horasEnabled: FormControl<boolean>;
@@ -143,7 +148,10 @@ export class LoadRestrictionForm implements OnChanges {
   readonly filteredPrograms = signal<LoadRestrictionCatalogItem[]>([]);
   readonly filteredPeople = signal<LoadRestrictionCatalogItem[]>([]);
   readonly selectedPrograms = signal<LoadRestrictionCatalogItem[]>([]);
-  readonly selectedPeople = signal<LoadRestrictionCatalogItem[]>([]);
+  readonly selectedPeople = signal<SelectedPersonExceptionItem[]>([]);
+  readonly selectedPersonException = signal<SelectedPersonExceptionItem | null>(null);
+  readonly personExceptionHours = new FormControl('', { nonNullable: true });
+  readonly showPersonExceptionHoursRequired = signal(false);
   readonly showExcepcionRequired = signal(false);
   readonly selectedCategories = signal<LoadRestrictionCatalogItem[]>([]);
   readonly selectedActivityTypes = signal<LoadRestrictionCatalogItem[]>([]);
@@ -450,7 +458,13 @@ export class LoadRestrictionForm implements OnChanges {
             return;
         }
 
-        this.selectedPeople.update((current) => [...current, person]);
+        this.selectedPeople.update((current) => [
+          ...current,
+          {
+            ...person,
+            maximoHoras: null,
+          },
+        ]);
         this.filteredPeople.set([]);
         this.showExcepcionRequired.set(false);
 
@@ -458,9 +472,53 @@ export class LoadRestrictionForm implements OnChanges {
     }
 
     removePerson(id: number): void {
-    this.selectedPeople.update((current) =>
+      this.selectedPeople.update((current) =>
         current.filter((item) => item.id !== id),
-    );
+      );
+
+      if (this.selectedPersonException()?.id === id) {
+        this.closePersonExceptionHours();
+      }
+    }
+
+    openPersonExceptionHours(person: SelectedPersonExceptionItem): void {
+      this.selectedPersonException.set(person);
+      this.personExceptionHours.setValue(person.maximoHoras ?? '');
+      this.showPersonExceptionHoursRequired.set(false);
+    }
+
+    closePersonExceptionHours(): void {
+      this.selectedPersonException.set(null);
+      this.personExceptionHours.setValue('');
+      this.showPersonExceptionHoursRequired.set(false);
+    }
+
+    savePersonExceptionHours(): void {
+      const person = this.selectedPersonException();
+
+      if (!person) {
+        return;
+      }
+
+      const value = String(this.personExceptionHours.value ?? '').trim();
+
+      if (!value || Number.isNaN(Number(value)) || Number(value) <= 0) {
+        this.showPersonExceptionHoursRequired.set(true);
+        return;
+      }
+
+      this.selectedPeople.update((current) =>
+        current.map((item) =>
+          item.id === person.id
+            ? {
+                ...item,
+                maximoHoras: value,
+              }
+            : item,
+        ),
+      );
+
+      this.closePersonExceptionHours();
     }
 
     onCategoriaSelected(value: string): void {
@@ -564,11 +622,19 @@ export class LoadRestrictionForm implements OnChanges {
       formaPago: raw.formaPago,
       tipoContrato: raw.tipoContrato,
       tipoHoras: raw.tipoHoras,
+
       idsProgramasExcepcion: this.selectedPrograms().map((item) => item.id),
+
       idsPersonasExcepcion: this.selectedPeople().map((item) => item.id),
+      personasExcepcion: this.selectedPeople().map((item) => ({
+        idPersona: item.id,
+        maximoHoras: item.maximoHoras,
+      })),
+
       idsCategoriasCatedratico: raw.categoriaEnabled
         ? this.selectedCategories().map((item) => item.id)
         : [],
+
       idsTiposActividad: raw.tipoActividadEnabled
         ? this.selectedActivityTypes().map((item) => item.id)
         : [],
@@ -610,7 +676,10 @@ export class LoadRestrictionForm implements OnChanges {
     this.syncExcepcionControls(true);
 
     this.setSelectedPrograms(item?.idsProgramasExcepcion ?? []);
-    this.setSelectedPeople(item?.idsPersonasExcepcion ?? []);
+    this.setSelectedPeople(
+      item?.idsPersonasExcepcion ?? [],
+      item?.personasExcepcion ?? [],
+    );
     this.setSelectedCategories(item?.idsCategoriasCatedratico ?? []);
     this.setSelectedActivityTypes(item?.idsTiposActividad ?? []);
     this.showCategoriaRequiredSignal.set(false);
@@ -636,11 +705,34 @@ export class LoadRestrictionForm implements OnChanges {
     );
    }
 
-  private setSelectedPeople(ids: number[]): void {
+  private setSelectedPeople(
+    ids: number[],
+    personasExcepcion: LoadRestrictionPersonException[] = [],
+  ): void {
     const people = this.catalogs()?.personas ?? [];
 
+    const hoursByPersonId = new Map(
+      personasExcepcion.map((item) => [
+        item.idPersona,
+        item.maximoHoras,
+      ]),
+    );
+
+    const idsFromPersonasExcepcion = personasExcepcion.map(
+      (item) => item.idPersona,
+    );
+
+    const selectedIds = Array.from(
+      new Set([...ids, ...idsFromPersonasExcepcion]),
+    );
+
     this.selectedPeople.set(
-       people.filter((item) => ids.includes(item.id)),
+      people
+        .filter((item) => selectedIds.includes(item.id))
+        .map((item) => ({
+          ...item,
+          maximoHoras: hoursByPersonId.get(item.id) ?? null,
+        })),
     );
   }
 
