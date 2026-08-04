@@ -10,14 +10,40 @@
         </p>
       </div>
 
-      <app-button
-        type="button"
-        size="sm"
-        variant="outline"
-        (btnClick)="back.emit()"
-      >
-        Volver al listado
-      </app-button>
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          [appTooltip]="
+            coordination().idCarga == null
+              ? 'Asigne una convocatoria para generar el reporte.'
+              : ''
+          "
+          tooltipPlacement="left"
+        >
+          <app-button
+            type="button"
+            size="sm"
+            variant="outline"
+            [disabled]="!canDownloadReport()"
+            (btnClick)="downloadPreloadReport()"
+          >
+            <app-icon name="file" size="sm" />
+            {{
+              isDownloadingReport()
+                ? 'Generando...'
+                : 'Descargar Excel'
+            }}
+          </app-button>
+        </span>
+
+        <app-button
+          type="button"
+          size="sm"
+          variant="outline"
+          (btnClick)="back.emit()"
+        >
+          Volver al listado
+        </app-button>
+      </div>
     </div>
 
     <section

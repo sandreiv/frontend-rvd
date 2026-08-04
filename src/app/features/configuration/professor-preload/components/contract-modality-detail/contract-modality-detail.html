@@ -91,7 +91,7 @@
               <app-dropdown
                 [isOpen]="openMenuKey() === row.menuKey"
                 [anchor]="professorMenuBtn"
-                className="w-48 p-2"
+                className="w-56 p-2"
                 (close)="closeProfessorMenu()"
               >
                 @for (
@@ -165,4 +165,12 @@
   [readOnlyReason]="writeBlockReason()"
   (close)="closeActivitiesModal()"
   (saved)="onActivitiesSaved()"
+/>
+
+<app-professor-summary
+  [isOpen]="isSummaryModalOpen()"
+  [professor]="summaryProfessor()"
+  [coordination]="coordination()"
+  [contractModality]="selectedModalityForModals()"
+  (close)="closeSummaryModal()"
 />

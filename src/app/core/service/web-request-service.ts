@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { StorageService } from './storage-service';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
@@ -71,6 +71,22 @@ export class WebRequestService {
       params,
       headers: this.getAuthHeaders(undefined, false),
       responseType: 'blob',
+    });
+  }
+
+  /**
+   * GET blob observando la respuesta completa (headers, status, body).
+   * Útil para descargas con Content-Disposition.
+   */
+  getBlobResponse(
+    endpoint: string,
+    params?: any,
+  ): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}${endpoint}`, {
+      params,
+      headers: this.getAuthHeaders(undefined, false),
+      responseType: 'blob',
+      observe: 'response',
     });
   }
 

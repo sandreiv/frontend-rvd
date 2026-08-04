@@ -30,6 +30,7 @@ import { ProyectoDocenteDto } from '../model/professor-projects.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
 import { SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
+import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 
 @Injectable({
   providedIn: 'root',
@@ -380,5 +381,64 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Obtiene el resumen completo de una carga docente:
+   * valor de contratación, horas de actividades y centros de costo.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con el resumen de la carga docente.
+   */
+  getProfessorLoadSummary(
+    idCargaDocente: number,
+  ): Observable<ProfessorLoadSummaryApi> {
+    return this.webRequestService.get<ProfessorLoadSummaryApi>(
+      `${this.endpoint}/professor-load-summary/${idCargaDocente}`,
+    );
+  }
+
+  /**
+   * Descarga el reporte Excel de preasignación de una carga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con el archivo y el nombre sugerido.
+   */
+  downloadPreloadReport(idCarga: number): Observable<{ blob: Blob; fileName: string }> {
+    return this.webRequestService
+      .getBlobResponse(`${this.endpoint}/preload-report/${idCarga}`)
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `preasignacion-carga-${idCarga}.xlsx`,
+          ),
+        })),
+      );
+  }
+
+}
+
+function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(
+    contentDisposition,
+  );
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim().replace(/"/g, ''));
+    } catch {
+      return utf8Match[1].trim().replace(/"/g, '');
+    }
+  }
+
+  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(contentDisposition);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim();
+  }
+
+  return fallback;
 }
 

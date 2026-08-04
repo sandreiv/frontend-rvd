@@ -40,6 +40,7 @@ import {
 import { SaveCareerProfessorPreloadRequest } from '../../model/save-career-professor-preload.model';
 import { ProfessorAddModal } from '../professor-add-modal/professor-add-modal';
 import { ProfessorActivitiesModal } from '../professor-activities-modal/professor-activities-modal';
+import { ProfessorSummary } from '../professor-summary/professor-summary';
 import { resolveModalityKind } from '../../model/professor-form.config';
 
 export type ProfessorManagementStatus =
@@ -121,6 +122,7 @@ const VERIFIED_MODALITY_STATE = '2';
     NewModal,
     ProfessorAddModal,
     ProfessorActivitiesModal,
+    ProfessorSummary,
   ],
   templateUrl: './contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -144,9 +146,11 @@ export class ContractModalityDetail {
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly isProfessorAddModalOpen = signal(false);
   readonly isActivitiesModalOpen = signal(false);
+  readonly isSummaryModalOpen = signal(false);
   readonly professorModalMode = signal<'create' | 'edit'>('create');
   readonly editingModalityProfessor = signal<ModalityProfessor | null>(null);
   readonly activitiesProfessor = signal<ModalityProfessor | null>(null);
+  readonly summaryProfessor = signal<ModalityProfessor | null>(null);
   readonly activitiesCoordination = signal<CoordinationItem | null>(null);
   readonly activitiesContractModality = signal<CoordinationContractModality | null>(null);
   readonly isExistingLoadAlertOpen = signal(false);
@@ -488,6 +492,12 @@ export class ContractModalityDetail {
       icon: canEdit ? (hasDetail ? 'pencil' : 'plus') : 'eyeOpen',
     };
 
+    const summaryAction: ProfessorMenuAction = {
+      id: 'resumen',
+      label: 'Ver resumen',
+      icon: 'file',
+    };
+
     if (this.isPlantaSelected()) {
       if (professor.tieneCarga === false) {
         return [
@@ -501,7 +511,7 @@ export class ContractModalityDetail {
         ];
       }
 
-      return [activitiesAction];
+      return [activitiesAction, summaryAction];
     }
 
     return [
@@ -511,6 +521,7 @@ export class ContractModalityDetail {
         icon: 'userCircle',
       },
       activitiesAction,
+      summaryAction,
       {
         id: 'eliminar',
         label: 'Eliminar',
@@ -558,6 +569,11 @@ export class ContractModalityDetail {
       return;
     }
 
+    if (actionId === 'resumen') {
+      this.openSummaryModal(professor);
+      return;
+    }
+
     if (actionId === 'activar-carga') {
       this.activateCareerProfessorLoad(professor);
       return;
@@ -586,6 +602,16 @@ export class ContractModalityDetail {
     this.activitiesProfessor.set(null);
     this.activitiesCoordination.set(null);
     this.activitiesContractModality.set(null);
+  }
+
+  openSummaryModal(professor: ModalityProfessor): void {
+    this.summaryProfessor.set(professor);
+    this.isSummaryModalOpen.set(true);
+  }
+
+  closeSummaryModal(): void {
+    this.isSummaryModalOpen.set(false);
+    this.summaryProfessor.set(null);
   }
 
   onActivitiesSaved(): void {
