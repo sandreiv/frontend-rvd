@@ -230,6 +230,7 @@ export interface ModalityProfessor {
   puntos: string | null;
   valorPunto: number | null;
   semanas: string | null;
+  onceMeses: string | null;
   horasDeExcepcion: string | null;
   tieneDetalleActividades?: boolean;
 }

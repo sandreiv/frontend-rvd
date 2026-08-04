@@ -48,12 +48,20 @@ export type ProfessorManagementStatus =
   | 'incompleto'
   | 'sin-asignar';
 
+type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';  
+
 interface ProfessorMenuAction {
   id: string;
   label: string;
   icon: AppIconName;
   className?: string;
   tooltip?: string;
+}
+
+interface TcoDurationSwitchItem {
+  id: TcoDurationFilter;
+  label: string;
+  icon: AppIconName;
 }
 
 const ACTIVATE_LOAD_TOOLTIP = 'Activar carga permite agregar las actividades al docente de tipo planta';
@@ -144,6 +152,24 @@ export class ContractModalityDetail {
   preloadChanged = output<void>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
+  readonly tcoDurationFilter = signal<TcoDurationFilter>('todos');
+  readonly tcoDurationSwitchItems: TcoDurationSwitchItem[] = [
+    {
+      id: 'todos',
+      label: 'Todos',
+      icon: 'adjustmentsHorizontal',
+    },
+    {
+      id: 'cuatroMeses',
+      label: '4 meses',
+      icon: 'calendar',
+    },
+    {
+      id: 'onceMeses',
+      label: '11 meses',
+      icon: 'calendar',
+    },
+  ];
   readonly isProfessorAddModalOpen = signal(false);
   readonly isActivitiesModalOpen = signal(false);
   readonly isSummaryModalOpen = signal(false);
@@ -215,8 +241,12 @@ export class ContractModalityDetail {
     return this.modalityProfessorsMap()[Number(selectedId)] ?? [];
   });
 
+ readonly filteredModalityProfessors = computed(() =>
+    this.filterProfessorsByTcoDuration(this.modalityProfessors()),
+  );
+
   readonly currentProfessorRows = computed<ModalityProfessorRow[]>(() =>
-    this.buildProfessorRows(this.modalityProfessors()),
+    this.buildProfessorRows(this.filteredModalityProfessors()),
   );
 
   readonly modalityTabs = computed<TabBarItem[]>(() => {
@@ -234,6 +264,19 @@ export class ContractModalityDetail {
       (item) => item.id === selectedId,
     );
     return modality != null && isPlantaModality(modality);
+  });
+
+  readonly isTiempoCompletoOcasionalSelected = computed(() => {
+    const selectedId = this.selectedContractModalityId();
+
+    const modality = this.sortedContractModalities().find(
+      (item) => item.id === selectedId,
+    );
+
+    return (
+      modality != null &&
+      resolveModalityKind(modality.nombre) === 'tiempoCompletoOcasional'
+    );
   });
 
   readonly selectedPlantaModality = computed(
@@ -302,6 +345,7 @@ export class ContractModalityDetail {
 
   onContractModalityChange(modalityId: TabBarId | null): void {
     this.selectedContractModalityId.set(modalityId);
+    this.tcoDurationFilter.set('todos');
   }
 
   onProfessorAddModalOpen(): void {
@@ -360,6 +404,34 @@ export class ContractModalityDetail {
       });
   }
 
+  setTcoDurationFilter(filter: TcoDurationFilter): void {
+    this.tcoDurationFilter.set(filter);
+  }
+
+  private filterProfessorsByTcoDuration(
+    professors: ModalityProfessor[],
+  ): ModalityProfessor[] {
+    if (!this.isTiempoCompletoOcasionalSelected()) {
+      return professors;
+    }
+
+    const filter = this.tcoDurationFilter();
+
+    if (filter === 'todos') {
+      return professors;
+    }
+
+    return professors.filter((professor) => {
+      const onceMeses = String(professor.onceMeses ?? '').trim();
+
+      if (filter === 'onceMeses') {
+        return onceMeses === '1';
+      }
+
+      return onceMeses !== '1';
+    });
+  }
+  
   private buildProfessorRows(
     professors: ModalityProfessor[],
   ): ModalityProfessorRow[] {
