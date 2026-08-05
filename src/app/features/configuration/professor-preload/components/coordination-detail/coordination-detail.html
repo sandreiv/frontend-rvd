@@ -26,11 +26,16 @@
             [disabled]="!canDownloadReport()"
             (btnClick)="downloadPreloadReport()"
           >
-            <app-icon name="file" size="sm" />
+            <img
+              src="/images/file-types/xls.svg"
+              alt=""
+              aria-hidden="true"
+              class="size-4 shrink-0"
+            />
             {{
               isDownloadingReport()
                 ? 'Generando...'
-                : 'Descargar Excel'
+                : 'Descargar Reporte'
             }}
           </app-button>
         </span>
