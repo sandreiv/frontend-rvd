@@ -21,7 +21,7 @@ export class AdministrationView {
   readonly menuItems: AdministrationMenuItem[] = [
     {
       label: 'Coordinaciones',
-      icon: 'adjustmentsHorizontal',
+      icon: 'home',
       path: 'coordinaciones',
     },
     {
@@ -31,7 +31,7 @@ export class AdministrationView {
     },
     {
       label: 'Convocatorias de proyecto',
-      icon: 'bookOpen',
+      icon: 'calendar',
       path: 'convocatorias-de-proyecto',
     },
     {

@@ -55,6 +55,7 @@ export class Select implements ControlValueAccessor {
   className = input('');
   defaultValue = input('');
   disabled = input(false);
+  labelFormat = input<'sentence' | 'uppercase'>('sentence');
 
   enableSearch = input(true);
   searchPlaceholder = input('Buscar...');
@@ -76,7 +77,7 @@ export class Select implements ControlValueAccessor {
   normalizedOptions = computed((): NormalizedOption[] =>
     this.options().map((option) => ({
       ...option,
-      label: formatSentenceValue(option.label),
+      label: this.formatOptionLabel(option.label),
       group: option.group?.trim() || undefined,
     })),
   );
@@ -142,6 +143,19 @@ export class Select implements ControlValueAccessor {
     return `relative pr-10 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-800 ${base}`;
   });
 
+  private formatOptionLabel(label: string): string {
+    if (this.labelFormat() === 'uppercase') {
+      const normalized = label?.trim();
+
+      if (!normalized || normalized === '-') {
+        return '-';
+      }
+
+      return normalized.toLocaleUpperCase('es-CO');
+    }
+
+    return formatSentenceValue(label);
+  }
   writeValue(value: string | number | null | undefined): void {
     const next = value == null ? '' : String(value);
     this.value.set(next);
