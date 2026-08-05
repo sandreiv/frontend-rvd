@@ -53,6 +53,8 @@ import {
   diffInDays,
   formatCurrencyCOP,
   formatWorkDateRange,
+  isOnceMesesProfessor,
+  isSecondUniversityPeriod,
   resolveModalityKind,
 } from '../../model/professor-form.config';
 import { AddProfessorRequest } from '../../model/add-professor.model';
@@ -81,6 +83,7 @@ export class ProfessorAddModal {
   isOpen = input(false);
   idCarga = input<number | null>(null);
   anioUniversidad = input<number | null>(null);
+  periodoUniversidad = input<string | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
   mode = input<'create' | 'edit'>('create');
   editingProfessor = input<ModalityProfessor | null>(null);
@@ -91,6 +94,22 @@ export class ProfessorAddModal {
   existingLoadSelected = output<ProfessorSearchResult>();
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
+
+  /**
+   * Docentes de 11 meses en convocatoria de periodo 2: la fecha labor
+   * se muestra con el rango del registro y no es editable.
+   */
+  readonly isLockedOnceMesesFechaLabor = computed(() => {
+    if (!this.isEditMode()) {
+      return false;
+    }
+
+    if (!isSecondUniversityPeriod(this.periodoUniversidad())) {
+      return false;
+    }
+
+    return isOnceMesesProfessor(this.editingProfessor()?.onceMeses);
+  });
 
   readonly modalTitle = computed(() =>
     this.isEditMode() ? 'Ver detalle preasignación' : 'Agregar nuevo docente',
@@ -134,9 +153,10 @@ export class ProfessorAddModal {
     const kind = resolveModalityKind(this.contractModality()?.nombre);
     const baseFields = kind ? PROFESSOR_FIELDS[kind] : [];
 
-   
+    let fields = baseFields;
+
     if (this.isEditMode() && kind === 'catedra') {
-      return baseFields.map((field) => {
+      fields = fields.map((field) => {
         if (field.key === 'categoriaCatedratico') {
           return {
             ...field,
@@ -148,30 +168,40 @@ export class ProfessorAddModal {
 
         return field;
       });
+    } else if (!this.isProfessorActive()) {
+      fields = fields.map((field) => {
+        if (field.key === 'categoriaCatedratico') {
+          return {
+            ...field,
+            control: 'select' as const,
+            readonly: false,
+            placeholder: 'Seleccione la categoría',
+          };
+        }
+
+        if (field.key === 'numeroPuntos') {
+          return { ...field, readonly: false };
+        }
+
+        return field;
+      });
     }
 
-    
-    if (this.isProfessorActive()) {
-      return baseFields;
-    }
+    if (this.isLockedOnceMesesFechaLabor()) {
+      fields = fields.map((field) => {
+        if (field.key !== 'fechaLabor') {
+          return field;
+        }
 
-    
-    return baseFields.map((field) => {
-      if (field.key === 'categoriaCatedratico') {
         return {
           ...field,
-          control: 'select' as const,
-          readonly: false,
-          placeholder: 'Seleccione la categoría',
+          control: 'text' as const,
+          readonly: true,
         };
-      }
+      });
+    }
 
-      if (field.key === 'numeroPuntos') {
-        return { ...field, readonly: false };
-      }
-
-      return field;
-    });
+    return fields;
   });
 
   readonly modalityKind = computed(() => resolveModalityKind(this.contractModality()?.nombre),);
@@ -573,8 +603,14 @@ export class ProfessorAddModal {
     dates: WorkDate[],
     categorias: CategoriaCatedratico[],
   ): void {
-    const workDate =
-      dates.find((item) => item.id === editing.idFechasConvocatoria) ?? null;
+    const catalogWorkDate =
+      dates.find((item) => item.id === editing.idFechasConvocatoria) ??
+      null;
+    const workDate = this.resolveEditingWorkDate(
+      editing,
+      catalogWorkDate,
+    );
+
     if (workDate) {
       this.selectedWorkDate.set(workDate);
     }
@@ -584,6 +620,45 @@ export class ProfessorAddModal {
     } else {
       this.prefillNnProfessor(editing, form, workDate);
     }
+  }
+
+  private resolveEditingWorkDate(
+    editing: ModalityProfessor,
+    catalogWorkDate: WorkDate | null,
+  ): WorkDate | null {
+    if (!this.isLockedOnceMesesFechaLabor()) {
+      return catalogWorkDate;
+    }
+
+    if (!editing.fechaInicio || !editing.fechaFin) {
+      return catalogWorkDate;
+    }
+
+    return {
+      id: editing.idFechasConvocatoria,
+      fechaInicio: editing.fechaInicio,
+      fechaFin: editing.fechaFin,
+      semanas: editing.semanas ?? catalogWorkDate?.semanas ?? null,
+      vacaciones: catalogWorkDate?.vacaciones ?? null,
+      rangoHoras: catalogWorkDate?.rangoHoras ?? null,
+    };
+  }
+
+  private resolveFechaLaborValue(
+    editing: ModalityProfessor,
+  ): string {
+    if (
+      this.isLockedOnceMesesFechaLabor() &&
+      editing.fechaInicio &&
+      editing.fechaFin
+    ) {
+      return formatWorkDateRange(
+        editing.fechaInicio,
+        editing.fechaFin,
+      );
+    }
+
+    return String(editing.idFechasConvocatoria);
   }
 
   private prefillNnProfessor(
@@ -600,7 +675,7 @@ export class ProfessorAddModal {
     form.patchValue({
       categoriaCatedratico: String(editing.idCategoriaCatedratico),
       numeroPuntos: editing.puntos ?? '',
-      fechaLabor: String(editing.idFechasConvocatoria),
+      fechaLabor: this.resolveFechaLaborValue(editing),
     });
     this.patchWorkDateFields(form, workDate, editing);
   }
@@ -622,7 +697,7 @@ export class ProfessorAddModal {
 
     form.patchValue({
       categoriaCatedratico: categoriaValue,
-      fechaLabor: String(editing.idFechasConvocatoria),
+      fechaLabor: this.resolveFechaLaborValue(editing),
     });
     this.patchWorkDateFields(form, workDate, editing);
 

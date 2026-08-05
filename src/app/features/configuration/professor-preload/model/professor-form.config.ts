@@ -127,6 +127,32 @@ export function formatWorkDateRange(fechaInicio: string, fechaFin: string): stri
   return `${formatWorkDate(fechaInicio)} - ${formatWorkDate(fechaFin)}`;
 }
 
+/**
+ * Detecta si el periodo universitario de la convocatoria es el
+ * segundo periodo del año (ej. "2026-2").
+ */
+export function isSecondUniversityPeriod(
+  periodoUniversidad: string | null | undefined,
+): boolean {
+  if (!periodoUniversidad?.trim()) {
+    return false;
+  }
+
+  const periodPart = periodoUniversidad
+    .trim()
+    .split('-')
+    .at(-1)
+    ?.trim();
+
+  return periodPart === '2';
+}
+
+export function isOnceMesesProfessor(
+  onceMeses: string | null | undefined,
+): boolean {
+  return String(onceMeses ?? '').trim() === '1';
+}
+
 export function parseMaxWeeklyHours(rangoHoras: string | null | undefined): number | null {
   if (!rangoHoras?.trim()) {
     return null;
