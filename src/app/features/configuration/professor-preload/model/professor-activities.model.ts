@@ -60,3 +60,10 @@ export interface GrupoMateria {
   nombre: string;
   capacidad: number;
 }
+
+export interface ProgramHourRestriction {
+  idPrograma: number;
+  maximoHoras: string;
+  horasAsignadas: number;
+  horasDisponibles: number;
+}

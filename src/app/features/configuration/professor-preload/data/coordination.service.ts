@@ -21,6 +21,7 @@ import {
   ActividadModalidadDTO,
   GrupoMateria,
   MateriaAcademica,
+  ProgramHourRestriction,
   ProgramaAcademico,
   TipoActividad,
   TipoActividadCriterio,
@@ -247,6 +248,32 @@ export class CoordinationService {
     return this.webRequestService.get<MateriaAcademica[]>(
       `${this.endpoint}/list-subject`,
       { idPrograma, idCoordinacion },
+    );
+  }
+
+  /**
+   * Consulta restricciones de horas por programa para la modalidad.
+   * Si se envía idCargaDocente, incluye horas asignadas y disponibles.
+   *
+   * @param idModalidadContratacion Identificador de la modalidad.
+   * @param idCargaDocente Identificador opcional de la carga docente.
+   * @returns Observable con programas que tienen máximo de horas configurado.
+   */
+  listProgramHourRestrictions(
+    idModalidadContratacion: number,
+    idCargaDocente?: number | null,
+  ): Observable<ProgramHourRestriction[]> {
+    const params: Record<string, number> = {
+      idModalidadContratacion,
+    };
+
+    if (idCargaDocente != null) {
+      params['idCargaDocente'] = idCargaDocente;
+    }
+
+    return this.webRequestService.get<ProgramHourRestriction[]>(
+      `${this.endpoint}/program-hour-restriction`,
+      params,
     );
   }
 

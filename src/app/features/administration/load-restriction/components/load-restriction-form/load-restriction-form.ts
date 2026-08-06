@@ -41,7 +41,12 @@ import {
   LoadRestrictionFormData,
   LoadRestrictionModalityItem,
   LoadRestrictionPersonException,
+  LoadRestrictionProgramException,
 } from '../../model/load-restriction.model';
+
+type SelectedProgramExceptionItem = LoadRestrictionCatalogItem & {
+  maximoHoras: string | null;
+};
 
 type SelectedPersonExceptionItem = LoadRestrictionCatalogItem & {
   maximoHoras: string | null;
@@ -147,10 +152,17 @@ export class LoadRestrictionForm implements OnChanges {
   ];
   readonly filteredPrograms = signal<LoadRestrictionCatalogItem[]>([]);
   readonly filteredPeople = signal<LoadRestrictionCatalogItem[]>([]);
-  readonly selectedPrograms = signal<LoadRestrictionCatalogItem[]>([]);
+  readonly selectedPrograms = signal<SelectedProgramExceptionItem[]>([]);
   readonly selectedPeople = signal<SelectedPersonExceptionItem[]>([]);
-  readonly selectedPersonException = signal<SelectedPersonExceptionItem | null>(null);
+  readonly selectedProgramException =
+    signal<SelectedProgramExceptionItem | null>(null);
+  readonly selectedPersonException =
+    signal<SelectedPersonExceptionItem | null>(null);
+  readonly programExceptionHours = new FormControl('', {
+    nonNullable: true,
+  });
   readonly personExceptionHours = new FormControl('', { nonNullable: true });
+  readonly showProgramExceptionHoursRequired = signal(false);
   readonly showPersonExceptionHoursRequired = signal(false);
   readonly showExcepcionRequired = signal(false);
   readonly selectedCategories = signal<LoadRestrictionCatalogItem[]>([]);
@@ -401,19 +413,29 @@ export class LoadRestrictionForm implements OnChanges {
     const program = item as LoadRestrictionCatalogItem;
 
     if (!program?.id) {
-        return;
+      return;
     }
 
-    if (this.selectedPrograms().some((selected) => selected.id === program.id)) {
-        this.clearProgramSearch();
-        return;
+    const existing = this.selectedPrograms().find(
+      (selected) => selected.id === program.id,
+    );
+
+    if (existing) {
+      this.clearProgramSearch();
+      this.openProgramExceptionHours(existing);
+      return;
     }
 
-    this.selectedPrograms.update((current) => [...current, program]);
+    const selectedProgram: SelectedProgramExceptionItem = {
+      ...program,
+      maximoHoras: null,
+    };
+
+    this.selectedPrograms.update((current) => [...current, selectedProgram]);
     this.filteredPrograms.set([]);
     this.showExcepcionRequired.set(false);
-
     this.clearProgramSearch();
+    this.openProgramExceptionHours(selectedProgram);
   }
 
   private clearProgramSearch(): void {
@@ -440,86 +462,132 @@ export class LoadRestrictionForm implements OnChanges {
     });
   }
 
-    removeProgram(id: number): void {
+  removeProgram(id: number): void {
     this.selectedPrograms.update((current) =>
-        current.filter((item) => item.id !== id),
+      current.filter((item) => item.id !== id),
     );
+
+    if (this.selectedProgramException()?.id === id) {
+      this.closeProgramExceptionHours();
+    }
+  }
+
+  openProgramExceptionHours(program: SelectedProgramExceptionItem): void {
+    this.closePersonExceptionHours();
+    this.selectedProgramException.set(program);
+    this.programExceptionHours.setValue(program.maximoHoras ?? '');
+    this.showProgramExceptionHoursRequired.set(false);
+  }
+
+  closeProgramExceptionHours(): void {
+    this.selectedProgramException.set(null);
+    this.programExceptionHours.setValue('');
+    this.showProgramExceptionHoursRequired.set(false);
+  }
+
+  saveProgramExceptionHours(): void {
+    const program = this.selectedProgramException();
+
+    if (!program) {
+      return;
     }
 
-    onPersonSelected(item: unknown): void {
-        const person = item as LoadRestrictionCatalogItem;
+    const value = String(this.programExceptionHours.value ?? '').trim();
 
-        if (!person?.id) {
-            return;
-        }
-
-        if (this.selectedPeople().some((selected) => selected.id === person.id)) {
-            this.clearPersonSearch();
-            return;
-        }
-
-        this.selectedPeople.update((current) => [
-          ...current,
-          {
-            ...person,
-            maximoHoras: null,
-          },
-        ]);
-        this.filteredPeople.set([]);
-        this.showExcepcionRequired.set(false);
-
-        this.clearPersonSearch();
+    if (!value || Number.isNaN(Number(value)) || Number(value) <= 0) {
+      this.showProgramExceptionHoursRequired.set(true);
+      return;
     }
 
-    removePerson(id: number): void {
-      this.selectedPeople.update((current) =>
-        current.filter((item) => item.id !== id),
-      );
+    this.selectedPrograms.update((current) =>
+      current.map((item) =>
+        item.id === program.id
+          ? {
+              ...item,
+              maximoHoras: value,
+            }
+          : item,
+      ),
+    );
 
-      if (this.selectedPersonException()?.id === id) {
-        this.closePersonExceptionHours();
-      }
+    this.closeProgramExceptionHours();
+  }
+
+  onPersonSelected(item: unknown): void {
+    const person = item as LoadRestrictionCatalogItem;
+
+    if (!person?.id) {
+      return;
     }
 
-    openPersonExceptionHours(person: SelectedPersonExceptionItem): void {
-      this.selectedPersonException.set(person);
-      this.personExceptionHours.setValue(person.maximoHoras ?? '');
-      this.showPersonExceptionHoursRequired.set(false);
+    if (this.selectedPeople().some((selected) => selected.id === person.id)) {
+      this.clearPersonSearch();
+      return;
     }
 
-    closePersonExceptionHours(): void {
-      this.selectedPersonException.set(null);
-      this.personExceptionHours.setValue('');
-      this.showPersonExceptionHoursRequired.set(false);
-    }
+    this.selectedPeople.update((current) => [
+      ...current,
+      {
+        ...person,
+        maximoHoras: null,
+      },
+    ]);
+    this.filteredPeople.set([]);
+    this.showExcepcionRequired.set(false);
 
-    savePersonExceptionHours(): void {
-      const person = this.selectedPersonException();
+    this.clearPersonSearch();
+  }
 
-      if (!person) {
-        return;
-      }
+  removePerson(id: number): void {
+    this.selectedPeople.update((current) =>
+      current.filter((item) => item.id !== id),
+    );
 
-      const value = String(this.personExceptionHours.value ?? '').trim();
-
-      if (!value || Number.isNaN(Number(value)) || Number(value) <= 0) {
-        this.showPersonExceptionHoursRequired.set(true);
-        return;
-      }
-
-      this.selectedPeople.update((current) =>
-        current.map((item) =>
-          item.id === person.id
-            ? {
-                ...item,
-                maximoHoras: value,
-              }
-            : item,
-        ),
-      );
-
+    if (this.selectedPersonException()?.id === id) {
       this.closePersonExceptionHours();
     }
+  }
+
+  openPersonExceptionHours(person: SelectedPersonExceptionItem): void {
+    this.closeProgramExceptionHours();
+    this.selectedPersonException.set(person);
+    this.personExceptionHours.setValue(person.maximoHoras ?? '');
+    this.showPersonExceptionHoursRequired.set(false);
+  }
+
+  closePersonExceptionHours(): void {
+    this.selectedPersonException.set(null);
+    this.personExceptionHours.setValue('');
+    this.showPersonExceptionHoursRequired.set(false);
+  }
+
+  savePersonExceptionHours(): void {
+    const person = this.selectedPersonException();
+
+    if (!person) {
+      return;
+    }
+
+    const value = String(this.personExceptionHours.value ?? '').trim();
+
+    if (!value || Number.isNaN(Number(value)) || Number(value) <= 0) {
+      this.showPersonExceptionHoursRequired.set(true);
+      return;
+    }
+
+    this.selectedPeople.update((current) =>
+      current.map((item) =>
+        item.id === person.id
+          ? {
+              ...item,
+              maximoHoras: value,
+            }
+          : item,
+      ),
+    );
+
+    this.closePersonExceptionHours();
+  }
 
     onCategoriaSelected(value: string): void {
     const id = Number(value);
@@ -624,6 +692,10 @@ export class LoadRestrictionForm implements OnChanges {
       tipoHoras: raw.tipoHoras,
 
       idsProgramasExcepcion: this.selectedPrograms().map((item) => item.id),
+      programasExcepcion: this.selectedPrograms().map((item) => ({
+        idPrograma: item.id,
+        maximoHoras: item.maximoHoras,
+      })),
 
       idsPersonasExcepcion: this.selectedPeople().map((item) => item.id),
       personasExcepcion: this.selectedPeople().map((item) => ({
@@ -675,7 +747,10 @@ export class LoadRestrictionForm implements OnChanges {
     this.form.controls.maximo.enable({ emitEvent: false });
     this.syncExcepcionControls(true);
 
-    this.setSelectedPrograms(item?.idsProgramasExcepcion ?? []);
+    this.setSelectedPrograms(
+      item?.idsProgramasExcepcion ?? [],
+      item?.programasExcepcion ?? [],
+    );
     this.setSelectedPeople(
       item?.idsPersonasExcepcion ?? [],
       item?.personasExcepcion ?? [],
@@ -694,16 +769,41 @@ export class LoadRestrictionForm implements OnChanges {
     this.selectedPeople.set([]);
     this.filteredPrograms.set([]);
     this.filteredPeople.set([]);
+    this.closeProgramExceptionHours();
+    this.closePersonExceptionHours();
     this.showExcepcionRequired.set(false);
   }
 
-  private setSelectedPrograms(ids: number[]): void {
+  private setSelectedPrograms(
+    ids: number[],
+    programasExcepcion: LoadRestrictionProgramException[] = [],
+  ): void {
     const programs = this.catalogs()?.programas ?? [];
 
-    this.selectedPrograms.set(
-        programs.filter((item) => ids.includes(item.id)),
+    const hoursByProgramId = new Map(
+      programasExcepcion.map((item) => [
+        item.idPrograma,
+        item.maximoHoras,
+      ]),
     );
-   }
+
+    const idsFromProgramasExcepcion = programasExcepcion.map(
+      (item) => item.idPrograma,
+    );
+
+    const selectedIds = Array.from(
+      new Set([...ids, ...idsFromProgramasExcepcion]),
+    );
+
+    this.selectedPrograms.set(
+      programs
+        .filter((item) => selectedIds.includes(item.id))
+        .map((item) => ({
+          ...item,
+          maximoHoras: hoursByProgramId.get(item.id) ?? null,
+        })),
+    );
+  }
 
   private setSelectedPeople(
     ids: number[],

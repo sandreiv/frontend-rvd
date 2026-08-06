@@ -34,6 +34,7 @@ import {
 import {
   GrupoMateria,
   MateriaAcademica,
+  ProgramHourRestriction,
   ProgramaAcademico,
   TipoActividad,
   TipoActividadCriterio,
@@ -64,6 +65,9 @@ export class DirectActivityCard {
   idCoordinacion = input.required<number>();
   idNivelEducativo = input.required<number>();
   idPeriodoUniversidad = input.required<number>();
+  idModalidadContratacion = input.required<number>();
+  idCargaDocente = input<number | null>(null);
+  allDirectActivities = input<DirectLearningActivity[]>([]);
   addFormOpen = input(false);
   activities = input<DirectLearningActivity[]>([]);
 
@@ -83,21 +87,40 @@ export class DirectActivityCard {
   readonly readonlyFields = DIRECT_ACTIVITY_READONLY_FIELDS;
 
   readonly form = new FormGroup({
-    idCriterio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    idUnidadRegional: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    idPrograma: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    codigoMateria: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    idGrupo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    idCriterio: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    idUnidadRegional: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    idPrograma: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    codigoMateria: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    idGrupo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     semestre: new FormControl<number | null>({ value: null, disabled: true }),
     creditos: new FormControl<number | null>({ value: null, disabled: true }),
     cupoMaximo: new FormControl<number | null>({ value: null, disabled: true }),
-    horasPresenciales: new FormControl<number | null>({ value: null, disabled: true }),
+    horasPresenciales: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
     total: new FormControl<number | null>({ value: null, disabled: true }),
   });
 
   private readonly selectedUnidadId = signal<number | null>(null);
   private readonly selectedProgramaId = signal<number | null>(null);
   private readonly selectedCodigoMateria = signal<string | null>(null);
+  private readonly formHorasPresenciales = signal<number | null>(null);
 
   private readonly criteriaResource = rxResource({
     params: () => {
@@ -182,6 +205,26 @@ export class DirectActivityCard {
     defaultValue: [] as GrupoMateria[],
   });
 
+  private readonly programHourRestrictionsResource = rxResource({
+    params: () => {
+      const idModalidadContratacion = this.idModalidadContratacion();
+      const idPrograma = this.selectedProgramaId();
+      if (idModalidadContratacion == null || idPrograma == null) {
+        return undefined;
+      }
+      return {
+        idModalidadContratacion,
+        idCargaDocente: this.idCargaDocente(),
+      };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.listProgramHourRestrictions(
+        params.idModalidadContratacion,
+        params.idCargaDocente,
+      ),
+    defaultValue: [] as ProgramHourRestriction[],
+  });
+
   readonly criteriaOptions = computed<Option[]>(() =>
     this.toOptions(
       this.criteriaResource.value(),
@@ -218,6 +261,51 @@ export class DirectActivityCard {
     ),
   );
 
+  readonly selectedProgramRestriction = computed(() => {
+    const idPrograma = this.selectedProgramaId();
+    if (idPrograma == null) {
+      return null;
+    }
+
+    return (
+      this.programHourRestrictionsResource
+        .value()
+        .find((item) => item.idPrograma === idPrograma) ?? null
+    );
+  });
+
+  readonly programHourLimitMessage = computed((): string | null => {
+    const restriction = this.selectedProgramRestriction();
+    const idPrograma = this.selectedProgramaId();
+    if (!restriction || idPrograma == null) {
+      return null;
+    }
+
+    const maximo = Number(restriction.maximoHoras);
+    if (!Number.isFinite(maximo) || maximo <= 0) {
+      return null;
+    }
+
+    const usedHours = this.sumDirectHoursForProgram(idPrograma);
+    const formHours = this.formHorasPresenciales() ?? 0;
+    const projected = usedHours + formHours;
+
+    if (projected <= maximo) {
+      return null;
+    }
+
+    const remaining = Math.max(0, maximo - usedHours);
+
+    return (
+      `Supera el máximo de horas del programa (máximo ${maximo}h, ` +
+      `asignadas ${usedHours}h, disponibles ${remaining}h).`
+    );
+  });
+
+  readonly exceedsProgramHourLimit = computed(
+    () => this.programHourLimitMessage() != null,
+  );
+
   constructor() {
     this.setupCascadeListeners();
     effect(() => {
@@ -251,13 +339,16 @@ export class DirectActivityCard {
   }
 
   onAddActivity(): void {
-
     if (this.readOnly()) {
       return;
     }
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    if (this.exceedsProgramHourLimit()) {
       return;
     }
 
@@ -429,6 +520,7 @@ export class DirectActivityCard {
       total: materia.horasDirectas,
       cupoMaximo: null,
     });
+    this.formHorasPresenciales.set(materia.horasDirectas);
   }
 
   private clearReadonlyFields(): void {
@@ -439,6 +531,7 @@ export class DirectActivityCard {
       horasPresenciales: null,
       total: null,
     });
+    this.formHorasPresenciales.set(null);
   }
 
   private resetForm(): void {
@@ -457,6 +550,7 @@ export class DirectActivityCard {
     this.selectedUnidadId.set(null);
     this.selectedProgramaId.set(null);
     this.selectedCodigoMateria.set(null);
+    this.formHorasPresenciales.set(null);
   }
 
   private buildActivityRow(): DirectLearningActivity | null {
@@ -543,6 +637,20 @@ export class DirectActivityCard {
 
   private createActivityId(): string {
     return `direct-${Date.now()}`;
+  }
+
+  private sumDirectHoursForProgram(idPrograma: number): number {
+    const rows = this.allDirectActivities();
+    let total = 0;
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index];
+      if (row.idPrograma === idPrograma) {
+        total += Number(row.horasPresenciales) || 0;
+      }
+    }
+
+    return total;
   }
 
   private buildSubjectOptionsByPeriodo(

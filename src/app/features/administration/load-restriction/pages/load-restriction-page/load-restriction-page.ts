@@ -48,7 +48,7 @@ export class LoadRestrictionPage implements OnInit {
   readonly isSaving = signal(false);
 
   async ngOnInit(): Promise<void> {
-    this.breadcrumbTitle.setPageTitle('Administración / Restricción de carga');
+    this.breadcrumbTitle.setPageTitle('Restricción de carga');
     await this.refreshModalities();
     await this.loadCatalogs();
   }

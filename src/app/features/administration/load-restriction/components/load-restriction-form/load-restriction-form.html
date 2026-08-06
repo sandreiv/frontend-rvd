@@ -161,13 +161,26 @@
           <div class="mt-3 flex flex-wrap gap-2">
             @for (program of selectedPrograms(); track program.id) {
               <span
-                class="inline-flex items-center gap-2 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
+                class="inline-flex items-center overflow-hidden rounded-full border border-green-300 bg-green-50 text-xs font-medium text-green-700"
               >
-                {{ program.label }}
+                <button
+                  type="button"
+                  class="px-3 py-1 text-green-700 hover:bg-green-100"
+                  title="Configurar horas máximas de excepción"
+                  (click)="openProgramExceptionHours(program)"
+                >
+                  {{ program.label }}
+
+                  @if (program.maximoHoras) {
+                    <span class="font-semibold">
+                      · {{ program.maximoHoras }}h
+                    </span>
+                  }
+                </button>
 
                 <button
                   type="button"
-                  class="text-green-700 hover:text-red-600"
+                  class="border-l border-green-200 px-2 py-1 text-green-700 hover:bg-red-50 hover:text-red-600"
                   aria-label="Quitar programa"
                   (click)="removeProgram(program.id)"
                 >
@@ -175,6 +188,62 @@
                 </button>
               </span>
             }
+          </div>
+        }
+
+        @if (selectedProgramException()) {
+          <div
+            class="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5"
+          >
+            <div class="mb-3">
+              <h5 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Horas máximas de excepción:
+                {{ selectedProgramException()?.label }}
+              </h5>
+
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Defina el máximo de horas permitido para este programa
+                exceptuado.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <app-input-field
+                  type="number"
+                  placeholder="Ingrese máximo de horas"
+                  min="1"
+                  [formControl]="programExceptionHours"
+                />
+
+                @if (showProgramExceptionHoursRequired()) {
+                  <p
+                    class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+                  >
+                    Las horas máximas de excepción deben ser mayores a cero.
+                  </p>
+                }
+              </div>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+              <app-button
+                type="button"
+                variant="outline"
+                size="sm"
+                (btnClick)="closeProgramExceptionHours()"
+              >
+                Cerrar
+              </app-button>
+
+              <app-button
+                type="button"
+                size="sm"
+                (btnClick)="saveProgramExceptionHours()"
+              >
+                Guardar horas
+              </app-button>
+            </div>
           </div>
         }
       </div>

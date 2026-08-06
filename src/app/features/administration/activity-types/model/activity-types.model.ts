@@ -56,7 +56,7 @@ export const ACTIVITY_TYPE_COMPONENTE_OPTIONS = [
   },
   {
     value: 'project',
-    label: 'Proyectos',
+    label: 'Proyectos CTeI - ISU',
   },
 ];
 

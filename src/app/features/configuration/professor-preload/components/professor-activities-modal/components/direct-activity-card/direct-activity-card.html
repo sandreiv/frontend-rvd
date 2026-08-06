@@ -52,6 +52,12 @@
         }
       </div>
 
+      @if (programHourLimitMessage(); as warning) {
+        <p class="mt-4 text-xs font-medium text-red-600 dark:text-red-400">
+          {{ warning }}
+        </p>
+      }
+
       <div class="mt-4 flex justify-end gap-2">
         <app-button
           type="button"
@@ -64,7 +70,7 @@
         <app-button
           type="button"
           size="sm"
-          [disabled]="readOnly()"
+          [disabled]="readOnly() || exceedsProgramHourLimit()"
           (btnClick)="onAddActivity()"
         >
           Agregar

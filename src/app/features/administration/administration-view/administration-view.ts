@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { Breadcrumb } from '../../../shared/components/common/breadcrumb/breadcrumb';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { AppIconName } from '../../../shared/ui/icon/icons';
+import { ProjectView } from '../project-view/project-view';
 
 type AdministrationMenuItem = {
   label: string;
@@ -14,7 +15,7 @@ type AdministrationMenuItem = {
 @Component({
   selector: 'app-administration-view',
   standalone: true,
-  imports: [RouterModule, Breadcrumb, Icon],
+  imports: [RouterModule, Breadcrumb, Icon, ProjectView],
   templateUrl: './administration-view.html',
 })
 export class AdministrationView {
@@ -28,21 +29,6 @@ export class AdministrationView {
       label: 'Tipo actividades',
       icon: 'bookOpen',
       path: 'tipo-actividades',
-    },
-    {
-      label: 'Convocatorias de proyecto',
-      icon: 'calendar',
-      path: 'convocatorias-de-proyecto',
-    },
-    {
-      label: 'Tipos de proyecto',
-      icon: 'briefcase',
-      path: 'tipos-de-proyecto',
-    },
-    {
-      label: 'Proyectos',
-      icon: 'documentPlus',
-      path: 'proyectos',
     },
     {
       label: 'Restricción de carga',

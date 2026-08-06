@@ -269,10 +269,12 @@ export class ProfessorActivitiesModal {
 
   readonly directActivityContext = computed(() => {
     const coordination = this.coordination();
+    const modalityId = this.contractModality()?.id;
     if (
       !coordination?.id ||
       coordination.idNivelEducativo == null ||
-      coordination.idPeriodoUniversidad == null
+      coordination.idPeriodoUniversidad == null ||
+      modalityId == null
     ) {
       return null;
     }
@@ -280,7 +282,24 @@ export class ProfessorActivitiesModal {
       idCoordinacion: coordination.id,
       idNivelEducativo: coordination.idNivelEducativo,
       idPeriodoUniversidad: coordination.idPeriodoUniversidad,
+      idModalidadContratacion: modalityId,
+      idCargaDocente: this.professor()?.idCargaDocente ?? null,
     };
+  });
+
+  readonly allDirectActivities = computed(() => {
+    const byCodigo = this.directByCodigo();
+    const codigos = Object.keys(byCodigo);
+    const rows: DirectLearningActivity[] = [];
+
+    for (let index = 0; index < codigos.length; index += 1) {
+      const activities = byCodigo[codigos[index]] ?? [];
+      for (let rowIndex = 0; rowIndex < activities.length; rowIndex += 1) {
+        rows.push(activities[rowIndex]);
+      }
+    }
+
+    return rows;
   });
 
   readonly periodLabel = computed(

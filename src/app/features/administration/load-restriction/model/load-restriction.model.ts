@@ -6,6 +6,7 @@
  * Fecha de creación: 22/07/2026
  * Modificaciones:
  * 22/07/2026 - Joel Daniel Arias Duarte - Creación inicial para modelos de restricción de carga.
+ * 06/08/2026 - Soporte de maximoHoras en programas exceptuados (programasExcepcion).
  */
 
 export interface LoadRestrictionModalityItem {
@@ -37,6 +38,7 @@ export interface LoadRestrictionDetail {
   tipoContrato: string | null;
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
+  programasExcepcion?: LoadRestrictionProgramException[];
   idsPersonasExcepcion: number[];
   personasExcepcion: LoadRestrictionPersonException[];
   idsCategoriasCatedratico: number[];
@@ -52,10 +54,16 @@ export interface LoadRestrictionFormData {
   tipoContrato: string | null;
   tipoHoras: string | null;
   idsProgramasExcepcion: number[];
+  programasExcepcion: LoadRestrictionProgramException[];
   idsPersonasExcepcion: number[];
   personasExcepcion: LoadRestrictionPersonException[];
   idsCategoriasCatedratico: number[];
   idsTiposActividad: number[];
+}
+
+export interface LoadRestrictionProgramException {
+  idPrograma: number;
+  maximoHoras: string | null;
 }
 
 export interface LoadRestrictionPersonException {
@@ -63,7 +71,9 @@ export interface LoadRestrictionPersonException {
   maximoHoras: string | null;
 }
 
-export function formatLoadRestrictionStatus(value: string | null | undefined): string {
+export function formatLoadRestrictionStatus(
+  value: string | null | undefined,
+): string {
   const normalized = String(value ?? '').trim().toUpperCase();
 
   return normalized === '1' || normalized === 'ACTIVO' || normalized === 'A'
