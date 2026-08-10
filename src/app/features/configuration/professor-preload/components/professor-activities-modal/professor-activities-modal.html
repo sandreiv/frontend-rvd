@@ -129,8 +129,9 @@
                 [allDirectActivities]="allDirectActivities()"
                 [addFormOpen]="isAddFormOpen(item.codigo)"
                 [activities]="directActivitiesForCodigo(item.codigo)"
-                [readOnly]="readOnly()"
-                [readOnlyReason]="readOnlyMessage()"
+                [readOnly]="activityCardsReadOnly()"
+                [readOnlyReason]="activityCardsReadOnlyReason()"
+                [isApproved]="isPreassignmentApproved()"
                 (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
                 (activitiesChange)="setDirectActivitiesForCodigo(item.codigo, $event)"
               />
@@ -141,8 +142,9 @@
               [tipoActividad]="item.tipoActividad ?? null"
               [addFormOpen]="isAddFormOpen(item.codigo)"
               [activities]="criteriaActivitiesForCodigo(item.codigo)"
-              [readOnly]="readOnly()"
-              [readOnlyReason]="readOnlyMessage()"
+              [readOnly]="activityCardsReadOnly()"
+              [readOnlyReason]="activityCardsReadOnlyReason()"
+              [isApproved]="isPreassignmentApproved()"
               (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
               (activitiesChange)="setCriteriaActivitiesForCodigo(item.codigo, $event)"
             />
@@ -153,8 +155,9 @@
               [projectRows]="projectHierarchyRowsForCodigo(item.codigo)"
               [associatedRows]="associatedProjectsForCodigo(item.codigo)"
               [isLoading]="professorProjectsResource.isLoading()"
-              [readOnly]="readOnly()"
-              [readOnlyReason]="readOnlyMessage()"
+              [readOnly]="activityCardsReadOnly()"
+              [readOnlyReason]="activityCardsReadOnlyReason()"
+              [isApproved]="isPreassignmentApproved()"
               (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
             />
           }

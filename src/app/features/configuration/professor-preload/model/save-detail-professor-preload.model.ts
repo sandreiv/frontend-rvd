@@ -1,3 +1,5 @@
+import { DetailProfessorPreloadItemApi } from './detail-professor-preload.model';
+
 export interface SaveDetailProfessorPreloadRequest {
   idCargaDocente: number;
   detalles: DetalleCargaDocenteRequest[];
@@ -24,4 +26,10 @@ export interface DetalleCargaDocenteRequest {
 export interface RelacionCargaProyectoRequest {
   idPersonaProyecto: number;
   idProyecto: number;
+}
+
+export interface ApproveProfessorActivityDistributionRequest {
+  idCargaDocente: number;
+  detallesActualizados: DetailProfessorPreloadItemApi[];
+  detallesNuevos: DetalleCargaDocenteRequest[];
 }

@@ -26,6 +26,8 @@ export class ProjectActivityCard {
   readOnly = input(false);
   readOnlyReason = input<string | null>(null);
 
+  isApproved = input(false);
+
   readonly readOnlyMessage = computed(
     () =>
       this.readOnlyReason() ??
@@ -56,6 +58,7 @@ export class ProjectActivityCard {
   isCheckboxDisabled(row: ProfessorProjectRow): boolean {
     return (
       this.readOnly() ||
+      this.isApproved() ||
       !row.esSeleccionable ||
       this.isAssociated(row.idPersonaProyecto)
     );
@@ -66,7 +69,7 @@ export class ProjectActivityCard {
     checked: boolean,
   ): void {
     
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isApproved()) {
       return;
     }
 
@@ -87,7 +90,7 @@ export class ProjectActivityCard {
 
   onAssociateSelected(): void {
 
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isApproved()) {
       return;
     }
 
@@ -118,7 +121,7 @@ export class ProjectActivityCard {
 
   onDisassociate(idPersonaProyecto: number): void {
 
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isApproved()) {
       return;
     }
     

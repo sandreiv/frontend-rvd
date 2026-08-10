@@ -29,7 +29,7 @@ import {
 } from '../model/professor-activities.model';
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
-import { SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
+import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 
@@ -391,6 +391,15 @@ export class CoordinationService {
     return this.webRequestService.put<void>(
       `${this.endpoint}/approve-professor-preassignment/${idCargaDocente}`,
       {},
+    );
+  }
+
+  approveProfessorActivityDistribution(
+    request: ApproveProfessorActivityDistributionRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/approve-professor-activity-distribution`,
+      request,
     );
   }
 

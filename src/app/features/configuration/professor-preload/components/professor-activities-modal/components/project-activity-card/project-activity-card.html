@@ -105,11 +105,13 @@
                 >
                   Horas dedicación
                 </th>
-                <th
-                  class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400"
-                >
-                  Desasociar
-                </th>
+                @if (!isApproved()) {
+                  <th
+                    class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400"
+                  >
+                    Desasociar
+                  </th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -136,22 +138,24 @@
                       {{ row.horasDedicacion }}
                     }
                   </td>
-                  <td class="px-4 py-3 text-center">
-                    <span
-                      [appTooltip]="readOnly() ? readOnlyMessage() : ''"
-                      tooltipPlacement="left"
-                    >
-                      <app-button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        [disabled]="readOnly()"
-                        (btnClick)="onDisassociate(row.idPersonaProyecto)"
+                  @if (!isApproved()) {
+                    <td class="px-4 py-3 text-center">
+                      <span
+                        [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+                        tooltipPlacement="left"
                       >
-                        Desasociar
-                      </app-button>
-                    </span>
-                  </td>
+                        <app-button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          [disabled]="readOnly()"
+                          (btnClick)="onDisassociate(row.idPersonaProyecto)"
+                        >
+                          Desasociar
+                        </app-button>
+                      </span>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>

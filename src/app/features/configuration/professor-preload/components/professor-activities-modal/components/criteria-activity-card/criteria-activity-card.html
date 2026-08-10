@@ -87,7 +87,9 @@
             >
               Horas dedicación
             </th>
-            <th class="px-4 py-3"></th>
+            @if (!isApproved()) {
+              <th class="px-4 py-3"></th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -101,22 +103,24 @@
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
                 {{ activity.horasDedicacion }}
               </td>
-              <td class="px-4 py-3 text-right">
-                <span
-                  [appTooltip]="readOnly() ? readOnlyMessage() : ''"
-                  tooltipPlacement="left"
-                >
-                  <button
-                    type="button"
-                    class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-error-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5"
-                    aria-label="Eliminar actividad"
-                    [disabled]="readOnly()"
-                    (click)="removeActivity(activity.id)"
+              @if (!isApproved()) {
+                <td class="px-4 py-3 text-right">
+                  <span
+                    [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+                    tooltipPlacement="left"
                   >
-                    <app-icon name="delete" size="sm" />
-                  </button>
-                </span>
-              </td>
+                    <button
+                      type="button"
+                      class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-error-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5"
+                      aria-label="Eliminar actividad"
+                      [disabled]="readOnly()"
+                      (click)="removeActivity(activity.id)"
+                    >
+                      <app-icon name="delete" size="sm" />
+                    </button>
+                  </span>
+                </td>
+              }
             </tr>
           }
         </tbody>

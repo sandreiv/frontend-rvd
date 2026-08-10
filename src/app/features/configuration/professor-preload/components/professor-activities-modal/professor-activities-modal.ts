@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, forkJoin, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of } from 'rxjs';
 import { NotificationService } from '../../../../../core/service/notification-service';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Button } from '../../../../../shared/ui/button/button';
@@ -103,6 +103,16 @@ export class ProfessorActivitiesModal {
     () =>
       this.readOnlyReason() ??
       'La coordinación no está habilitada para edición en esta convocatoria.',
+  );
+
+  readonly activityCardsReadOnly = computed(
+    () => this.readOnly() || this.isPreassignmentApproved(),
+  );
+
+  readonly activityCardsReadOnlyReason = computed(() =>
+    this.isPreassignmentApproved()
+      ? 'La preasignación del docente ya fue aprobada.'
+      : this.readOnlyMessage(),
   );
 
   readonly directByCodigo = signal<
@@ -408,42 +418,25 @@ export class ProfessorActivitiesModal {
     return this.hasCompletedWeeklyGoal() ? 'Aprobar' : 'Guardar';
   });
 
-  readonly submitButtonDisabled = computed(
-    () =>
+  readonly submitButtonDisabled = computed(() => {
+    if (
       this.readOnly() ||
       this.isSaving() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
       this.isPreassignmentApproved() ||
-      !this.canSaveDistribution(),
-  );
+      this.exceedsWeeklyLimit()
+    ) {
+      return true;
+    }
 
-  readonly showApprovalBox = computed(
-    () => this.hasCompletedWeeklyGoal() || this.isPreassignmentApproved(),
-  );
+    const hasPendingChanges = hasSaveableActivities(
+      this.buildSaveInput(),
+      this.loadedDetailsById(),
+    );
 
-  readonly approvalText = computed(() =>
-    this.isPreassignmentApproved()
-      ? 'Estado aprobación preasignación para el docente:'
-      : 'Aprobar preasignación para el docente',
-  );
-
-  readonly approvalButtonText = computed(() =>
-    this.isPreassignmentApproved() ? 'Aprobado' : 'Aprobar',
-  );
-
-  readonly canSaveDistribution = computed(
-    () =>
-      !this.readOnly() &&
-      !this.isPreassignmentApproved() &&
-      !this.isLoadingDetail() &&
-      !this.isLoadingActivityCategories() &&
-      !this.exceedsWeeklyLimit() &&
-      hasSaveableActivities(
-        this.buildSaveInput(),
-        this.loadedDetailsById(),
-      ),
-  );
+    return !hasPendingChanges && !this.hasCompletedWeeklyGoal();
+  });
 
   constructor() {
 
@@ -525,7 +518,7 @@ export class ProfessorActivitiesModal {
   }
 
   onAddFormOpenChange(codigo: string, isFormOpen: boolean): void {
-    if (this.readOnly() && isFormOpen) {
+    if (this.activityCardsReadOnly() && isFormOpen) {
       return;
     }
 
@@ -547,7 +540,7 @@ export class ProfessorActivitiesModal {
     codigo: string,
     activities: DirectLearningActivity[],
   ): void {
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isPreassignmentApproved()) {
       return;
     }
 
@@ -565,7 +558,8 @@ export class ProfessorActivitiesModal {
     codigo: string,
     activities: SimpleActivity[],
   ): void {
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isPreassignmentApproved()) {
+
       return;
     }
 
@@ -587,7 +581,8 @@ export class ProfessorActivitiesModal {
     codigo: string,
     rows: ProfessorProjectRow[],
   ): void {
-    if (this.readOnly()) {
+    if (this.readOnly() || this.isPreassignmentApproved()) {
+
       return;
     }
 
@@ -614,7 +609,18 @@ export class ProfessorActivitiesModal {
     const idCargaDocente = professor.idCargaDocente;
     const input = this.buildSaveInput();
 
-    if (!hasSaveableActivities(input, this.loadedDetailsById())) {
+    const saveRequest = buildSaveActivityDistributionRequest(input);
+    const updateRequests = buildUpdateDetailProfessorPreloadRequests(
+      input,
+      this.loadedDetailsById(),
+    );
+
+    const hasPendingChanges =
+      saveRequest.detalles.length > 0 || updateRequests.length > 0;
+
+    const shouldApprove = this.hasCompletedWeeklyGoal();
+
+    if (!hasPendingChanges && !shouldApprove) {
       this.notificationService.warning(
         'Agrega al menos una actividad o proyecto asociado para guardar.',
         'Sin actividades',
@@ -629,39 +635,25 @@ export class ProfessorActivitiesModal {
       return;
     }
 
-    const shouldApprove = this.hasCompletedWeeklyGoal();
-
-    const saveRequest = buildSaveActivityDistributionRequest(input);
-    const updateRequests = buildUpdateDetailProfessorPreloadRequests(
-      input,
-      this.loadedDetailsById(),
-    );
-
-    const requests = [
-      ...updateRequests.map((detalle) =>
-        this.coordinationService.updateDetailProfessorPreload(detalle),
-      ),
-    ];
-
-    if (saveRequest.detalles.length > 0) {
-      requests.push(
-        this.coordinationService.saveActivityDistribution(saveRequest),
-      );
-    }
-
     this.isSaving.set(true);
 
-    forkJoin(requests)
-      .pipe(
-        switchMap(() =>
-          shouldApprove
-            ? this.coordinationService.approveProfessorPreassignment(
-                idCargaDocente,
-              )
-            : of(null),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
+    const operation$ = shouldApprove
+      ? this.coordinationService.approveProfessorActivityDistribution({
+          idCargaDocente,
+          detallesActualizados: updateRequests,
+          detallesNuevos: saveRequest.detalles,
+        })
+      : forkJoin([
+          ...updateRequests.map((detalle) =>
+            this.coordinationService.updateDetailProfessorPreload(detalle),
+          ),
+          ...(saveRequest.detalles.length > 0
+            ? [this.coordinationService.saveActivityDistribution(saveRequest)]
+            : []),
+        ]).pipe(map(() => undefined));
+
+    operation$
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.isSaving.set(false);
