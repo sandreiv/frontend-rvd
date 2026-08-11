@@ -61,6 +61,8 @@ import {
 } from '../../model/professor-projects.model';
 import { parseMaxWeeklyHours } from '../../model/professor-form.config';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
+import { PreloadCallService } from '../../../preload-call/data/preload-call.service';
+import { PreloadCallDetailFecha } from '../../../preload-call/model/preload-call.model';
 
 const NN_LABEL = 'NN';
 
@@ -81,6 +83,7 @@ const NN_LABEL = 'NN';
 })
 export class ProfessorActivitiesModal {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly preloadCallService = inject(PreloadCallService);
   private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -191,6 +194,23 @@ export class ProfessorActivitiesModal {
     defaultValue: [] as WorkDate[],
   });
 
+  readonly preloadCallDetailResource = rxResource({
+    params: () => {
+      if (!this.isOpen()) {
+        return undefined;
+      }
+
+      const idConvocatoria = this.coordination()?.idConvocatoria;
+      if (idConvocatoria == null) {
+        return undefined;
+      }
+
+      return { idConvocatoria };
+    },
+    stream: ({ params }) =>
+      this.preloadCallService.getPreloadCallDetails(params.idConvocatoria),
+  });
+
   readonly detailResource = rxResource({
     params: () => {
       if (!this.isOpen()) {
@@ -227,6 +247,24 @@ export class ProfessorActivitiesModal {
       this.activityTypesResource.value(),
     ),
   );
+
+  readonly projectAssociationDates = computed(() => {
+    const fechas = this.preloadCallDetailResource.value()?.fechas ?? [];
+
+    const findByCode = (codigo: 'CTEI' | 'ISU') =>
+      fechas.find(
+        (fecha) =>
+          String(fecha.codigo).trim().toUpperCase() === codigo,
+      ) ?? null;
+
+    return {
+      CTEI: findByCode('CTEI'),
+      ISU: findByCode('ISU'),
+    } satisfies Record<
+      'CTEI' | 'ISU',
+      PreloadCallDetailFecha | null
+    >;
+  });
 
   readonly projectHierarchyRowsByCodigo = computed(() => {
     const proyectos = this.professorProjectsResource.value();
@@ -532,6 +570,47 @@ export class ProfessorActivitiesModal {
     return `${hours ?? 0}h`;
   }
 
+  isProjectAssociationExpired(codigo: string): boolean {
+    const projectCode = this.resolveProjectActivityCode(codigo);
+
+    if (projectCode == null) {
+      return false;
+    }
+
+    const fechaFin = this.dateOnly(
+      this.projectAssociationDates()[projectCode]?.fechaFin,
+    );
+
+    if (fechaFin == null) {
+      return false;
+    }
+
+    return fechaFin < this.todayLocalDate();
+  }
+
+  projectAssociationExpiredReason(codigo: string): string | null {
+    const projectCode = this.resolveProjectActivityCode(codigo);
+
+    if (
+      projectCode == null ||
+      !this.isProjectAssociationExpired(projectCode)
+    ) {
+      return null;
+    }
+
+    const fechaFin = this.dateOnly(
+      this.projectAssociationDates()[projectCode]?.fechaFin,
+    );
+
+    if (fechaFin == null) {
+      return null;
+    }
+
+    const label = projectCode === 'CTEI' ? 'CTeI' : 'ISU';
+
+    return `La fecha límite para asociar proyectos ${label} expiró el ${this.formatDate(fechaFin)}.`;
+  }
+
   directActivitiesForCodigo(codigo: string): DirectLearningActivity[] {
     return this.directByCodigo()[codigo] ?? [];
   }
@@ -685,6 +764,46 @@ export class ProfessorActivitiesModal {
       criteriaByCodigo: this.criteriaByCodigo(),
       projectsByCodigo: this.projectsByCodigo(),
     };
+  }
+
+  private resolveProjectActivityCode(
+    codigo: string,
+  ): 'CTEI' | 'ISU' | null {
+    const normalized = codigo.trim().toUpperCase();
+
+    return normalized === 'CTEI' || normalized === 'ISU'
+      ? normalized
+      : null;
+  }
+
+  private dateOnly(
+    value: string | null | undefined,
+  ): string | null {
+    const normalized = value?.trim();
+
+    if (!normalized) {
+      return null;
+    }
+
+    const match = normalized.match(/^(\d{4}-\d{2}-\d{2})/);
+
+    return match?.[1] ?? null;
+  }
+
+  private todayLocalDate(): string {
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatDate(value: string): string {
+    const [year, month, day] = value.split('-');
+
+    return `${day}/${month}/${year}`;
   }
 
   private resolveActivityTypesForSave(): TipoActividad[] {

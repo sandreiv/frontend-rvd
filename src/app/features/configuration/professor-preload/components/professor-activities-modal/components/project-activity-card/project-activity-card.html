@@ -54,11 +54,21 @@
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-center">
-                  <app-checkbox
-                    [checked]="isSelected(row.idPersonaProyecto)"
-                    [disabled]="isCheckboxDisabled(row)"
-                    (checkedChange)="onSelectionChange(row, $event)"
-                  />
+                  <span
+                    class="inline-flex"
+                    [appTooltip]="
+                      associationExpired()
+                        ? (associationExpiredReason() ?? '')
+                        : ''
+                    "
+                    tooltipPlacement="left"
+                  >
+                    <app-checkbox
+                      [checked]="isSelected(row.idPersonaProyecto)"
+                      [disabled]="isCheckboxDisabled(row)"
+                      (checkedChange)="onSelectionChange(row, $event)"
+                    />
+                  </span>
                 </div>
               </td>
             </tr>
@@ -69,13 +79,19 @@
 
     <div class="flex justify-end">
       <span
-        [appTooltip]="readOnly() ? readOnlyMessage() : ''"
+        class="inline-flex"
+        [appTooltip]="associationBlockedMessage()"
         tooltipPlacement="left"
       >
         <app-button
           type="button"
           size="sm"
-          [disabled]="readOnly() || !hasSelection()"
+          [disabled]="
+            readOnly() ||
+            isApproved() ||
+            associationExpired() ||
+            !hasSelection()
+          "
           (btnClick)="onAssociateSelected()"
         >
           Asociar
@@ -149,7 +165,7 @@
                           variant="outline"
                           size="sm"
                           [disabled]="readOnly()"
-                          (btnClick)="onDisassociate(row.idPersonaProyecto)"
+                          (btnClick)="onDisassociate(row)"
                         >
                           Desasociar
                         </app-button>

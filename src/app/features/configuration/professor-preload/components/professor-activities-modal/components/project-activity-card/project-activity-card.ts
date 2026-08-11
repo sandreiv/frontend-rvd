@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  inject,
   input,
   output,
   signal,
@@ -9,12 +11,15 @@ import {
 import { Checkbox } from '../../../../../../../shared/components/form/input/checkbox';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { TipoActividad } from '../../../../model/professor-activities.model';
-import { ProfessorProjectRow } from '../../../../model/professor-projects.model'
-import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';;
+import { ProfessorProjectRow } from '../../../../model/professor-projects.model';
+import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CoordinationService } from '../../../../data/coordination.service';
+
 
 @Component({
   selector: 'app-project-activity-card',
-  imports: [Checkbox, Button, Tooltip,],
+  imports: [Checkbox, Button, Tooltip],
   templateUrl: './project-activity-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,11 +33,29 @@ export class ProjectActivityCard {
 
   isApproved = input(false);
 
+  associationExpired = input(false);
+  associationExpiredReason = input<string | null>(null);
+
   readonly readOnlyMessage = computed(
     () =>
       this.readOnlyReason() ??
       'La coordinación no está habilitada para edición en esta convocatoria.',
   );
+
+  readonly associationBlockedMessage = computed(() => {
+    if (this.associationExpired()) {
+      return (
+        this.associationExpiredReason() ??
+        'La fecha límite para asociar proyectos ya expiró.'
+      );
+    }
+
+    if (this.readOnly()) {
+      return this.readOnlyMessage();
+    }
+
+    return '';
+  });
 
   associatedRowsChange = output<ProfessorProjectRow[]>();
 
@@ -47,6 +70,9 @@ export class ProjectActivityCard {
       ),
   );
 
+  private readonly coordinationService = inject(CoordinationService);
+  private readonly destroyRef = inject(DestroyRef);
+
   isSelected(idPersonaProyecto: number): boolean {
     return this.selectedIds().has(idPersonaProyecto);
   }
@@ -59,6 +85,7 @@ export class ProjectActivityCard {
     return (
       this.readOnly() ||
       this.isApproved() ||
+      this.associationExpired() ||
       !row.esSeleccionable ||
       this.isAssociated(row.idPersonaProyecto)
     );
@@ -69,7 +96,11 @@ export class ProjectActivityCard {
     checked: boolean,
   ): void {
     
-    if (this.readOnly() || this.isApproved()) {
+    if (
+      this.readOnly() ||
+      this.isApproved() ||
+      this.associationExpired()
+    ) {
       return;
     }
 
@@ -90,7 +121,11 @@ export class ProjectActivityCard {
 
   onAssociateSelected(): void {
 
-    if (this.readOnly() || this.isApproved()) {
+    if (
+      this.readOnly() ||
+      this.isApproved() ||
+      this.associationExpired()
+    ) {
       return;
     }
 
@@ -119,12 +154,25 @@ export class ProjectActivityCard {
     this.selectedIds.set(new Set());
   }
 
-  onDisassociate(idPersonaProyecto: number): void {
-
+  onDisassociate(row: ProfessorProjectRow): void {
     if (this.readOnly() || this.isApproved()) {
       return;
     }
-    
+
+    if (row.idDetalleCargaDocente == null) {
+      this.withoutAssociatedProject(row.idPersonaProyecto);
+      return;
+    }
+
+    this.coordinationService
+      .deleteProfessorActivity(row.idDetalleCargaDocente)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() =>
+        this.withoutAssociatedProject(row.idPersonaProyecto),
+      );
+  }
+
+  private withoutAssociatedProject(idPersonaProyecto: number): void {
     this.associatedRowsChange.emit(
       this.associatedRows().filter(
         (row) => row.idPersonaProyecto !== idPersonaProyecto,

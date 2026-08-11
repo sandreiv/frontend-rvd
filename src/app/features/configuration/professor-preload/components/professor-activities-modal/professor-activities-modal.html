@@ -158,6 +158,8 @@
               [readOnly]="activityCardsReadOnly()"
               [readOnlyReason]="activityCardsReadOnlyReason()"
               [isApproved]="isPreassignmentApproved()"
+              [associationExpired]="isProjectAssociationExpired(item.codigo)"
+              [associationExpiredReason]="projectAssociationExpiredReason(item.codigo)"
               (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
             />
           }
