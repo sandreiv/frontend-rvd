@@ -284,10 +284,16 @@ export class CoordinationService {
     );
   }
 
-  listProjectsProfessor(idPersonaGeneral: number): Observable<ProyectoDocenteDto[]> {
+  listProjectsProfessor(
+    idPersonaGeneral: number,
+    idConvocatoria: number,
+  ): Observable<ProyectoDocenteDto[]> {
     return this.webRequestService.get<ProyectoDocenteDto[]>(
       `${this.endpoint}/list-projects-professor`,
-      { idPersonaGeneral },
+      {
+        idPersonaGeneral,
+        idConvocatoria,
+      },
     );
   }
 

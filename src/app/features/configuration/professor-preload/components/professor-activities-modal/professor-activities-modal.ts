@@ -161,16 +161,29 @@ export class ProfessorActivitiesModal {
       if (!this.isOpen()) {
         return undefined;
       }
+
       const idPersonaGeneral = this.professor()?.idPersonaGeneral;
-      if (idPersonaGeneral == null) {
+      const idConvocatoria = this.coordination()?.idConvocatoria;
+
+      if (
+        idPersonaGeneral == null ||
+        idConvocatoria == null
+      ) {
         return undefined;
       }
-      return { idPersonaGeneral };
+
+      return {
+        idPersonaGeneral,
+        idConvocatoria,
+      };
     },
+
     stream: ({ params }) =>
       this.coordinationService.listProjectsProfessor(
         params.idPersonaGeneral,
+        params.idConvocatoria,
       ),
+
     defaultValue: [] as ProyectoDocenteDto[],
   });
 
