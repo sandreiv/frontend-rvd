@@ -213,24 +213,45 @@ export class PreloadCallForm implements OnInit {
   private mapDetailModalityRows(
     detail: PreloadCallDetailResponse,
   ): ModalityFormItem[] {
-    return detail.convocatoriaTipoContratacion.flatMap((cotc) => {
-      const tipoModalidad = String(cotc.idModalidadContratacion);
-      const label =
-        this.modalitySelectOptions().find((opt) => opt.value === tipoModalidad)
-          ?.label ?? tipoModalidad;
+    return detail.convocatoriaTipoContratacion.flatMap(
+      (cotc): ModalityFormItem[] => {
+        const tipoModalidad = String(cotc.idModalidadContratacion);
+        const label =
+          this.modalitySelectOptions().find(
+            (opt) => opt.value === tipoModalidad,
+          )?.label ?? tipoModalidad;
 
-      return cotc.fechas.map((fecha) => ({
-        id: crypto.randomUUID(),
-        cotcId: cotc.id,
-        fechaId: fecha.id,
-        tipoModalidad,
-        tipoModalidadLabel: label,
-        diasVacaciones: fecha.vacaciones,
-        fechaInicio: this.toDateOnly(fecha.fechaInicio),
-        fechaFin: this.toDateOnly(fecha.fechaFin),
-        semanas: Number(fecha.semanas),
-      }));
-    });
+        if (!cotc.fechas.length) {
+          return [
+            {
+              id: crypto.randomUUID(),
+              cotcId: cotc.id,
+              tipoModalidad,
+              tipoModalidadLabel: label,
+              diasVacaciones: null,
+              fechaInicio: null,
+              fechaFin: null,
+              semanas: null,
+            },
+          ];
+        }
+
+        return cotc.fechas.map(
+          (fecha): ModalityFormItem => ({
+            id: crypto.randomUUID(),
+            cotcId: cotc.id,
+            fechaId: fecha.id,
+            tipoModalidad,
+            tipoModalidadLabel: label,
+            diasVacaciones: fecha.vacaciones,
+            fechaInicio: this.toDateOnly(fecha.fechaInicio),
+            fechaFin: this.toDateOnly(fecha.fechaFin),
+            semanas:
+              fecha.semanas == null ? null : Number(fecha.semanas),
+          }),
+        );
+      },
+    );
   }
 
   private toDateOnly(value: string | null | undefined): string {

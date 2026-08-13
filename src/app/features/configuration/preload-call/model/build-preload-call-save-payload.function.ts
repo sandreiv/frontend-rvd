@@ -42,6 +42,18 @@ function resolveCotcGroupKey(item: ModalityFormItem): string {
   return `mod-${item.tipoModalidad}`;
 }
 
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function isPlantModality(row: ModalityFormItem): boolean {
+  return normalizeText(row.tipoModalidadLabel).includes('planta');
+}
+
 function mapCotcFecha(row: ModalityFormItem): PreloadCallSaveCotcFecha {
   return {
     id: row.fechaId ?? null,
@@ -66,10 +78,14 @@ function mapConvocatoriaTipoContratacion(
 
   return Array.from(groups.values()).map((group) => {
     const first = group[0];
+    const isPlant = isPlantModality(first);
+
     return {
       id: first.cotcId ?? null,
       idModalidadContratacion: Number(first.tipoModalidad),
-      fechas: group.map((row) => mapCotcFecha(row)),
+      fechas: isPlant
+        ? []
+        : group.map((row) => mapCotcFecha(row)),
     };
   });
 }
