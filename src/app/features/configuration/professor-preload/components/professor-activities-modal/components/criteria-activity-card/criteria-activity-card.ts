@@ -30,6 +30,7 @@ import {
 } from '../../../../model/professor-activities.model';
 import { SimpleActivity } from '../../../../model/professor-activities-modal.models';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
+import { NotificationService } from '../../../../../../../core/service/notification-service';
 
 @Component({
   selector: 'app-criteria-activity-card',
@@ -47,6 +48,7 @@ import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 })
 export class CriteriaActivityCard {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   tipoActividad = input<TipoActividad | null>(null);
@@ -173,6 +175,20 @@ export class CriteriaActivityCard {
       return;
     }
 
+    const llaveActividad = this.buildIndirectActivityKey(activity);
+    const isDuplicate = this.activities().some(
+      (existingActivity) =>
+        this.buildIndirectActivityKey(existingActivity) === llaveActividad,
+    );
+
+    if (isDuplicate) {
+      this.notificationService.warning(
+        'La actividad seleccionada ya fue agregada.',
+        'Actividad duplicada',
+      );
+      return;
+    }
+
     this.activitiesChange.emit([...this.activities(), activity]);
     this.resetForm();
     this.addFormOpenChange.emit(false);
@@ -230,5 +246,11 @@ export class CriteriaActivityCard {
       idCriterio: '',
       horasDedicacion: null,
     });
+  }
+
+  private buildIndirectActivityKey(activity: SimpleActivity): string {
+    return [
+      activity.idTipoActividadHija
+    ].join('|');
   }
 }

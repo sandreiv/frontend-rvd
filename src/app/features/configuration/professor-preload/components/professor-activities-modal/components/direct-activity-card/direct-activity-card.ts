@@ -42,6 +42,7 @@ import {
 } from '../../../../model/professor-activities.model';
 import { DirectLearningActivity } from '../../../../model/professor-activities-modal.models';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
+import { NotificationService } from '../../../../../../../core/service/notification-service';
 
 @Component({
   selector: 'app-direct-activity-card',
@@ -59,6 +60,7 @@ import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 })
 export class DirectActivityCard {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   tipoActividad = input<TipoActividad | null>(null);
@@ -356,6 +358,20 @@ export class DirectActivityCard {
 
     const activity = this.buildActivityRow();
     if (!activity) {
+      return;
+    }
+
+    const llaveActividad = this.buildDirectActivityKey(activity);
+    const isDuplicate = this.activities().some(
+      (existingActivity) =>
+        this.buildDirectActivityKey(existingActivity) === llaveActividad,
+    );
+
+    if (isDuplicate) {
+      this.notificationService.warning(
+        'La actividad seleccionada ya fue agregada.',
+        'Actividad duplicada',
+      );
       return;
     }
 
@@ -682,5 +698,14 @@ export class DirectActivityCard {
       value: resolveValue(item),
       label: resolveLabel(item),
     }));
+  }
+
+  private buildDirectActivityKey(activity: DirectLearningActivity): string {
+    return [
+      activity.idUnidadRegional,
+      activity.idPrograma,
+      activity.idGrupo,
+      activity.idTipoActividad
+    ].join('|');
   }
 }

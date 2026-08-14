@@ -668,7 +668,6 @@ export class ProfessorActivitiesModal {
     activities: SimpleActivity[],
   ): void {
     if (this.readOnly() || this.isPreassignmentApproved()) {
-
       return;
     }
 
