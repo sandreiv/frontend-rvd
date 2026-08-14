@@ -7,7 +7,7 @@ import {
   output,
   DestroyRef
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -79,6 +79,50 @@ export class CriteriaActivityCard {
       validators: [Validators.required, Validators.min(1)],
     }),
   });
+
+
+  readonly selectedIdCriterio = toSignal(
+    this.form.controls.idCriterio.valueChanges,
+    { initialValue: '' }
+  );
+
+  readonly horasDedicacion = toSignal(
+    this.form.controls.horasDedicacion.valueChanges,
+    { initialValue: null }
+  );
+
+  readonly selectedCriterio = computed(() => 
+    this.criteriaResource
+      .value()
+      .find((item) => String(item.id) === this.selectedIdCriterio())
+  );
+
+  readonly horasValidation = computed(() => {
+    const criterio = this.selectedCriterio();
+    const horas = this.horasDedicacion();
+
+    if (!criterio || horas == null) {
+      return {
+        valid: false,
+        bajoMinimo: false,
+        sobreMaximo: false,
+        minimo: false,
+        maximo: false
+      };
+    }
+
+    const minimo = Number(criterio.minimoHoras);
+    const maximo = Number(criterio.maximoHoras);
+
+    return {
+      valid: (horas >= minimo) && (horas <= maximo),
+      bajoMinimo: horas < minimo,
+      sobreMaximo: horas > maximo,
+      minimo,
+      maximo
+    };
+  });
+
 
   private readonly criteriaResource = rxResource({
     params: () => {

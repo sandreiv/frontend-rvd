@@ -23,7 +23,7 @@
             type="button"
             size="sm"
             variant="outline"
-            [disabled]="!canDownloadReport()"
+            [disabled]="!permissions.canDownloadExcel()"
             (btnClick)="downloadPreloadReport()"
           >
             <img

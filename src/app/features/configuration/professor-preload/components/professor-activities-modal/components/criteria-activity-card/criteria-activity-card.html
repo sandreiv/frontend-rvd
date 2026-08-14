@@ -46,6 +46,24 @@
             [min]="'1'"
             [disabled]="readOnly()"
           />
+
+          @if (horasValidation().bajoMinimo) {
+            <div
+              class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+            >
+              El mínimo de horas para este criterio es
+              {{ horasValidation().minimo }}.
+            </div>
+          }
+
+          @if (horasValidation().sobreMaximo) {
+            <div
+              class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+            >
+              El máximo de horas para este criterio es
+              {{ horasValidation().maximo }}.
+            </div>
+          }
         </div>
       </div>
 
@@ -61,7 +79,7 @@
         <app-button
           type="button"
           size="sm"
-          [disabled]="readOnly()"
+          [disabled]="readOnly() || !horasValidation().valid"
           (btnClick)="onAddActivity()"
         >
           Agregar

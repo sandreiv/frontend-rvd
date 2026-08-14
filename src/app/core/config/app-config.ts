@@ -25,11 +25,12 @@ export interface ApiEndpoints {
  * Interfaz de configuración de autenticación
  */
 export interface AuthConfig {
-  mockDelayMs: number;
+  applicationId: number;
   tokenStorageKey: string;
-  userEmailStorageKey: string;
+  userStorageKey: string;
   loginRedirectUrl: string;
   logoutRedirectUrl: string;
+  sessionRequiredUrl: string;
 }
 
 /**
@@ -46,9 +47,9 @@ export interface AppConfig {
   production: boolean;
   api: {
     baseUrl: string;
-    endpoints: ApiEndpoints;
+    securityAuthUrl: string;
+    endpoints?: ApiEndpoints;
   };
   auth: AuthConfig;
   sidebarTheme: SidebarThemeConfig;
 }
-

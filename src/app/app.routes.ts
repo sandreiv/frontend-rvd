@@ -1,16 +1,20 @@
 import { Routes } from '@angular/router';
 import { AppLayout } from './shared/layout/app-layout/app-layout';
-import { configurationRoutes } from './features/configuration/configuration.routes';
 import { PreloadCall } from './features/configuration/preload-call/pages/preload-call/preload-call';
 import { ProfessorPreload } from './features/configuration/professor-preload/pages/professor-preload/professor-preload';
 import { administrationRoutes } from './features/administration/administration.routes';
 import { ProjectCalls } from './features/administration/project-calls/pages/project-calls/project-calls';
 import { ProjectTypes } from './features/administration/project-types/pages/project-types/project-types';
-
-
+import { SessionRequired } from './features/auth/session-required/session-required';
+import { authGuard } from './core/guards/auth.guard';
+import { homeRedirectGuard, menuGuard } from './core/guards/menu.guard';
 
 export const routes: Routes = [
-  
+  {
+    path: 'sesion-requerida',
+    component: SessionRequired,
+    title: 'Sesión requerida',
+  },
   {
     path: '',
     redirectTo: '/rvd',
@@ -20,13 +24,20 @@ export const routes: Routes = [
     path: 'rvd',
     component: AppLayout,
     title: 'RVD UdeC',
-    data: { roles: ['postulante', 'evaluador', 'admin'] },
+    canActivate: [authGuard],
+    canActivateChild: [menuGuard],
     children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [homeRedirectGuard],
+        children: [],
+      },
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
       { path: 'administracion', children: administrationRoutes },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
     ],
-  }
+  },
 ];

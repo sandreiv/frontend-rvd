@@ -24,6 +24,7 @@ import {
   TabBarItem,
 } from '../../../../../shared/ui/tab-bar/tab-bar.types';
 import { CoordinationService } from '../../data/coordination.service';
+import { PermissionService } from '../../../../../core/service/permission-service';
 import {
   CoordinationContractModality,
   CoordinationItem,
@@ -138,6 +139,7 @@ const VERIFIED_MODALITY_STATE = '2';
 export class ContractModalityDetail {
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly permissions = inject(PermissionService);
 
   coordination = input.required<CoordinationItem>();
   coordinationsCatalog = input<CoordinationItem[]>([]);
@@ -202,6 +204,10 @@ export class ContractModalityDetail {
 
   readonly modalityProfessorsResource = rxResource({
     params: () => {
+      /*if (!this.permissions.canListProfessors()) {
+        return undefined;
+      }*/
+
       const modalities = this.sortedContractModalities();
       const idCarga = this.coordination().idCarga;
       if (!modalities.length || idCarga == null) {
@@ -586,7 +592,7 @@ export class ContractModalityDetail {
       return [activitiesAction, summaryAction];
     }
 
-    return [
+    const actions: ProfessorMenuAction[] = [
       {
         id: 'detalle',
         label: 'Ver detalle preasignación',
@@ -594,7 +600,10 @@ export class ContractModalityDetail {
       },
       activitiesAction,
       summaryAction,
-      {
+    ];
+
+    if (this.permissions.canDeleteProfessor()) {
+      actions.push({
         id: 'eliminar',
         label: 'Eliminar',
         icon: 'delete',
@@ -602,8 +611,10 @@ export class ContractModalityDetail {
         className: canEdit
           ? 'text-error-600 dark:text-error-400'
           : 'cursor-not-allowed opacity-50 text-error-600 dark:text-error-400',
-      },
-    ];
+      });
+    }
+
+    return actions;
   }
 
   resolveProfessorName(professor: ModalityProfessor): string {

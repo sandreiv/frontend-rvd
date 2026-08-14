@@ -2,9 +2,11 @@ import { inject } from '@angular/core';
 import {
   HttpErrorResponse,
   HttpInterceptorFn,
+  HttpRequest,
   HttpResponse,
 } from '@angular/common/http';
 import { catchError, tap, throwError } from 'rxjs';
+import { AuthService } from '../service/auth-service';
 import { ToastService } from '../service/toastService';
 import {
   resolveHttpErrorToast,
@@ -18,8 +20,11 @@ const MUTATION_METHODS = new Set([
   'DELETE',
 ]);
 
+const BOOTSTRAP_PATH = '/api/auth/bootstrap';
+
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
+  const authService = inject(AuthService);
 
   return next(req).pipe(
     tap((event) => {
@@ -27,7 +32,7 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         return;
       }
 
-      if (!MUTATION_METHODS.has(req.method)) {
+      if (shouldSkipToast(req) || !MUTATION_METHODS.has(req.method)) {
         return;
       }
 
@@ -41,11 +46,19 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
       toastService.show(toast.message, 'success', toast.title);
     }),
     catchError((error: HttpErrorResponse) => {
+      if (shouldSkipToast(req)) {
+        return throwError(() => error);
+      }
+
       const toast = resolveHttpErrorToast(
         req.method,
         error,
         req.url,
       );
+
+      if (error.status === 401) {
+        authService.logout();
+      }
 
       toastService.show(toast.message, 'error', toast.title, 5000);
 
@@ -53,3 +66,9 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
+
+function shouldSkipToast(req: HttpRequest<unknown>): boolean {
+  return (
+    req.url.includes(BOOTSTRAP_PATH) || req.url.includes('/arbol-roles')
+  );
+}

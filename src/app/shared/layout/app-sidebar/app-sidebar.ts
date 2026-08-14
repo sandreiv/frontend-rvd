@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
 import { combineLatest, Subscription } from 'rxjs';
 import { SidebarService } from '../../../core/service/sidebar-service';
+import { MenuService, MenuNavItem } from '../../../core/service/menu-service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Icon } from '../../ui/icon/icon';
@@ -21,25 +22,6 @@ type NavItem = {
   styleUrl: './app-sidebar.css',
 })
 export class AppSidebar {
-  // Main nav items
-  navItems: NavItem[] = [
-    {
-      icon: 'call',
-      name: 'Convocatoria precarga',
-      path: '/rvd/convocatoria-precarga',
-    },
-    {
-      icon: 'paperAirplane',
-      name: 'Precarga docente',
-      path: '/rvd/precarga-docente',
-    },
-    {
-      icon: 'adjustmentsHorizontal',
-      name: 'Administración',
-      path: '/rvd/administracion',
-    },
-  ];
-  // Others nav items
   othersItems: NavItem[] = [];
 
   openSubmenu: string | null | number = null;
@@ -56,10 +38,15 @@ export class AppSidebar {
     public sidebarService: SidebarService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private menuService: MenuService,
   ) {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.isHovered$ = this.sidebarService.isHovered$;
+  }
+
+  get navItems(): MenuNavItem[] {
+    return this.menuService.navItems();
   }
 
   ngOnInit() {
