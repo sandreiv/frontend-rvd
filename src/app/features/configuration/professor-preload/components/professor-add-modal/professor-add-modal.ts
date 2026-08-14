@@ -36,6 +36,7 @@ import { Icon } from '../../../../../shared/ui/icon/icon';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
 import { CoordinationService } from '../../data/coordination.service';
+import { PermissionService } from '../../../../../core/service/permission-service';
 import {
   CategoriaCatedratico,
   CoordinationContractModality,
@@ -79,6 +80,7 @@ import { SearchGeneralPersonParams } from '../../../preload-call/model/preload-c
 export class ProfessorAddModal {
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly permissions = inject(PermissionService);
 
   isOpen = input(false);
   idCarga = input<number | null>(null);
@@ -122,12 +124,20 @@ export class ProfessorAddModal {
   );
 
   readonly saveButtonLabel = computed(() => {
-    if (this.readOnly()) {
+    if (this.readOnly() || !this.canSubmitProfessor()) {
       return 'Solo lectura';
     }
 
     return this.isEditMode() ? 'Actualizar' : 'Guardar detalle de precarga';
   });
+
+  canSubmitProfessor(): boolean {
+    if (this.isEditMode()) {
+      return this.permissions.canUpdateProfessor();
+    }
+
+    return this.permissions.canAddProfessor();
+  }
 
   readonly editingDisplayName = computed(() => {
     const editing = this.editingProfessor();
@@ -794,7 +804,7 @@ export class ProfessorAddModal {
 
   onSubmit(): void {
 
-    if (this.readOnly()) {
+    if (this.readOnly() || !this.canSubmitProfessor()) {
       return;
     }
     

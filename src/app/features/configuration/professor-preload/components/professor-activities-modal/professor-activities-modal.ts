@@ -22,6 +22,7 @@ import { DirectActivityCard } from './components/direct-activity-card/direct-act
 import { CriteriaActivityCard } from './components/criteria-activity-card/criteria-activity-card';
 import { ProjectActivityCard } from './components/project-activity-card/project-activity-card';
 import { CoordinationService } from '../../data/coordination.service';
+import { PermissionService } from '../../../../../core/service/permission-service';
 import {
   CoordinationContractModality,
   CoordinationItem,
@@ -86,6 +87,7 @@ export class ProfessorActivitiesModal {
   private readonly preloadCallService = inject(PreloadCallService);
   private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly permissions = inject(PermissionService);
 
   isOpen = input(false);
   professor = input<ModalityProfessor | null>(null);
@@ -453,6 +455,12 @@ export class ProfessorActivitiesModal {
     return Math.abs(this.totalAssignedHours() - limit) < 0.0001;
   });
 
+  canApproveNow(): boolean {
+    return (
+      this.hasCompletedWeeklyGoal() && this.permissions.canApprove()
+    );
+  }
+
   readonly submitButtonText = computed(() => {
     if (this.readOnly()) {
       return 'Solo lectura';
@@ -463,10 +471,18 @@ export class ProfessorActivitiesModal {
     }
 
     if (this.isSaving()) {
-      return this.hasCompletedWeeklyGoal() ? 'Aprobando...' : 'Guardando...';
+      return this.canApproveNow() ? 'Aprobando...' : 'Guardando...';
     }
 
-    return this.hasCompletedWeeklyGoal() ? 'Aprobar' : 'Guardar';
+    return this.canApproveNow() ? 'Aprobar' : 'Guardar';
+  });
+
+  readonly canSubmitActivities = computed(() => {
+    if (this.canApproveNow()) {
+      return true;
+    }
+
+    return this.permissions.canSaveDetail();
   });
 
   readonly submitButtonDisabled = computed(() => {
@@ -476,7 +492,8 @@ export class ProfessorActivitiesModal {
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
       this.isPreassignmentApproved() ||
-      this.exceedsWeeklyLimit()
+      this.exceedsWeeklyLimit() ||
+      !this.canSubmitActivities()
     ) {
       return true;
     }
@@ -685,7 +702,12 @@ export class ProfessorActivitiesModal {
   }
 
   onSubmit(): void {
-    if (this.readOnly() || this.isSaving() || this.isPreassignmentApproved()) {
+    if (
+      this.readOnly() ||
+      this.isSaving() ||
+      this.isPreassignmentApproved() ||
+      !this.canSubmitActivities()
+    ) {
       return;
     }
 
@@ -710,7 +732,7 @@ export class ProfessorActivitiesModal {
     const hasPendingChanges =
       saveRequest.detalles.length > 0 || updateRequests.length > 0;
 
-    const shouldApprove = this.hasCompletedWeeklyGoal();
+    const shouldApprove = this.canApproveNow();
 
     if (!hasPendingChanges && !shouldApprove) {
       this.notificationService.warning(

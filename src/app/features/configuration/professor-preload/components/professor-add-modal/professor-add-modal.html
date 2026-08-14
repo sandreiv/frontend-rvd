@@ -146,7 +146,7 @@
     >
       <app-button
         type="button"
-        [disabled]="isSaving() || readOnly()"
+        [disabled]="isSaving() || readOnly() || !canSubmitProfessor()"
         (btnClick)="onSubmit()"
       >
         {{ saveButtonLabel() }}

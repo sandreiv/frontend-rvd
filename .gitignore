@@ -43,6 +43,8 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+banco-talento/
+
 # Environment files
 #src/environments/environment.ts
 #src/environments/environment.development.ts
