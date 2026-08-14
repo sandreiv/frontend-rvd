@@ -58,6 +58,24 @@
         placeholder="Horas"
         min="0"
       />
+
+      @if (horasValidation().bajoMinimo) {
+        <div
+          class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+        >
+          El mínimo de horas para este tipo de actividad es
+          {{ horasValidation().minimo }}.
+        </div>
+      }
+
+      @if (horasValidation().sobreMaximo) {
+        <div
+          class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+        >
+          El máximo de horas para este tipo de actividad es
+          {{ horasValidation().maximo }}.
+        </div>
+      }
     </div>
 
     <div>
@@ -81,7 +99,7 @@
     <app-button
       type="submit"
       size="sm"
-      [disabled]="form.invalid || isSaving() || isCreateBlocked()"
+      [disabled]="form.invalid || isSaving() || isCreateBlocked() || !horasValidation().valid"
     >
       {{ isSaving() ? 'Guardando...' : 'Guardar' }}
     </app-button>

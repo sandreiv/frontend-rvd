@@ -17,7 +17,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   catchError,
   debounceTime,
@@ -45,6 +45,7 @@ import {
   ProjectPersonFormData,
   ProjectPersonItem,
 } from '../../model/projects.model';
+import { ActivityTypeItem } from '../../../activity-types/model/activity-types.model';
 
 type ProjectPersonFormGroup = FormGroup<{
   idPersonaGeneral: FormControl<string>;
@@ -120,6 +121,56 @@ export class ProjectPersonForm implements OnInit, OnChanges {
       validators: [Validators.maxLength(255)],
     }),
   });
+
+  readonly selectedIdTipoActividad = toSignal(
+    this.form.controls.idTipoActividad.valueChanges,
+    { initialValue: '' }
+  );
+
+  readonly horas = toSignal(
+    this.form.controls.horas.valueChanges,
+    { initialValue: null }
+  );
+
+  readonly selectedTipoActividad = computed(() => 
+    this.tiposActividadResource
+      .value()
+      .find((item) => String(item.id) === this.selectedIdTipoActividad())
+  );
+
+  readonly horasValidation = computed(() => {
+    const tipoActividad = this.selectedTipoActividad();
+    const horas = this.horas();
+
+    if (!tipoActividad || horas == null) {
+      return {
+        valid: false,
+        bajoMinimo: false,
+        sobreMaximo: false,
+        minimo: false,
+        maximo: false
+      };
+    }
+
+    const minimo = Number(tipoActividad.minimoHoras);
+    const maximo = Number(tipoActividad.maximoHoras);
+
+    return {
+      valid: (horas >= minimo) && (horas <= maximo),
+      bajoMinimo: horas < minimo,
+      sobreMaximo: horas > maximo,
+      minimo,
+      maximo
+    };
+  });
+
+  
+  private readonly tiposActividadResource = rxResource({
+    stream: () =>
+      this.activityTypesService.listActivityTypes(),
+    defaultValue: [] as ActivityTypeItem[],
+  });
+
 
   constructor() {
     this.searchTerm$

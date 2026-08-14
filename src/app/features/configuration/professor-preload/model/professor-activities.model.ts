@@ -29,6 +29,8 @@ export interface TipoActividadCriterio {
   id: number;
   nombre: string;
   descripcion: string;
+  minimoHoras: string;
+  maximoHoras: string;
 }
 
 export interface UnidadRegional {
