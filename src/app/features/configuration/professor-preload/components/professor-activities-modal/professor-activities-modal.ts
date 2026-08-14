@@ -55,6 +55,9 @@ import {
   DetailProfessorPreloadApi,
   DetailProfessorPreloadItemApi,
 } from '../../model/detail-professor-preload.model';
+import {
+  SaveDetailProfessorPreloadRequest,
+} from '../../model/save-detail-professor-preload.model';
 import { buildProjectHierarchyRows } from '../../model/professor-projects.mapper';
 import {
   ProfessorProjectRow,
@@ -66,6 +69,12 @@ import { PreloadCallService } from '../../../preload-call/data/preload-call.serv
 import { PreloadCallDetailFecha } from '../../../preload-call/model/preload-call.model';
 
 const NN_LABEL = 'NN';
+
+interface PendingDistribution {
+  idCargaDocente: number;
+  saveRequest: SaveDetailProfessorPreloadRequest;
+  updateRequests: DetailProfessorPreloadItemApi[];
+}
 
 @Component({
   selector: 'app-professor-activities-modal',
@@ -101,6 +110,7 @@ export class ProfessorActivitiesModal {
   saved = output<void>();
 
   readonly isSaving = signal(false);
+  readonly isApproving = signal(false);
   readonly hasSavedDetail = signal(false);
   readonly isPreassignmentApproved = signal(false);
 
@@ -455,56 +465,67 @@ export class ProfessorActivitiesModal {
     return Math.abs(this.totalAssignedHours() - limit) < 0.0001;
   });
 
-  canApproveNow(): boolean {
-    return (
-      this.hasCompletedWeeklyGoal() && this.permissions.canApprove()
-    );
-  }
+  readonly canApproveNow = computed(
+    () => this.hasCompletedWeeklyGoal() && this.permissions.canApprove(),
+  );
 
-  readonly submitButtonText = computed(() => {
+  readonly showApproveButton = computed(() => {
+    if (this.readOnly() || !this.permissions.canApprove()) {
+      return false;
+    }
+
+    return (
+      this.hasCompletedWeeklyGoal() || this.isPreassignmentApproved()
+    );
+  });
+
+  readonly saveButtonText = computed(() => {
     if (this.readOnly()) {
       return 'Solo lectura';
     }
 
+    return this.isSaving() ? 'Guardando...' : 'Guardar';
+  });
+
+  readonly approveButtonText = computed(() => {
     if (this.isPreassignmentApproved()) {
       return 'Aprobado';
     }
 
-    if (this.isSaving()) {
-      return this.canApproveNow() ? 'Aprobando...' : 'Guardando...';
-    }
-
-    return this.canApproveNow() ? 'Aprobar' : 'Guardar';
+    return this.isApproving() ? 'Aprobando...' : 'Aprobar';
   });
 
-  readonly canSubmitActivities = computed(() => {
-    if (this.canApproveNow()) {
-      return true;
-    }
+  readonly approveButtonTooltip = computed(() =>
+    this.isPreassignmentApproved()
+      ? 'La preasignación del docente ya fue aprobada.'
+      : '',
+  );
 
-    return this.permissions.canSaveDetail();
-  });
-
-  readonly submitButtonDisabled = computed(() => {
-    if (
+  readonly isActionBlocked = computed(
+    () =>
       this.readOnly() ||
       this.isSaving() ||
+      this.isApproving() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
       this.isPreassignmentApproved() ||
-      this.exceedsWeeklyLimit() ||
-      !this.canSubmitActivities()
-    ) {
+      this.exceedsWeeklyLimit(),
+  );
+
+  readonly saveButtonDisabled = computed(() => {
+    if (this.isActionBlocked() || !this.permissions.canSaveDetail()) {
       return true;
     }
 
-    const hasPendingChanges = hasSaveableActivities(
+    return !hasSaveableActivities(
       this.buildSaveInput(),
       this.loadedDetailsById(),
     );
-
-    return !hasPendingChanges && !this.hasCompletedWeeklyGoal();
   });
+
+  readonly approveButtonDisabled = computed(
+    () => this.isActionBlocked() || !this.canApproveNow(),
+  );
 
   constructor() {
 
@@ -700,40 +721,22 @@ export class ProfessorActivitiesModal {
     }));
   }
 
-  onSubmit(): void {
+  onSave(): void {
+    if (this.saveButtonDisabled()) {
+      return;
+    }
+
+    const distribution = this.resolveDistributionPayload();
+    if (distribution == null) {
+      return;
+    }
+
+    const { saveRequest, updateRequests } = distribution;
+
     if (
-      this.readOnly() ||
-      this.isSaving() ||
-      this.isPreassignmentApproved() ||
-      !this.canSubmitActivities()
+      saveRequest.detalles.length === 0 &&
+      updateRequests.length === 0
     ) {
-      return;
-    }
-
-    const professor = this.professor();
-
-    if (professor?.idCargaDocente == null) {
-      this.notificationService.error(
-        'No se encontró la carga docente del profesor.',
-      );
-      return;
-    }
-
-    const idCargaDocente = professor.idCargaDocente;
-    const input = this.buildSaveInput();
-
-    const saveRequest = buildSaveActivityDistributionRequest(input);
-    const updateRequests = buildUpdateDetailProfessorPreloadRequests(
-      input,
-      this.loadedDetailsById(),
-    );
-
-    const hasPendingChanges =
-      saveRequest.detalles.length > 0 || updateRequests.length > 0;
-
-    const shouldApprove = this.canApproveNow();
-
-    if (!hasPendingChanges && !shouldApprove) {
       this.notificationService.warning(
         'Agrega al menos una actividad o proyecto asociado para guardar.',
         'Sin actividades',
@@ -741,49 +744,102 @@ export class ProfessorActivitiesModal {
       return;
     }
 
+    this.isSaving.set(true);
+
+    forkJoin([
+      ...updateRequests.map((detalle) =>
+        this.coordinationService.updateDetailProfessorPreload(detalle),
+      ),
+      ...(saveRequest.detalles.length > 0
+        ? [this.coordinationService.saveActivityDistribution(saveRequest)]
+        : []),
+    ])
+      .pipe(
+        map(() => undefined),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => this.completeMutation(false),
+        error: () => this.failMutation(),
+      });
+  }
+
+  onApprove(): void {
+    if (this.approveButtonDisabled()) {
+      return;
+    }
+
+    const distribution = this.resolveDistributionPayload();
+    if (distribution == null) {
+      return;
+    }
+
+    const { idCargaDocente, saveRequest, updateRequests } =
+      distribution;
+
+    this.isApproving.set(true);
+
+    this.coordinationService
+      .approveProfessorActivityDistribution({
+        idCargaDocente,
+        detallesActualizados: updateRequests,
+        detallesNuevos: saveRequest.detalles,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.completeMutation(true),
+        error: () => this.failMutation(),
+      });
+  }
+
+  private resolveDistributionPayload(): PendingDistribution | null {
+    const idCargaDocente = this.professor()?.idCargaDocente;
+
+    if (idCargaDocente == null) {
+      this.notificationService.error(
+        'No se encontró la carga docente del profesor.',
+      );
+      return null;
+    }
+
     if (this.exceedsWeeklyLimit()) {
       this.notificationService.error(
         `El total de horas asignadas (${this.totalAssignedHours()}h) supera el límite semanal de ${this.weeklyHoursLimit()}h.`,
       );
-      return;
+      return null;
     }
 
-    this.isSaving.set(true);
+    const input = this.buildSaveInput();
 
-    const operation$ = shouldApprove
-      ? this.coordinationService.approveProfessorActivityDistribution({
-          idCargaDocente,
-          detallesActualizados: updateRequests,
-          detallesNuevos: saveRequest.detalles,
-        })
-      : forkJoin([
-          ...updateRequests.map((detalle) =>
-            this.coordinationService.updateDetailProfessorPreload(detalle),
-          ),
-          ...(saveRequest.detalles.length > 0
-            ? [this.coordinationService.saveActivityDistribution(saveRequest)]
-            : []),
-        ]).pipe(map(() => undefined));
+    return {
+      idCargaDocente,
+      saveRequest: buildSaveActivityDistributionRequest(input),
+      updateRequests: buildUpdateDetailProfessorPreloadRequests(
+        input,
+        this.loadedDetailsById(),
+      ),
+    };
+  }
 
-    operation$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.isSaving.set(false);
+  private completeMutation(approved: boolean): void {
+    this.isSaving.set(false);
+    this.isApproving.set(false);
 
-          if (shouldApprove) {
-            this.isPreassignmentApproved.set(true);
-            this.notificationService.success(
-              'La preasignación del docente fue aprobada correctamente.',
-              'Preasignación aprobada',
-            );
-          }
+    if (approved) {
+      this.isPreassignmentApproved.set(true);
+      this.notificationService.success(
+        'La preasignación del docente fue aprobada correctamente.',
+        'Preasignación aprobada',
+      );
+    }
 
-          this.saved.emit();
-          this.close.emit();
-        },
-        error: () => this.isSaving.set(false),
-      });
+    this.saved.emit();
+    this.close.emit();
+  }
+
+  private failMutation(): void {
+    this.isSaving.set(false);
+    this.isApproving.set(false);
   }
 
   private buildSaveInput() {
@@ -876,6 +932,7 @@ export class ProfessorActivitiesModal {
     this.expandedCategories.set(createInitialExpandedCategories());
     this.addFormOpen.set(createInitialAddFormOpen());
     this.isSaving.set(false);
+    this.isApproving.set(false);
     this.hasSavedDetail.set(false);
   }
 
