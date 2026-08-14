@@ -31,16 +31,23 @@
   </div>
 
   <div class="mt-4">
-    <app-date-range-picker
-      [formGroup]="form"
-      startControlName="fechaInicio"
-      endControlName="fechaFin"
-      startId="proyectoFechaInicio"
-      endId="proyectoFechaFin"
-      startPlaceholder="Fecha inicio"
-      endPlaceholder="Fecha fin"
-      [showLabels]="true"
-    />
+    <fieldset
+      class="m-0 min-w-0 border-0 p-0"
+      [disabled]="isProductMode()"
+      [class.pointer-events-none]="isProductMode()"
+      [class.opacity-50]="isProductMode()"
+    >
+      <app-date-range-picker
+        [formGroup]="form"
+        startControlName="fechaInicio"
+        endControlName="fechaFin"
+        startId="proyectoFechaInicio"
+        endId="proyectoFechaFin"
+        startPlaceholder="Fecha inicio"
+        endPlaceholder="Fecha fin"
+        [showLabels]="true"
+      />
+    </fieldset>
   </div>
 
   <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -66,33 +73,54 @@
 
     <div>
       <app-label>Convocatoria proyecto</app-label>
-      <app-select
-        formControlName="idConvocatoriaProyectos"
-        [options]="convocatoriaOptions()"
-        placeholder="Seleccione convocatoria"
-      />
+
+      <fieldset
+        class="m-0 min-w-0 border-0 p-0"
+        [disabled]="isProductMode()"
+      >
+        <app-select
+          formControlName="idConvocatoriaProyectos"
+          [options]="convocatoriaOptions()"
+          [disabled]="isProductMode()"
+          placeholder="Seleccione convocatoria"
+        />
+      </fieldset>
     </div>
 
     <div>
       <app-label>Tipo proyecto</app-label>
-      <app-select
-        formControlName="idTipoProyecto"
-        [options]="tipoProyectoOptions()"
-        placeholder="Seleccione tipo"
-      />
+
+      <fieldset
+        class="m-0 min-w-0 border-0 p-0"
+        [disabled]="isProductMode()"
+      >
+        <app-select
+          formControlName="idTipoProyecto"
+          [options]="tipoProyectoOptions()"
+          [disabled]="isProductMode()"
+          placeholder="Seleccione tipo"
+        />
+      </fieldset>
     </div>
   </div>
 
   <div class="mt-4">
     <app-label>Coordinación</app-label>
-    <app-typeahead-select
-      formControlName="idCoordinacion"
-      [items]="filteredCoordinations()"
-      [optionAdapter]="coordinationOptionAdapter"
-      placeholder="Buscar coordinación"
-      emptyText="No se encontraron resultados"
-      (queryChange)="onSearchCoordination($event)"
-    />
+
+    <fieldset
+      class="m-0 min-w-0 border-0 p-0"
+      [disabled]="isProductMode()"
+    >
+      <app-typeahead-select
+        formControlName="idCoordinacion"
+        [items]="filteredCoordinations()"
+        [optionAdapter]="coordinationOptionAdapter"
+        [disabled]="isProductMode()"
+        placeholder="Buscar coordinación"
+        emptyText="No se encontraron resultados"
+        (queryChange)="onSearchCoordination($event)"
+      />
+    </fieldset>
   </div>
 
   <div class="mt-5 flex justify-end gap-3">

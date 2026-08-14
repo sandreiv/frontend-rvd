@@ -101,6 +101,16 @@ export class ProjectForm implements OnInit, OnChanges {
   editTitle = input('Editar proyecto');
   description = input('Registra la información básica del proyecto.');
   parentProjectId = input<number | null>(null);
+  parentProjectCallId = input<number | null>(null);
+  parentProjectTypeId = input<number | null>(null);
+  parentCoordinationId = input<number | null>(null);
+  parentCoordinationName = input('');
+  parentStartDate = input<string | null>(null);
+  parentEndDate = input<string | null>(null);
+
+  readonly isProductMode = computed(
+    () => this.parentProjectId() != null,
+  );
 
   @Output() cancel = new EventEmitter<void>();
   @Output() saveProject = new EventEmitter<ProjectFormData>();
@@ -191,8 +201,16 @@ export class ProjectForm implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['project']) {
-      this.ensureSelectedCoordination();
+    if (
+      changes['project'] ||
+      changes['parentProjectId'] ||
+      changes['parentProjectCallId'] ||
+      changes['parentProjectTypeId'] ||
+      changes['parentCoordinationId'] ||
+      changes['parentCoordinationName'] ||
+      changes['parentStartDate'] ||
+      changes['parentEndDate'] 
+    ) {
       this.patchForm();
     }
   }
@@ -214,11 +232,17 @@ export class ProjectForm implements OnInit, OnChanges {
   };
 
   onSearchCoordination(term: string): void {
+    if (this.isProductMode()) {
+      return;
+    }
+
     const normalized = term.trim();
+
     if (normalized.length < 2) {
       this.filteredCoordinations.set([]);
       return;
     }
+
     this.searchTerm$.next(normalized);
   }
 
@@ -311,14 +335,17 @@ export class ProjectForm implements OnInit, OnChanges {
     }
   }
 
-  private ensureSelectedCoordination(): void {
-    const item = this.project();
-    if (!item?.idCoordinacion) {
+  private ensureSelectedCoordination(
+    idCoordinacion: number | null | undefined,
+    nombreCoordinacion: string | null | undefined,
+  ): void {
+    if (idCoordinacion == null) {
       return;
     }
 
-    const id = String(item.idCoordinacion);
+    const id = String(idCoordinacion);
     const rows = this.filteredCoordinations();
+
     if (rows.some((row) => String(row.id) === id)) {
       return;
     }
@@ -326,30 +353,85 @@ export class ProjectForm implements OnInit, OnChanges {
     this.filteredCoordinations.set([
       ...rows,
       {
-        id: item.idCoordinacion,
-        nombre: item.coordinacion?.nombre?.trim() || id,
+        id: idCoordinacion,
+        nombre: nombreCoordinacion?.trim() || id,
       },
     ]);
   }
 
   private patchForm(): void {
     const item = this.project();
+    const productMode = this.isProductMode();
+
+    const projectCallId = productMode
+      ? this.parentProjectCallId()
+      : item?.idConvocatoriaProyectos;
+
+    const projectTypeId = productMode
+      ? this.parentProjectTypeId()
+      : item?.idTipoProyecto;
+
+    const coordinationId = productMode
+      ? this.parentCoordinationId()
+      : item?.idCoordinacion;
+      
+    const startDate = productMode
+      ? this.parentStartDate()
+      : item?.fechaInicio;
+
+    const endDate = productMode
+      ? this.parentEndDate()
+      : item?.fechaFin;  
+
+
+
+    console.log('DEBUG FECHAS PRODUCTO', {
+  productMode,
+  parentStartDate: this.parentStartDate(),
+  parentEndDate: this.parentEndDate(),
+  startDate,
+  endDate,
+  startDateNormalized: toDateOnly(startDate),
+  endDateNormalized: toDateOnly(endDate),
+});
+
+
+
+
+
+
+    const coordinationName = productMode
+      ? this.parentCoordinationName()
+      : item?.coordinacion?.nombre;
+
     const tipoId =
-      item?.idTipoProyecto != null ? String(item.idTipoProyecto) : '';
+      projectTypeId != null
+        ? String(projectTypeId)
+        : '';
+
+    this.ensureSelectedCoordination(
+      coordinationId,
+      coordinationName,
+    );
 
     this.form.reset({
       nombre: item?.nombre ?? '',
       descripcion: item?.descripcion ?? '',
       monto: formatCurrencyInput(item?.monto),
-      fechaInicio: toDateOnly(item?.fechaInicio),
-      fechaFin: toDateOnly(item?.fechaFin),
+      fechaInicio: toDateOnly(startDate),
+      fechaFin: toDateOnly(endDate),
+
       idConvocatoriaProyectos:
-        item?.idConvocatoriaProyectos != null
-          ? String(item.idConvocatoriaProyectos)
+        projectCallId != null
+          ? String(projectCallId)
           : '',
+
       idTipoProyecto: tipoId,
+
       idCoordinacion:
-        item?.idCoordinacion != null ? String(item.idCoordinacion) : '',
+        coordinationId != null
+          ? String(coordinationId)
+          : '',
     });
 
     this.onTipoProyectoChange(tipoId);

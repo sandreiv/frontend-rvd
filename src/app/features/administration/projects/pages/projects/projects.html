@@ -85,6 +85,12 @@
           [editTitle]="formEditTitle()"
           [description]="formDescription()"
           [parentProjectId]="parentProject()?.id ?? null"
+          [parentProjectCallId]="parentProject()?.idConvocatoriaProyectos ?? null"
+          [parentProjectTypeId]="parentProject()?.idTipoProyecto ?? null"
+          [parentCoordinationId]="parentProject()?.idCoordinacion ?? null"
+          [parentCoordinationName]="parentProject()?.coordinacion?.nombre ?? ''"
+          [parentStartDate]="parentProject()?.fechaInicio ?? null"
+          [parentEndDate]="parentProject()?.fechaFin ?? null"
           (cancel)="closeForm()"
           (saveProject)="onSaveProject($event)"
         />
