@@ -235,7 +235,9 @@ export class ContractModalityDetail {
 
   readonly hasLoadedProfessors = computed(() =>
     Object.values(this.modalityProfessorsMap()).some(
-      (professors) => professors.length > 0,
+      (professors) => professors.some(
+        (professor) => professor.tieneCarga
+      ),
     ),
   );
 
