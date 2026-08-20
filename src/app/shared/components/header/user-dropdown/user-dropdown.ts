@@ -28,7 +28,11 @@ export class UserDropdown {
   readonly user = computed(() => this.authService.currentUser());
 
   readonly displayName = computed(() => {
-    return this.user()?.username?.trim() || 'Usuario';
+    return (
+      this.user()?.nombreCompleto?.trim() ||
+      this.user()?.username?.trim() ||
+      'Usuario'
+    );
   });
 
   toggleDropdown(): void {

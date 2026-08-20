@@ -145,8 +145,19 @@ export class AuthService {
     const fromUsuario = res.usuario;
     const roles = fromUsuario?.roles ?? res.roles ?? [];
 
+    const username =
+      fromUsuario?.username ??
+      res.username ??
+      '';
+
+    const nombreCompleto =
+      fromUsuario?.nombreCompleto?.trim() ||
+      res.nombreCompleto?.trim() ||
+      username;
+
     return {
-      username: fromUsuario?.username ?? res.username ?? '',
+      username,
+      nombreCompleto,
       idPersona: fromUsuario?.idPersona ?? res.idPersona ?? null,
       roles: Array.isArray(roles) ? roles : [],
       idAplicacion:
