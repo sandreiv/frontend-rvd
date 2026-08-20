@@ -10,6 +10,8 @@ import {
   OnDestroy,
   SimpleChanges,
   OnChanges,
+  inject,
+  ChangeDetectorRef,
 } from '@angular/core';
 import {
   DataTableActionEvent,
@@ -40,6 +42,7 @@ import { formatCurrencyValue } from '../../utils/currency.util';
 export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('sentinelElement') sentinelElement?: ElementRef<HTMLDivElement>;
   @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
+  @ViewChild('rowActionMenu') rowActionMenu?: ElementRef<HTMLDivElement>;
   @Input() canAdd = true;
   @Input() columns: DataTableColumn<T>[] = [];
   @Input() rows: T[] = [];
@@ -92,10 +95,12 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
   activeSortDirection: DataTableSortDirection | null = null;
 
   //Scroll infinito: LP: 30-004-2026
+  private readonly cdr = inject(ChangeDetectorRef);
   private intersectionObserver: IntersectionObserver | null = null;
   private currentBlockIndex = 0;
   private scrollListener: (() => void) | null = null;
   private isLoadMorePending = false;
+  private activeRowTrigger: HTMLElement | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (
@@ -178,25 +183,70 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
       return;
     }
 
-    const rect = trigger.getBoundingClientRect();
-    const menuWidth = 160;
-
     this.activeRowMenuKey = rowKey;
     this.activeRowMenuRow = row;
     this.activeRowMenuRowIndex = rowIndex;
-    this.rowMenuTop = rect.bottom + 4;
-    this.rowMenuLeft = Math.max(8, rect.right - menuWidth);
+    this.activeRowTrigger = trigger;
+
+    this.cdr.detectChanges();
+    this.positionRowMenu();
   }
 
   closeRowMenu(): void {
     this.activeRowMenuKey = null;
     this.activeRowMenuRow = null;
     this.activeRowMenuRowIndex = -1;
+    this.activeRowTrigger = null;
+    this.rowMenuTop = 0;
+    this.rowMenuLeft = 0;
   }
 
   @HostListener('document:click')
   onDocumentClick(): void {
     this.closeRowMenu();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.activeRowMenuKey !== null) {
+      this.positionRowMenu();
+    }
+  }
+
+  private positionRowMenu() {
+    const trigger = this.activeRowTrigger;
+    if (!trigger) return;
+
+    const menu = document.querySelector('.row-action-menu') as HTMLElement | null;
+    if (!menu) return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    if (!menuRect.height || !menuRect.width) return;
+
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    const spacing = 6;
+    const spaceBelow = viewportHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+
+    const openUp = (spaceBelow < menuRect.height + spacing) && (spaceAbove > spaceBelow);
+
+    let top = openUp ? (triggerRect.top - menuRect.height - spacing) : (triggerRect.bottom + spacing);
+    let left = triggerRect.right - menuRect.width;
+
+    top = Math.max(
+      spacing,
+      Math.min(top, viewportHeight - menuRect.height - spacing)
+    );
+    left = Math.max(
+      spacing,
+      Math.min(left, viewportWidth - menuRect.width - spacing)
+    );
+
+    this.rowMenuTop = top;
+    this.rowMenuLeft = left;
   }
 
   onToolbarAction(actionId: DataTableToolbarActionId): void {

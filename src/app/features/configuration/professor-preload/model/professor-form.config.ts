@@ -165,16 +165,14 @@ export function parseMaxWeeklyHours(rangoHoras: string | null | undefined): numb
 }
 
 function formatWorkDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const datePart = value.substring(0, 10);
+  const [year, month, day] = datePart.split('-');
+
+  if (!year || !month || !day) {
     return value;
   }
 
-  return date.toLocaleDateString('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  return `${day}/${month}/${year}`;
 }
 
 

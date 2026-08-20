@@ -75,7 +75,7 @@ export class PersonCoordinationForm implements OnChanges {
     return {
       value: String(person.id),
       label: person.label,
-      secondaryLabel: person.codigo ?? undefined,
+      secondaryLabel: undefined,
       data: person,
     };
   };
