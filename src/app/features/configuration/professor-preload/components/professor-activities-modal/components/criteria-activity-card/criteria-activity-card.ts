@@ -69,6 +69,7 @@ export class CriteriaActivityCard {
 
   addFormOpenChange = output<boolean>();
   activitiesChange = output<SimpleActivity[]>();
+  activityDeleted = output<void>();
 
   readonly formFields = CRITERIA_ACTIVITY_FIELDS;
 
@@ -208,7 +209,10 @@ export class CriteriaActivityCard {
     this.coordinationService
     .deleteProfessorActivity(activity.idDetalleCargaDocente)
     .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe(() => this.withoutActivity(activityId));
+    .subscribe(() => {
+      this.withoutActivity(activityId);
+      this.activityDeleted.emit();
+    });
 
   }
 

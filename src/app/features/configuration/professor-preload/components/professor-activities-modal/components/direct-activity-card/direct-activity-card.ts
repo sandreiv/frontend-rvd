@@ -86,6 +86,7 @@ export class DirectActivityCard {
 
   addFormOpenChange = output<boolean>();
   activitiesChange = output<DirectLearningActivity[]>();
+  activityDeleted = output<void>();
 
   readonly cascadeFields = DIRECT_ACTIVITY_CASCADE_FIELDS;
   readonly readonlyFields = DIRECT_ACTIVITY_READONLY_FIELDS;
@@ -395,8 +396,10 @@ export class DirectActivityCard {
     this.coordinationService
     .deleteProfessorActivity(activity.idDetalleCargaDocente)
     .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe(() => this.withoutActivity(activityId));
-
+    .subscribe(() => {
+      this.withoutActivity(activityId);
+      this.activityDeleted.emit();
+    });
   }
 
   private withoutActivity(activityId: string): void{

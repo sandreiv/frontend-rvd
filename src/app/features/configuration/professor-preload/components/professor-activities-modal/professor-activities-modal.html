@@ -134,6 +134,7 @@
                 [isApproved]="isPreassignmentApproved()"
                 (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
                 (activitiesChange)="setDirectActivitiesForCodigo(item.codigo, $event)"
+                (activityDeleted)="onLastPersistedActivityDelete()"
               />
             }
           }
@@ -147,6 +148,7 @@
               [isApproved]="isPreassignmentApproved()"
               (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
               (activitiesChange)="setCriteriaActivitiesForCodigo(item.codigo, $event)"
+              (activityDeleted)="onLastPersistedActivityDelete()"
             />
           }
           @case ('project') {
@@ -161,6 +163,7 @@
               [associationExpired]="isProjectAssociationExpired(item.codigo)"
               [associationExpiredReason]="projectAssociationExpiredReason(item.codigo)"
               (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
+              (associatedRowDeleted)="onLastPersistedActivityDelete()"
             />
           }
         }

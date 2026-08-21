@@ -792,6 +792,24 @@ export class ProfessorActivitiesModal {
       });
   }
 
+  onLastPersistedActivityDelete(): void {
+    if (!this.hasPersistedActivities()) {
+      this.saved.emit();
+    }
+  }
+
+  private hasPersistedActivities(): boolean {
+    return [
+      ...Object.values(this.directByCodigo()),
+      ...Object.values(this.criteriaByCodigo()),
+      ...Object.values(this.projectsByCodigo()),
+    ].some((activities) => 
+      activities.some((activity) => 
+        activity.idDetalleCargaDocente != null
+      )
+    );
+  }
+
   private resolveDistributionPayload(): PendingDistribution | null {
     const idCargaDocente = this.professor()?.idCargaDocente;
 

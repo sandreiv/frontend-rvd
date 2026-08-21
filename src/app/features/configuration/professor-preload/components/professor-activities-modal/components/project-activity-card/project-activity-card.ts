@@ -36,6 +36,8 @@ export class ProjectActivityCard {
   associationExpired = input(false);
   associationExpiredReason = input<string | null>(null);
 
+  associatedRowDeleted = output<void>();
+
   readonly readOnlyMessage = computed(
     () =>
       this.readOnlyReason() ??
@@ -167,9 +169,10 @@ export class ProjectActivityCard {
     this.coordinationService
       .deleteProfessorActivity(row.idDetalleCargaDocente)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() =>
-        this.withoutAssociatedProject(row.idPersonaProyecto),
-      );
+      .subscribe(() => {
+        this.withoutAssociatedProject(row.idPersonaProyecto);
+        this.associatedRowDeleted.emit();
+      });
   }
 
   private withoutAssociatedProject(idPersonaProyecto: number): void {
