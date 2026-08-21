@@ -34,6 +34,16 @@
         <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ displayName() }}
         </span>
+
+        @if (user()?.roles?.length) {
+          <div class="mt-1 space-y-0.5">
+            @for (role of user()?.roles ?? []; track role) {
+              <span class="block text-xs text-gray-500 dark:text-gray-400">
+                {{ role }}
+              </span>  
+            }
+          </div>
+        }
       </div>
 
       <button
