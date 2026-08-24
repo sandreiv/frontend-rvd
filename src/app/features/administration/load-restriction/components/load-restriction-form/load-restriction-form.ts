@@ -226,7 +226,7 @@ export class LoadRestrictionForm implements OnChanges {
     return {
       value: String(option.id),
       label: option.label,
-      secondaryLabel: option.codigo ?? undefined,
+      secondaryLabel: undefined,
       data: option,
     };
   };
