@@ -182,6 +182,46 @@
         </app-button>
       </div>
     }
+
+    @if (canShowDeanApprovalSection()) {
+      <form [formGroup]="form" class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6">
+        <div class="flex items-center justify-between gap-3">
+          <app-button
+            type="button"
+            size="sm"
+            [disabled]="this.form.controls.observacion.invalid || this.isDecliningPreload()"
+            (btnClick)="declinePreloadDean()"
+          >
+            <app-icon name="plus" size="sm" />
+            Devolver carga
+          </app-button>
+
+          <app-button
+            type="button"
+            size="sm"
+            (btnClick)="approvePreloadDean()"
+          >
+            <app-icon name="plus" size="sm" />
+            Aprobar carga
+          </app-button>
+        </div>
+
+        <div class="mt-4 w-full max-w-xl">
+          <app-label>Observación</app-label>
+
+          <app-input-field
+            formControlName="observacion"
+            placeholder="Ingrese la observación en caso de rechazo"
+          />
+
+          @if (form.controls.observacion.touched && form.controls.observacion.invalid) {
+            <p class="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+              La observación es obligatoria para devolver la carga.
+            </p>
+          }
+        </div>
+      </form>
+    }
   </div>
 </div>
 

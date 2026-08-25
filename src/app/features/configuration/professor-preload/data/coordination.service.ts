@@ -32,6 +32,7 @@ import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../mod
 import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
+import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 
 @Injectable({
   providedIn: 'root',
@@ -469,6 +470,20 @@ export class CoordinationService {
       `${this.endpoint}/send-preload-dean/${idCarga}`,
       {},
     );
+  }
+
+  /**
+   * Devuelve la carga al coordinador para su corrección, cambiando el estado a registrado.
+   * 
+   * @param idCarga Identificador de la carga.
+   * @param request Cuerpo de la solicitud para mantener trazabilidad de observaciones.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+  declinePreloadDean(idCarga: number, request: DeclinePreloadDeanRequest): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/decline-preload-dean/${idCarga}`,
+      request,
+    )
   }
 
 }

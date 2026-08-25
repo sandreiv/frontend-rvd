@@ -7,3 +7,8 @@ export interface PreloadCargaApi {
   valorAutorizado?: number | null;
   estadoCarga?: CoordinationLookupItem | null;
 }
+
+export interface DeclinePreloadDeanRequest {
+  idPersonaGeneral: number;
+  observacion: string;
+}

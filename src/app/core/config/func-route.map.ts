@@ -32,6 +32,8 @@ export const PRELOAD_FUNC = {
   SAVE_DETAIL: '02_05',
   APPROVE: '02_06',
   ENDORSE_LOAD_DEAN: '02_07',
+  DECLINE_LOAD_DEAN: '02_08',
+  APPROVE_LOAD_DEAN: '02_09',
   PARENT: '02',
 } as const;
 
