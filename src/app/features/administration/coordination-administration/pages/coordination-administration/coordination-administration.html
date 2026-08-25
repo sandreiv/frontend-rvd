@@ -1,6 +1,6 @@
 <app-section-frame
   title="Coordinaciones"
-  description="Administra coordinaciones padre, coordinaciones hijas y configuración interna."
+  description="Administra facultades, coordinaciones y configuración interna."
   iconName="adjustmentsHorizontal"
   iconVariant="brand"
 >
@@ -16,7 +16,7 @@
               Coordinaciones hijas de: {{ selectedParentCoordination()?.nombre }}
             </h4>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Administra las coordinaciones hijas asociadas a esta coordinación padre.
+              Administra las coordinaciones asociadas a esta facultad.
             </p>
           </div>
 
@@ -70,7 +70,11 @@
             Configuración interna de: {{ selectedInternalCoordination()?.nombre }}
           </h4>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Administra asociaciones, personas y docentes de planta para esta coordinación.
+            {{
+              isInternalParentCoordination()
+                ? 'Administra asociaciones, personas y docentes de planta para esta facultad.'
+                : 'Administra asociaciones, personas y docentes de planta para esta coordinación.'
+            }}
           </p>
         </div>
 
@@ -86,28 +90,37 @@
 
       <div class="mb-6 inline-flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-theme-xs dark:border-white/10 dark:bg-white/5">
         @for (item of switchItems; track item.id) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30"
-            [class.border-brand-600]="selectedTab() === item.id"
-            [class.bg-brand-600]="selectedTab() === item.id"
-            [class.text-white]="selectedTab() === item.id"
-            [class.shadow-theme-xs]="selectedTab() === item.id"
-            [class.border-transparent]="selectedTab() !== item.id"
-            [class.bg-transparent]="selectedTab() !== item.id"
-            [class.text-gray-700]="selectedTab() !== item.id"
-            [class.hover:bg-gray-100]="selectedTab() !== item.id"
-            [class.dark:text-gray-200]="selectedTab() !== item.id"
-            [class.dark:hover:bg-white/10]="selectedTab() !== item.id"
-            (click)="selectTab(item.id)"
-          >
-            <app-icon
-              [name]="item.icon"
-              size="sm"
-              [classes]="selectedTab() === item.id ? 'text-white' : 'text-brand-600 dark:text-brand-400'"
-            />
-            {{ item.label }}
-          </button>
+
+          @if (!(isInternalParentCoordination() && item.id === 'careerProfessors')) {
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30"
+              [class.border-brand-600]="selectedTab() === item.id"
+              [class.bg-brand-600]="selectedTab() === item.id"
+              [class.text-white]="selectedTab() === item.id"
+              [class.shadow-theme-xs]="selectedTab() === item.id"
+              [class.border-transparent]="selectedTab() !== item.id"
+              [class.bg-transparent]="selectedTab() !== item.id"
+              [class.text-gray-700]="selectedTab() !== item.id"
+              [class.hover:bg-gray-100]="selectedTab() !== item.id"
+              [class.dark:text-gray-200]="selectedTab() !== item.id"
+              [class.dark:hover:bg-white/10]="selectedTab() !== item.id"
+              (click)="selectTab(item.id)"
+            >
+              <app-icon
+                [name]="item.icon"
+                size="sm"
+                [classes]="selectedTab() === item.id ? 'text-white' : 'text-brand-600 dark:text-brand-400'"
+              />
+
+              {{
+                isInternalParentCoordination() && item.id === 'people'
+                  ? 'Asociar decano'
+                  : item.label
+              }}
+            </button>
+          }
+
         }
       </div>
 

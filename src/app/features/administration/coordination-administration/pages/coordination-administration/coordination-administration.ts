@@ -256,6 +256,12 @@ export class CoordinationAdministration implements OnInit {
     readonly isChildrenView = computed(() => this.coordinationViewMode() === 'children');
     readonly isInternalView = computed(() => this.coordinationViewMode() === 'internal');
 
+    readonly isInternalParentCoordination = computed(() => {
+    const coordination = this.selectedInternalCoordination();
+
+    return coordination?.idCoordinacionPadre == null;
+    });
+
     readonly displayedCoordinations = computed(() =>
     this.isChildrenView() ? this.childCoordinations() : this.managedCoordinations(),
     );
