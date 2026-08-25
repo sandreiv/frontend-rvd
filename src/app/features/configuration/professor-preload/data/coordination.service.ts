@@ -16,7 +16,7 @@ import {
 } from '../model/coordination.model';
 import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
-import { SearchGeneralPersonParams } from '../../preload-call/model/preload-call.model';
+import { SearchGeneralPersonParams, UniversityPeriodItem } from '../../preload-call/model/preload-call.model';
 import {
   ActividadModalidadDTO,
   GrupoMateria,
@@ -343,6 +343,12 @@ export class CoordinationService {
     return this.webRequestService.get<DetailProfessorPreloadApi>(
       `${this.endpoint}/list-detail-professor-preload`,
       { idCargaDocente },
+    );
+  }
+
+  getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
+    return this.webRequestService.get<UniversityPeriodItem[]>(
+      `${this.endpoint}/list-university-period`,
     );
   }
 
