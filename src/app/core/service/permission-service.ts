@@ -47,6 +47,10 @@ export class PermissionService {
   canApprove(): boolean {
     return this.can(PRELOAD_FUNC.APPROVE);
   }
+
+  canEndorseLoad(): boolean {
+    return this.can(PRELOAD_FUNC.ENDORSE_LOAD);
+  }
   
 }
 

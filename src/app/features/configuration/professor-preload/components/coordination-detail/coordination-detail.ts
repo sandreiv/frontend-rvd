@@ -57,6 +57,8 @@ export class CoordinationDetail {
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
   readonly isDownloadingReport = signal(false);
+  readonly isEndorsingPreload = signal(false);
+  readonly allProfessorsPreloadApproved = signal(false);
 
   /**
  * Determina si la coordinación seleccionada puede ejecutar acciones de edición.
@@ -85,6 +87,8 @@ export class CoordinationDetail {
   readonly canDownloadReport = computed(
     () => this.coordination().idCarga != null && !this.isDownloadingReport(),
   );
+
+  readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
 
   constructor() {
     effect(() => {
@@ -115,6 +119,10 @@ export class CoordinationDetail {
     this.hasLoadedProfessors.set(hasProfessors);
   }
 
+  onAllProfessorsAproved(approved: boolean): void {
+    this.allProfessorsPreloadApproved.set(approved);
+  }
+
   onPreloadChanged(): void {
     this.totalRefreshKey.update((value) => value + 1);
   }
@@ -139,6 +147,27 @@ export class CoordinationDetail {
     .subscribe(({ blob, fileName }) => {
         this.triggerBrowserDownload(blob, fileName);
       });
+  }
+
+  endorsePreload() {
+    if (!this.permissions.canEndorseLoad()) return;
+
+    const idCarga = this.coordination().idCarga;
+    if ((idCarga == null) || this.isEndorsingPreload()) return;
+
+    this.isEndorsingPreload.set(true);
+    this.coordinationService
+      .endorsePreload(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isEndorsingPreload.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        // Redirigir al listado
+        this.back.emit();
+      }
+    });
   }
 
   private triggerBrowserDownload(blob: Blob, fileName: string): void {

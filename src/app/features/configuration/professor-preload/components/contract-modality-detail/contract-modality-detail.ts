@@ -152,6 +152,7 @@ export class ContractModalityDetail {
   editBlockReason = input<string | null>(null);
   hasProfessorsChange = output<boolean>();
   preloadChanged = output<void>();
+  allProfessorsAproved = output<boolean>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly tcoDurationFilter = signal<TcoDurationFilter>('todos');
@@ -330,6 +331,17 @@ export class ContractModalityDetail {
     return this.selectedModalityForModals();
   });
 
+  readonly allRequiredProfessorsApproved = computed(() => {
+    const professors = Object.values(this.modalityProfessorsMap())
+      .flat()
+      .filter((professor) => professor.tieneCarga === true);
+
+    if (professors.length === 0) return false;
+
+    return professors.every((professor) => professor.estado === '1');
+  });
+
+
   constructor() {
     effect(() => {
       const tabs = this.modalityTabs();
@@ -348,6 +360,12 @@ export class ContractModalityDetail {
 
     effect(() => {
       this.hasProfessorsChange.emit(this.hasLoadedProfessors());
+    });
+
+    effect(() => {
+      this.allProfessorsAproved.emit(
+        this.allRequiredProfessorsApproved()
+      );
     });
   }
 

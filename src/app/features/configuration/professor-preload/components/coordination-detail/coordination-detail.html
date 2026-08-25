@@ -160,6 +160,7 @@
       [canEditPreassignment]="canEditPreassignment()"
       [editBlockReason]="editBlockReason()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
+      (allProfessorsAproved)="onAllProfessorsAproved($event)"
       (preloadChanged)="onPreloadChanged()"
     />
 
@@ -167,6 +168,20 @@
       [idCarga]="coordination().idCarga"
       [refreshKey]="totalRefreshKey()" 
     />
+
+    @if (canShowEndorseButton() && permissions.canEndorseLoad()) {
+      <div class="mt-5 flex justify-end gap-3">
+        <app-button
+          type="button"
+          size="sm"
+          [disabled]="!allProfessorsPreloadApproved()"
+          (btnClick)="endorsePreload()"
+        >
+          <app-icon name="plus" size="sm" />
+          Inscribir carga
+        </app-button>
+      </div>
+    }
   </div>
 </div>
 
