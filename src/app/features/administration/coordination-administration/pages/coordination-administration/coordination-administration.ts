@@ -262,6 +262,20 @@ export class CoordinationAdministration implements OnInit {
     return coordination?.idCoordinacionPadre == null;
     });
 
+    readonly isInternalParentAcademicCoordination = computed(() => {
+        const coordination = this.selectedInternalCoordination();
+
+        if (!coordination || !this.isInternalParentCoordination()) {
+            return false;
+        }
+
+        const esAcademica = String(coordination.esAcademica ?? '')
+            .trim()
+            .toUpperCase();
+
+        return ['1', 'S', 'SI', 'TRUE'].includes(esAcademica);
+    });
+
     readonly displayedCoordinations = computed(() =>
     this.isChildrenView() ? this.childCoordinations() : this.managedCoordinations(),
     );

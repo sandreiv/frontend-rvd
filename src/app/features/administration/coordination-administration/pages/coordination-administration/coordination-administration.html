@@ -71,7 +71,7 @@
           </h4>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {{
-              isInternalParentCoordination()
+              isInternalParentAcademicCoordination()
                 ? 'Administra asociaciones, personas y docentes de planta para esta facultad.'
                 : 'Administra asociaciones, personas y docentes de planta para esta coordinación.'
             }}
@@ -114,7 +114,7 @@
               />
 
               {{
-                isInternalParentCoordination() && item.id === 'people'
+                isInternalParentAcademicCoordination() && item.id === 'people'
                   ? 'Asociar decano'
                   : item.label
               }}
