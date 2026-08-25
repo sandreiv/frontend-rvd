@@ -21,7 +21,7 @@
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        @if (!isPlantaSelected() && permissions.canAddProfessor()) {
+        @if (!isPlantaSelected() && permissions.canAddProfessor() && isCargaEnRegistro()) {
           <span
             [appTooltip]="canEditPreassignment() ? '' : writeBlockReason()"
             tooltipPlacement="right"
@@ -125,7 +125,8 @@
                 [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
                 [attr.aria-label]="'Acciones para ' + row.displayName"
                 [attr.aria-expanded]="openMenuKey() === row.menuKey"
-                (click)="toggleProfessorMenu(row.menuKey)"
+                (click)="toggleProfessorMenu(row.menuKey, row.professor)"
+                [disabled]="!canOpenProfessorMenu(row.professor)"
               >
                 <app-icon name="ellipsisVertical" size="sm" />
               </button>

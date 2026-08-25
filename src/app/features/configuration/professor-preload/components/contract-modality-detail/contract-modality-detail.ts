@@ -25,6 +25,7 @@ import {
 } from '../../../../../shared/ui/tab-bar/tab-bar.types';
 import { CoordinationService } from '../../data/coordination.service';
 import { PermissionService } from '../../../../../core/service/permission-service';
+import { AuthService } from '../../../../../core/service/auth-service';
 import {
   CoordinationContractModality,
   CoordinationItem,
@@ -137,6 +138,7 @@ const VERIFIED_MODALITY_STATE = '2';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContractModalityDetail {
+  private readonly authService = inject(AuthService);
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
   readonly permissions = inject(PermissionService);
@@ -274,6 +276,13 @@ export class ContractModalityDetail {
     );
     return modality != null && isPlantaModality(modality);
   });
+
+  readonly isCargaEnRegistro = computed(() => (this.coordination().estadoCarga === 'REGISTRADO'));
+  readonly isCoordinator = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Coordinador');
+  })
 
   readonly isTiempoCompletoOcasionalSelected = computed(() => {
     const selectedId = this.selectedContractModalityId();
@@ -573,6 +582,12 @@ export class ContractModalityDetail {
     return this.buildStatusBadge('Con actividades', 'brand');
   }
 
+  canOpenProfessorMenu(professor: ModalityProfessor): boolean {
+    if (professor.tieneCarga) return true;
+
+    return this.isCoordinator() && this.isCargaEnRegistro();
+  }
+
   resolveProfessorActions(professor: {
     tieneDetalleActividades?: boolean;
     tieneCarga?: boolean;
@@ -622,7 +637,7 @@ export class ContractModalityDetail {
       summaryAction,
     ];
 
-    if (this.permissions.canDeleteProfessor()) {
+    if (this.permissions.canDeleteProfessor() && this.isCargaEnRegistro()) {
       actions.push({
         id: 'eliminar',
         label: 'Eliminar',
@@ -644,7 +659,9 @@ export class ContractModalityDetail {
     return professor.nombreCompleto?.trim() || NN_LABEL;
   }
 
-  toggleProfessorMenu(menuKey: string): void {
+  toggleProfessorMenu(menuKey: string, professor?: ModalityProfessor): void {
+    if (professor && !this.canOpenProfessorMenu(professor)) return;
+
     this.openMenuKey.update((current) =>
       current === menuKey ? null : menuKey,
     );
