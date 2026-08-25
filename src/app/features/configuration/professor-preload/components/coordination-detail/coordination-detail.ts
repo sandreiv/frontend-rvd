@@ -149,15 +149,15 @@ export class CoordinationDetail {
       });
   }
 
-  endorsePreload() {
-    if (!this.permissions.canEndorseLoad()) return;
+  endorsePreloadDean() {
+    if (!this.permissions.canEndorseLoadDean()) return;
 
     const idCarga = this.coordination().idCarga;
     if ((idCarga == null) || this.isEndorsingPreload()) return;
 
     this.isEndorsingPreload.set(true);
     this.coordinationService
-      .endorsePreload(idCarga)
+      .endorsePreloadDean(idCarga)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isEndorsingPreload.set(false)),

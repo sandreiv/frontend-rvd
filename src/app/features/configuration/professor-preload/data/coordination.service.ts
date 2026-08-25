@@ -464,9 +464,9 @@ export class CoordinationService {
    * @param idCarga Identificador de la carga.
    * @returns Observable sin contenido cuando la actualización finaliza correctamente.
    */
-  endorsePreload(idCarga: number): Observable<void> {
+  endorsePreloadDean(idCarga: number): Observable<void> {
     return this.webRequestService.put<void>(
-      `${this.endpoint}/endorse-preload/${idCarga}`,
+      `${this.endpoint}/send-preload-dean/${idCarga}`,
       {},
     );
   }

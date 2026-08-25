@@ -169,13 +169,13 @@
       [refreshKey]="totalRefreshKey()" 
     />
 
-    @if (canShowEndorseButton() && permissions.canEndorseLoad()) {
+    @if (canShowEndorseButton() && permissions.canEndorseLoadDean()) {
       <div class="mt-5 flex justify-end gap-3">
         <app-button
           type="button"
           size="sm"
           [disabled]="!allProfessorsPreloadApproved()"
-          (btnClick)="endorsePreload()"
+          (btnClick)="endorsePreloadDean()"
         >
           <app-icon name="plus" size="sm" />
           Inscribir carga

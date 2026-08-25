@@ -31,7 +31,7 @@ export const PRELOAD_FUNC = {
   DELETE: '02_04',
   SAVE_DETAIL: '02_05',
   APPROVE: '02_06',
-  ENDORSE_LOAD: '02_07',
+  ENDORSE_LOAD_DEAN: '02_07',
   PARENT: '02',
 } as const;
 
