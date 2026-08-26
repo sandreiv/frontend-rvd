@@ -19,6 +19,7 @@ import { CoordinationService } from '../../data/coordination.service';
 import {
   CoordinationContractModality,
   CoordinationItem,
+  isPlantaModality,
   ModalityProfessor,
 } from '../../model/coordination.model';
 import {
@@ -49,6 +50,19 @@ export class ProfessorSummary {
   close = output<void>();
 
   readonly sections = PROFESSOR_SUMMARY_SECTIONS;
+
+  readonly isPlanta = computed(() => {
+    const modality = this.contractModality();
+
+    return modality != null && isPlantaModality(modality);
+  });
+
+  readonly visibleSections = computed(() =>
+    this.sections.filter(
+      (section) =>
+        !(this.isPlanta() && section.id === 'valores-contratacion'),
+    ),
+  );
 
   readonly expandedSections = signal(createInitialExpandedSections());
 

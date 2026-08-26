@@ -49,7 +49,7 @@
         Cargando resumen del docente...
       </p>
     } @else {
-      @for (section of sections; track section.id) {
+      @for (section of visibleSections(); track section.id) {
         <app-collapsible-section
           class="block"
           [expanded]="isSectionExpanded(section.id)"
