@@ -14,7 +14,6 @@ import {
   type Option as SelectOption,
 } from '../../../../../shared/components/form/select/select';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
-import { PreloadCallService } from '../../../preload-call/data/preload-call.service';
 import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.model';
 import { CoordinationDetail } from '../../components/coordination-detail/coordination-detail';
 import { CoordinationTable } from '../../components/coordination-table/coordination-table';
@@ -39,7 +38,6 @@ import {
 })
 export class ProfessorPreload implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
-  private readonly preloadCallService = inject(PreloadCallService);
 
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
@@ -335,7 +333,7 @@ export class ProfessorPreload implements OnInit {
 
     try {
       const periods = await firstValueFrom(
-        this.preloadCallService.getUniversityPeriod(),
+        this.coordinationService.getUniversityPeriod(),
       );
       this.universityPeriods.set(periods ?? []);
     } catch (error) {
