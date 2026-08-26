@@ -160,7 +160,7 @@
       [canEditPreassignment]="canEditPreassignment()"
       [editBlockReason]="editBlockReason()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
-      (allProfessorsAproved)="onAllProfessorsAproved($event)"
+      (allProfessorsAproved)="onAllProfessorsApproved($event)"
       (preloadChanged)="onPreloadChanged()"
     />
 
@@ -177,50 +177,40 @@
           [disabled]="!allProfessorsPreloadApproved()"
           (btnClick)="endorsePreloadDean()"
         >
-          <app-icon name="plus" size="sm" />
+          <app-icon name="paperAirplane" size="sm" />
           Inscribir carga
         </app-button>
       </div>
     }
 
-    @if (canShowDeanApprovalSection()) {
-      <form [formGroup]="form" class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6">
-        <div class="flex items-center justify-between gap-3">
-          <app-button
-            type="button"
-            size="sm"
-            [disabled]="this.form.controls.observacion.invalid || this.isDecliningPreload()"
-            (btnClick)="declinePreloadDean()"
-          >
-            <app-icon name="plus" size="sm" />
-            Devolver carga
-          </app-button>
+    @if (canShowDeanApprovalButtons()) {
+      <div class="mt-4 flex w-full items-center justify-center gap-4">
+        <app-button
+          type="button"
+          size="sm"
+          variant="error"
+          (btnClick)="openDeclineModal()"
+        >
+          <app-icon name="handRaised" size="sm" />
+          Devolver carga
+        </app-button>
 
-          <app-button
-            type="button"
-            size="sm"
-            (btnClick)="approvePreloadDean()"
-          >
-            <app-icon name="plus" size="sm" />
-            Aprobar carga
-          </app-button>
-        </div>
+        <app-button
+          type="button"
+          size="sm"
+          (btnClick)="approvePreloadDean()"
+        >
+          <app-icon name="paperAirplane" size="sm" />
+          Aprobar carga
+        </app-button>
+      </div>
 
-        <div class="mt-4 w-full max-w-xl">
-          <app-label>Observación</app-label>
-
-          <app-input-field
-            formControlName="observacion"
-            placeholder="Ingrese la observación en caso de rechazo"
-          />
-
-          @if (form.controls.observacion.touched && form.controls.observacion.invalid) {
-            <p class="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-              La observación es obligatoria para devolver la carga.
-            </p>
-          }
-        </div>
-      </form>
+      <app-decline-preload-modal
+        [isOpen]="isDeclineModalOpen()"
+        [isSaving]="isDecliningPreload()"
+        (close)="closeDeclineModal()"
+        (save)="onDeclinePreloadDean($event)"
+      />
     }
   </div>
 </div>

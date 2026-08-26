@@ -1,0 +1,50 @@
+<app-modal
+  [isOpen]="isOpen()"
+  className="mx-4 w-full max-w-lg p-6 sm:p-8"
+  (close)="onClose()"
+>
+  <h3 class="mb-2 text-xl font-semibold text-gray-800 dark:text-white">
+    Devolver precarga
+  </h3>
+  <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+    Ingrese la observación para devolver la precarga al coordinador.
+  </p>
+
+  <form [formGroup]="form" class="flex flex-col gap-2">
+    <div class="w-full">
+      <app-label>Observación</app-label>
+
+      <app-input-field
+        formControlName="observacion"
+        placeholder="Ingrese la observación del rechazo"
+      />
+
+      @if (form.controls.observacion.touched && form.controls.observacion.invalid) {
+        <p class="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+          La observación es obligatoria para devolver la carga.
+        </p>
+      }
+    </div>
+  </form>
+
+  <div class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+    <div class="flex w-full justify-end gap-3">
+      <app-button
+        type="button"
+        variant="outline"
+        [disabled]="isSaving()"
+        (btnClick)="onClose()"
+      >
+        Cancelar
+      </app-button>
+      
+      <app-button
+        type="button"
+        [disabled]="isSaving() || form.invalid"
+        (btnClick)="onSave()"
+      >
+        {{ isSaving() ? 'Guardando...' : 'Guardar' }}
+      </app-button>
+    </div>
+  </div>
+</app-modal>

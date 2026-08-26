@@ -22,10 +22,8 @@ import { TotalCoordination } from '../total-coordination/total-coordination';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { AuthService } from '../../../../../core/service/auth-service';
-import { Label } from "../../../../../shared/components/form/label/label";
-import { InputField } from "../../../../../shared/components/form/input/input-field";
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
 import { DeclinePreloadDeanRequest } from '../../model/preload-carga.model';
+import { DeclinePreloadModal } from "../decline-preload-modal/decline-preload-modal";
 
 @Component({
   selector: 'app-coordination-detail',
@@ -36,10 +34,7 @@ import { DeclinePreloadDeanRequest } from '../../model/preload-carga.model';
     ContractModalityDetail,
     TotalCoordination,
     Tooltip,
-    Label,
-    InputField,
-    FormsModule,
-    ReactiveFormsModule
+    DeclinePreloadModal
 ],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,7 +43,6 @@ import { DeclinePreloadDeanRequest } from '../../model/preload-carga.model';
 export class CoordinationDetail {
   private readonly authService = inject(AuthService);
   private readonly coordinationService = inject(CoordinationService);
-  private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   readonly permissions = inject(PermissionService);
 
@@ -65,6 +59,7 @@ export class CoordinationDetail {
       this.coordination().idPeriodoUniversidad,
   );
   readonly isAssignModalOpen = signal(false);
+  readonly isDeclineModalOpen = signal(false);
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
   readonly isDownloadingReport = signal(false);
@@ -101,11 +96,7 @@ export class CoordinationDetail {
   );
 
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
-  readonly canShowDeanApprovalSection = computed(() => this.coordination().estadoCarga === 'INSCRITO' && this.permissions.canDeclineLoadDean())
-
-  readonly form = this.fb.group({
-    observacion: ['', Validators.required]
-  });
+  readonly canShowDeanApprovalButtons = computed(() => this.coordination().estadoCarga === 'INSCRITO' && this.permissions.canDeclineLoadDean())
 
   constructor() {
     effect(() => {
@@ -123,8 +114,16 @@ export class CoordinationDetail {
     this.isAssignModalOpen.set(true);
   }
 
+  openDeclineModal(): void {
+    this.isDeclineModalOpen.set(true);
+  }
+
   closeAssignModal(): void {
     this.isAssignModalOpen.set(false);
+  }
+
+  closeDeclineModal(): void {
+    this.isDeclineModalOpen.set(false);
   }
 
   onPreloadCallAssigned(updated: CoordinationItem): void {
@@ -136,7 +135,7 @@ export class CoordinationDetail {
     this.hasLoadedProfessors.set(hasProfessors);
   }
 
-  onAllProfessorsAproved(approved: boolean): void {
+  onAllProfessorsApproved(approved: boolean): void {
     this.allProfessorsPreloadApproved.set(approved);
   }
 
@@ -187,7 +186,7 @@ export class CoordinationDetail {
     });
   }
 
-  declinePreloadDean() {
+  onDeclinePreloadDean(observacion: string) {
     if (!this.permissions.canDeclineLoadDean()) return;
 
     const currentUser = this.authService.currentUser();
@@ -196,15 +195,9 @@ export class CoordinationDetail {
     const idCarga = this.coordination().idCarga;
     if ((idCarga == null) || this.isDecliningPreload()) return;
 
-    const observacion = this.form.controls.observacion;
-    if (!observacion.value?.trim()) {
-      observacion.markAsTouched();
-      return;
-    }
-
     const body: DeclinePreloadDeanRequest = {
       idPersonaGeneral: Number(currentUser.idPersona),
-      observacion: observacion.value.trim()
+      observacion: observacion
     }
 
     this.isDecliningPreload.set(true);
@@ -217,6 +210,7 @@ export class CoordinationDetail {
     .subscribe({
       next: () => {
         // Redirigir al listado
+        this.isDeclineModalOpen.set(false);
         this.back.emit();
       }
     });
