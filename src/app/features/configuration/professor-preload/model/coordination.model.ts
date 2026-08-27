@@ -304,3 +304,14 @@ export interface TotalPreload {
   totalHorasPreasignacion: TotalHorasPreloadItem[];
   totalHoras: number;
 }
+
+export interface ActivitiesHoursItem {
+  codigo: string;
+  nombre: string;
+  horas: number;
+}
+
+export interface ActivitiesHours {
+  totalHorasPreasignacion: ActivitiesHoursItem[];
+  totalHoras: number;
+}

@@ -19,6 +19,7 @@ import { CoordinationService } from '../../data/coordination.service';
 import { CoordinationPreloadCallModal } from '../coordination-preload-call-modal/coordination-preload-call-modal';
 import { ContractModalityDetail } from '../contract-modality-detail/contract-modality-detail';
 import { TotalCoordination } from '../total-coordination/total-coordination';
+import { TotalActivitiesGraph } from '../total-activities-graph/total-activities-graph';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { AuthService } from '../../../../../core/service/auth-service';
@@ -33,6 +34,7 @@ import { DeclinePreloadModal } from "../decline-preload-modal/decline-preload-mo
     CoordinationPreloadCallModal,
     ContractModalityDetail,
     TotalCoordination,
+    TotalActivitiesGraph,
     Tooltip,
     DeclinePreloadModal
 ],
@@ -100,6 +102,10 @@ export class CoordinationDetail {
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
   readonly canShowDeanApprovalButtons = computed( () => this.coordination().estadoCarga === 'INSCRITO' && (this.permissions.canDeclineLoadDean() || this.permissions.canApproveLoadDean()));
   readonly canShowDevelopmentApprovalButtons = computed(() => this.coordination().estadoCarga === 'APROBADO DECANO' && (this.permissions.canDeclineLoadDevelopment() || this.permissions.canApproveLoadDevelopment()));
+  readonly canShowActivitiesGraph = computed(() =>
+    this.permissions.canViewActivitiesGraph(),
+  );
+
   constructor() {
     effect(() => {
       this.coordination().id;
