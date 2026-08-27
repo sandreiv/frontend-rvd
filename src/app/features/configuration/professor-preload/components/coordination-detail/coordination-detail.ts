@@ -65,6 +65,8 @@ export class CoordinationDetail {
   readonly isDownloadingReport = signal(false);
   readonly isEndorsingPreload = signal(false);
   readonly isDecliningPreload = signal(false);
+  readonly isApprovingPreloadDean = signal(false);
+  readonly isApprovingPreloadDevelopment = signal(false);
   readonly allProfessorsPreloadApproved = signal(false);
 
   /**
@@ -96,8 +98,8 @@ export class CoordinationDetail {
   );
 
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
-  readonly canShowDeanApprovalButtons = computed(() => this.coordination().estadoCarga === 'INSCRITO' && this.permissions.canDeclineLoadDean())
-
+  readonly canShowDeanApprovalButtons = computed( () => this.coordination().estadoCarga === 'INSCRITO' && (this.permissions.canDeclineLoadDean() || this.permissions.canApproveLoadDean()));
+  readonly canShowDevelopmentApprovalButtons = computed(() => this.coordination().estadoCarga === 'APROBADO DECANO' && (this.permissions.canDeclineLoadDevelopment() || this.permissions.canApproveLoadDevelopment()));
   constructor() {
     effect(() => {
       this.coordination().id;
@@ -216,8 +218,109 @@ export class CoordinationDetail {
     });
   }
 
-  approvePreloadDean() {
+  approvePreloadDean(): void {
+    if (!this.permissions.canApproveLoadDean()) {
+      return;
+    }
 
+    const idCarga = this.coordination().idCarga;
+
+    if (
+      idCarga == null ||
+      this.isApprovingPreloadDean()
+    ) {
+      return;
+    }
+
+    this.isApprovingPreloadDean.set(true);
+
+    this.coordinationService
+      .approvePreloadDean(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() =>
+          this.isApprovingPreloadDean.set(false),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.back.emit();
+        },
+      });
+  }
+
+  onDeclinePreloadDevelopment(observacion: string): void {
+    if (!this.permissions.canDeclineLoadDevelopment()) {
+      return;
+    }
+
+    const currentUser = this.authService.currentUser();
+
+    if (!currentUser || currentUser.idPersona === null) {
+      return;
+    }
+
+    const idCarga = this.coordination().idCarga;
+
+    if (
+      idCarga == null ||
+      this.isDecliningPreload()
+    ) {
+      return;
+    }
+
+    const body: DeclinePreloadDeanRequest = {
+      idPersonaGeneral: Number(currentUser.idPersona),
+      observacion,
+    };
+
+    this.isDecliningPreload.set(true);
+
+    this.coordinationService
+      .declinePreloadDevelopment(idCarga, body)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() =>
+          this.isDecliningPreload.set(false),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.isDeclineModalOpen.set(false);
+          this.back.emit();
+        },
+      });
+  }
+
+  approvePreloadDevelopment(): void {
+    if (!this.permissions.canApproveLoadDevelopment()) {
+      return;
+    }
+
+    const idCarga = this.coordination().idCarga;
+
+    if (
+      idCarga == null ||
+      this.isApprovingPreloadDevelopment()
+    ) {
+      return;
+    }
+
+    this.isApprovingPreloadDevelopment.set(true);
+
+    this.coordinationService
+      .approvePreloadDevelopment(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() =>
+          this.isApprovingPreloadDevelopment.set(false),
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.back.emit();
+        },
+      });
   }
 
   private triggerBrowserDownload(blob: Blob, fileName: string): void {

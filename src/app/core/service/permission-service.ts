@@ -59,6 +59,15 @@ export class PermissionService {
   canApproveLoadDean(): boolean {
     return this.can(PRELOAD_FUNC.APPROVE_LOAD_DEAN);
   }
+
+  canDeclineLoadDevelopment(): boolean {
+    return this.can(PRELOAD_FUNC.DECLINE_LOAD_DEVELOPMENT);
+  }
+
+  canApproveLoadDevelopment(): boolean {
+    return this.can(PRELOAD_FUNC.APPROVE_LOAD_DEVELOPMENT);
+  }
+
 }
 
 function collectCodes(

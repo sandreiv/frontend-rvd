@@ -492,6 +492,44 @@ export class CoordinationService {
     )
   }
 
+  /**
+   * Aprueba la carga por parte del decano y la envía a desarrollo académico.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+  approvePreloadDean(idCarga: number): Observable<void> {
+      return this.webRequestService.put<void>(
+        `${this.endpoint}/approve-preload-dean/${idCarga}`,
+        {},
+      );
+    }
+
+    /**
+   * Devuelve la carga desde Desarrollo Académico al coordinador.
+   * El estado de la carga vuelve a REGISTRADO.
+   */
+  declinePreloadDevelopment(
+    idCarga: number,
+    request: DeclinePreloadDeanRequest,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/decline-preload-development/${idCarga}`,
+      request,
+    );
+  }
+
+  /**
+   * Aprueba la carga por parte de Desarrollo Académico.
+   * El estado cambia a AVAL DESARROLLO.
+   */
+  approvePreloadDevelopment(idCarga: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-preload-development/${idCarga}`,
+      {},
+    );
+  }
+
 }
 
 function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {

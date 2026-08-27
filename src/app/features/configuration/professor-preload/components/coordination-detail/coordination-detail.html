@@ -184,34 +184,89 @@
     }
 
     @if (canShowDeanApprovalButtons()) {
-      <div class="mt-4 flex w-full items-center justify-center gap-4">
-        <app-button
-          type="button"
-          size="sm"
-          variant="error"
-          (btnClick)="openDeclineModal()"
-        >
-          <app-icon name="handRaised" size="sm" />
-          Devolver carga
-        </app-button>
+      <div class="mt-5 flex justify-end gap-3">
 
-        <app-button
-          type="button"
-          size="sm"
-          (btnClick)="approvePreloadDean()"
-        >
-          <app-icon name="paperAirplane" size="sm" />
-          Enviar a desarrollo académico
-        </app-button>
+        @if (permissions.canDeclineLoadDean()) {
+          <app-button
+            type="button"
+            size="sm"
+            variant="error"
+            (btnClick)="openDeclineModal()"
+          >
+            <app-icon name="handRaised" size="sm" />
+            Devolver carga
+          </app-button>
+        }
+
+        @if (permissions.canApproveLoadDean()) {
+          <app-button
+            type="button"
+            size="sm"
+            (btnClick)="approvePreloadDean()"
+          >
+            <app-icon name="paperAirplane" size="sm" />
+            Enviar a desarrollo académico
+          </app-button>
+        }
+
       </div>
 
-      <app-decline-preload-modal
-        [isOpen]="isDeclineModalOpen()"
-        [isSaving]="isDecliningPreload()"
-        (close)="closeDeclineModal()"
-        (save)="onDeclinePreloadDean($event)"
-      />
+      @if (permissions.canDeclineLoadDean()) {
+        <app-decline-preload-modal
+          [isOpen]="isDeclineModalOpen()"
+          [isSaving]="isDecliningPreload()"
+          (close)="closeDeclineModal()"
+          (save)="onDeclinePreloadDean($event)"
+        />
+      }
     }
+
+    @if (canShowDevelopmentApprovalButtons()) {
+      <div class="mt-5 flex justify-end gap-3">
+
+        @if (permissions.canDeclineLoadDevelopment()) {
+          <app-button
+            type="button"
+            size="sm"
+            variant="error"
+            (btnClick)="openDeclineModal()"
+          >
+            <app-icon name="handRaised" size="sm" />
+            Devolver carga
+          </app-button>
+        }
+
+        @if (permissions.canApproveLoadDevelopment()) {
+          <app-button
+            type="button"
+            size="sm"
+            [disabled]="isApprovingPreloadDevelopment()"
+            (btnClick)="approvePreloadDevelopment()"
+          >
+            <app-icon name="paperAirplane" size="sm" />
+            Aval desarrollo
+          </app-button>
+        }
+
+      </div>
+
+      @if (permissions.canDeclineLoadDevelopment()) {
+        <app-decline-preload-modal
+          [isOpen]="isDeclineModalOpen()"
+          [isSaving]="isDecliningPreload()"
+          (close)="closeDeclineModal()"
+          (save)="onDeclinePreloadDevelopment($event)"
+        />
+      }
+    }
+
+
+
+
+
+
+
+
   </div>
 </div>
 
