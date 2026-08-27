@@ -6,6 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { AuthService } from '../../../../../core/service/auth-service';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { Button } from '../../../../../shared/ui/button/button';
@@ -38,6 +39,8 @@ import {
 })
 export class ProfessorPreload implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
+
+  private readonly authService = inject(AuthService);
 
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
@@ -112,16 +115,24 @@ export class ProfessorPreload implements OnInit {
     })),
   );
 
-  readonly preloadCallOptions = computed<SelectOption[]>(() => [
-    {
-      value: UNASSIGNED_PRELOAD_CALL_FILTER,
-      label: 'Sin convocatoria asignada',
-    },
-    ...this.activePreloadCallsResource.value().map((item) => ({
+  readonly preloadCallOptions = computed<SelectOption[]>(() => {
+    const activeCalls = this.activePreloadCallsResource.value().map((item) => ({
       value: String(item.id),
       label: item.nombre,
-    })),
-  ]);
+    }));
+
+    if (this.hideUnassignedPreloadCall()) {
+      return activeCalls;
+    }
+
+    return [
+      {
+        value: UNASSIGNED_PRELOAD_CALL_FILTER,
+        label: 'Sin convocatoria asignada',
+      },
+      ...activeCalls,
+    ];
+  });
 
   readonly coordinations = computed(() => this.coordinationsResource.value());
 
@@ -149,6 +160,17 @@ export class ProfessorPreload implements OnInit {
     }
 
     return 'Seleccione una convocatoria y pulse Filtrar.';
+  });
+
+  readonly hideUnassignedPreloadCall = computed(() => {
+    const roles = this.authService
+      .getRoles()
+      .map((role) => role.trim().toLowerCase());
+
+    return (
+      roles.includes('decano') ||
+      roles.includes('desarrollo academico')
+    );
   });
 
   ngOnInit(): void {

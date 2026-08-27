@@ -198,6 +198,13 @@
       [refreshKey]="totalRefreshKey()" 
     />
 
+    @if (canShowActivitiesGraph()) {
+      <app-total-activities-graph
+        [coordination]="coordination()"
+        [refreshKey]="totalRefreshKey()"
+      />
+    }
+
     @if (canShowEndorseButton() && permissions.canEndorseLoadDean()) {
       <div class="mt-5 flex justify-end gap-3">
         <app-button

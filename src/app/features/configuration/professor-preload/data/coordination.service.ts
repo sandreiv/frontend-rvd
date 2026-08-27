@@ -9,6 +9,7 @@ import {
   LoadRestrictionPreview,
   ModalityProfessor,
   ProfessorSearchResult,
+  ActivitiesHours,
   TotalPreload,
   ValuePointsPreload,
   WorkDate,
@@ -544,6 +545,19 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Consulta las horas totales de las actividades de la precarga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con las horas totales de las actividades.
+   */
+  getActivitiesHours(idCarga: number): Observable<ActivitiesHours> {
+    return this.webRequestService.get<ActivitiesHours>(
+      `${this.endpoint}/activities-hours`,
+      { idCarga },
+    );
+  }
+
 }
 
 function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {
@@ -569,4 +583,3 @@ function resolveDownloadFileName(contentDisposition: string | null, fallback: st
 
   return fallback;
 }
-

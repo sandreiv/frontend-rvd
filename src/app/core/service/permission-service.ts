@@ -71,6 +71,14 @@ export class PermissionService {
   canListObservations(): boolean {
     return this.can(PRELOAD_FUNC.LIST_OBSERVATIONS);
   }
+  /**
+   * Permite ver la gráfica de porcentaje de horas por actividades.
+   * Código Vortal 02_12, asignable al rol Desarrollo académico.
+   */
+  canViewActivitiesGraph(): boolean {
+    return this.can(PRELOAD_FUNC.VIEW_ACTIVITIES_GRAPH);
+  }
+
 }
 
 function collectCodes(
