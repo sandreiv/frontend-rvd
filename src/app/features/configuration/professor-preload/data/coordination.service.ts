@@ -33,6 +33,7 @@ import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPrelo
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
+import { ObservacionesCargaItem } from '../model/observations-load';
 
 @Injectable({
   providedIn: 'root',
@@ -463,6 +464,19 @@ export class CoordinationService {
           ),
         })),
       );
+  }
+
+  /**
+   * Obtiene las observaciones por carga.
+   * 
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con el objeto de observaciones que se mostrara en el modal.
+   */
+  listPreloadObservations(idCarga: number): Observable<ObservacionesCargaItem[]> {
+    return this.webRequestService.get<ObservacionesCargaItem[]>(
+      `${this.endpoint}/preload-observations/${idCarga}`,
+      {},
+    )
   }
 
   /**

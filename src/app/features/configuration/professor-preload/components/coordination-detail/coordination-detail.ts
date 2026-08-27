@@ -16,7 +16,6 @@ import { Button } from '../../../../../shared/ui/button/button';
 import { Icon } from '../../../../../shared/ui/icon/icon';
 import { CoordinationItem } from '../../model/coordination.model';
 import { CoordinationService } from '../../data/coordination.service';
-import { CoordinationPreloadCallModal } from '../coordination-preload-call-modal/coordination-preload-call-modal';
 import { ContractModalityDetail } from '../contract-modality-detail/contract-modality-detail';
 import { TotalCoordination } from '../total-coordination/total-coordination';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
@@ -24,17 +23,19 @@ import { PermissionService } from '../../../../../core/service/permission-servic
 import { AuthService } from '../../../../../core/service/auth-service';
 import { DeclinePreloadDeanRequest } from '../../model/preload-carga.model';
 import { DeclinePreloadModal } from "../decline-preload-modal/decline-preload-modal";
+import { ObservationsModal } from "../observations-modal/observations-modal";
+import { ObservacionesCargaItem } from '../../model/observations-load';
 
 @Component({
   selector: 'app-coordination-detail',
   imports: [
     Button,
     Icon,
-    CoordinationPreloadCallModal,
     ContractModalityDetail,
     TotalCoordination,
     Tooltip,
-    DeclinePreloadModal
+    DeclinePreloadModal,
+    ObservationsModal
 ],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,14 +61,19 @@ export class CoordinationDetail {
   );
   readonly isAssignModalOpen = signal(false);
   readonly isDeclineModalOpen = signal(false);
+  readonly isObservationModalOpen = signal(false);
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
   readonly isDownloadingReport = signal(false);
   readonly isEndorsingPreload = signal(false);
   readonly isDecliningPreload = signal(false);
+  readonly isSearchingObservations = signal(false);
   readonly isApprovingPreloadDean = signal(false);
   readonly isApprovingPreloadDevelopment = signal(false);
   readonly allProfessorsPreloadApproved = signal(false);
+  readonly hasViewedObservations = signal(false);
+
+  readonly searchObservations = signal<ObservacionesCargaItem[]>([]);
 
   /**
  * Determina si la coordinación seleccionada puede ejecutar acciones de edición.
@@ -97,16 +103,22 @@ export class CoordinationDetail {
     () => this.coordination().idCarga != null && !this.isDownloadingReport(),
   );
 
+  readonly canShowObservations = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (this.permissions.canListObservations()) && (this.searchObservations().length > 0))
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
   readonly canShowDeanApprovalButtons = computed( () => this.coordination().estadoCarga === 'INSCRITO' && (this.permissions.canDeclineLoadDean() || this.permissions.canApproveLoadDean()));
   readonly canShowDevelopmentApprovalButtons = computed(() => this.coordination().estadoCarga === 'APROBADO DECANO' && (this.permissions.canDeclineLoadDevelopment() || this.permissions.canApproveLoadDevelopment()));
+  
   constructor() {
     effect(() => {
       this.coordination().id;
       this.hasLoadedProfessors.set(false);
       this.totalRefreshKey.set(0);
+      this.hasViewedObservations.set(false);
+
+      this.triggerLoadObservations(this.coordination().idCarga);
     });
   }
+  
 
   openAssignModal(): void {
     if (!this.canChangePreloadCall()) {
@@ -120,12 +132,25 @@ export class CoordinationDetail {
     this.isDeclineModalOpen.set(true);
   }
 
+  openObservationModal(): void {
+    if (!this.canShowObservations()) {
+      return;
+    }
+
+    this.hasViewedObservations.set(true);
+    this.isObservationModalOpen.set(true);
+  }
+
   closeAssignModal(): void {
     this.isAssignModalOpen.set(false);
   }
 
   closeDeclineModal(): void {
     this.isDeclineModalOpen.set(false);
+  }
+
+  closeObservationModal(): void {
+    this.isObservationModalOpen.set(false);
   }
 
   onPreloadCallAssigned(updated: CoordinationItem): void {
@@ -203,6 +228,7 @@ export class CoordinationDetail {
     }
 
     this.isDecliningPreload.set(true);
+
     this.coordinationService
       .declinePreloadDean(idCarga, body)
       .pipe(
@@ -331,6 +357,27 @@ export class CoordinationDetail {
     anchor.click();
     URL.revokeObjectURL(url);
   }
+
+  private triggerLoadObservations(idCarga: number|null): void {
+    if (!this.permissions.canListObservations()) return;
+
+    if ((idCarga == null)) return;
+
+    this.isSearchingObservations.set(true);
+
+    this.coordinationService
+      .listPreloadObservations(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSearchingObservations.set(false)),
+      )
+    .subscribe({
+      next: (observations) => {
+        this.searchObservations.set(observations);
+      },
+      error: () => {
+        this.searchObservations.set([]);
+      }
+    });
+  }
 }
-
-

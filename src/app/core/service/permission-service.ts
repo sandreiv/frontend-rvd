@@ -68,6 +68,9 @@ export class PermissionService {
     return this.can(PRELOAD_FUNC.APPROVE_LOAD_DEVELOPMENT);
   }
 
+  canListObservations(): boolean {
+    return this.can(PRELOAD_FUNC.LIST_OBSERVATIONS);
+  }
 }
 
 function collectCodes(
