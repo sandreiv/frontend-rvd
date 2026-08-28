@@ -73,7 +73,6 @@ export class CoordinationDetail {
   readonly isApprovingPreloadDean = signal(false);
   readonly isApprovingPreloadDevelopment = signal(false);
   readonly allProfessorsPreloadApproved = signal(false);
-  readonly hasViewedObservations = signal(false);
 
   readonly searchObservations = signal<ObservacionesCargaItem[]>([]);
 
@@ -104,6 +103,7 @@ export class CoordinationDetail {
   readonly canDownloadReport = computed(
     () => this.coordination().idCarga != null && !this.isDownloadingReport(),
   );
+  readonly allViewedObservations = computed(() => this.searchObservations().every(observation => observation.visto));
 
   readonly canShowObservations = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (this.permissions.canListObservations()) && (this.searchObservations().length > 0))
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
@@ -118,7 +118,6 @@ export class CoordinationDetail {
       this.coordination().id;
       this.hasLoadedProfessors.set(false);
       this.totalRefreshKey.set(0);
-      this.hasViewedObservations.set(false);
 
       this.triggerLoadObservations(this.coordination().idCarga);
     });
@@ -142,7 +141,7 @@ export class CoordinationDetail {
       return;
     }
 
-    this.hasViewedObservations.set(true);
+    this.markObservationsAsSeen(this.coordination().idCarga);
     this.isObservationModalOpen.set(true);
   }
 
@@ -382,6 +381,30 @@ export class CoordinationDetail {
       },
       error: () => {
         this.searchObservations.set([]);
+      }
+    });
+  }
+
+  private markObservationsAsSeen(idCarga: number|null): void {
+    if (!this.permissions.canListObservations()) return;
+
+    if (this.allViewedObservations()) return;
+
+    if ((idCarga == null)) return;
+
+    this.coordinationService
+      .markSeenObservations(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef)
+      )
+    .subscribe({
+      next: () => {
+        this.searchObservations.update(observations => observations.map(
+          observation => ({
+            ...observation,
+            visto: true
+          })
+        ));
       }
     });
   }

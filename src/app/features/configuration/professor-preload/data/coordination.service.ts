@@ -481,6 +481,19 @@ export class CoordinationService {
   }
 
   /**
+   * Actualiza la bandera booleana de la observación a Vista.
+   * 
+   * @param idCarga Identificador de la carga.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+  markSeenObservations(idCarga: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/mark-seen-observations/${idCarga}`,
+      {},
+    )
+  }
+
+  /**
    * Activa el aval de la carga para cambiar su estado a inscrito y pasar al decano.
    * 
    * @param idCarga Identificador de la carga.
