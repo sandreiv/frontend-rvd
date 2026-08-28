@@ -26,6 +26,7 @@ import { DeclinePreloadDeanRequest } from '../../model/preload-carga.model';
 import { DeclinePreloadModal } from "../decline-preload-modal/decline-preload-modal";
 import { ObservationsModal } from "../observations-modal/observations-modal";
 import { ObservacionesCargaItem } from '../../model/observations-load';
+import { CoordinationPreloadCallModal } from "../coordination-preload-call-modal/coordination-preload-call-modal";
 
 @Component({
   selector: 'app-coordination-detail',
@@ -37,7 +38,8 @@ import { ObservacionesCargaItem } from '../../model/observations-load';
     TotalActivitiesGraph,
     Tooltip,
     DeclinePreloadModal,
-    ObservationsModal
+    ObservationsModal,
+    CoordinationPreloadCallModal
 ],
   templateUrl: './coordination-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
