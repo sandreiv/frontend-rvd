@@ -23,6 +23,7 @@ export interface CoordinationAssociationCatalogs {
   materias: SubjectCatalogOptionItem[];
   centrosCosto: CatalogOptionItem[];
   personas: CatalogOptionItem[];
+  docentes: CatalogOptionItem[];
 
 }
 
