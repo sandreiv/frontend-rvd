@@ -95,6 +95,30 @@ export class CoordinationService {
   }
 
   /**
+   * Lista las coordinaciones disponibles para Solicitudes CPD.
+   * El backend retorna únicamente cargas en estado AVAL DESARROLLO
+   * asociadas al Decano autenticado.
+   */
+  getCdpRequests(
+    idPeriodoUniversidad: number,
+    idConvocatoria: number,
+  ): Observable<CoordinationItem[]> {
+    return this.webRequestService
+      .get<CoordinationApiItem[]>(
+        `${this.endpoint}/cdp-requests`,
+        {
+          idPeriodoUniversidad,
+          idConvocatoria,
+        },
+      )
+      .pipe(
+        map((items) =>
+          items.map(normalizeCoordinationItem),
+        ),
+      );
+  }
+
+  /**
    * Asigna o actualiza la convocatoria asociada a una coordinación.
    * El backend valida que la convocatoria sea asignable libremente y que no tenga restricciones vigentes.
    *
@@ -491,6 +515,26 @@ export class CoordinationService {
       `${this.endpoint}/mark-seen-observations/${idCarga}`,
       {},
     )
+  }
+
+  /**
+   * Descarga el reporte PDF de preasignación de una carga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con el archivo y el nombre sugerido.
+   */
+  downloadPreloadPdfReport(idCarga: number): Observable<{ blob: Blob; fileName: string }> {
+    return this.webRequestService
+      .getBlobResponse(`${this.endpoint}/preload-pdf-report/${idCarga}`)
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `preasignacion-carga-${idCarga}.pdf`,
+          ),
+        })),
+      );
   }
 
   /**

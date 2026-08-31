@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AppLayout } from './shared/layout/app-layout/app-layout';
 import { PreloadCall } from './features/configuration/preload-call/pages/preload-call/preload-call';
 import { ProfessorPreload } from './features/configuration/professor-preload/pages/professor-preload/professor-preload';
+import { CdpRequests } from './features/configuration/cdp-requests/pages/cdp-requests/cdp-requests';
 import { administrationRoutes } from './features/administration/administration.routes';
 import { ProjectCalls } from './features/administration/project-calls/pages/project-calls/project-calls';
 import { ProjectTypes } from './features/administration/project-types/pages/project-types/project-types';
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
       { path: 'administracion', children: administrationRoutes },
+      { path: 'solicitudes-cdp', component: CdpRequests },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
     ],

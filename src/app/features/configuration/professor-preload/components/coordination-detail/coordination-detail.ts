@@ -69,6 +69,7 @@ export class CoordinationDetail {
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
   readonly isDownloadingReport = signal(false);
+  readonly isDownloadingPdfReport = signal(false);
   readonly isEndorsingPreload = signal(false);
   readonly isDecliningPreload = signal(false);
   readonly isSearchingObservations = signal(false);
@@ -194,6 +195,28 @@ export class CoordinationDetail {
         finalize(() => this.isDownloadingReport.set(false)),
       )
     .subscribe(({ blob, fileName }) => {
+        this.triggerBrowserDownload(blob, fileName);
+      });
+  }
+
+  downloadPreloadPdfReport(): void {
+    if (!this.permissions.canDownloadExcel()) {
+      return;
+    }
+
+    const idCarga = this.coordination().idCarga;
+    if (idCarga == null || this.isDownloadingPdfReport()) {
+      return;
+    }
+
+    this.isDownloadingPdfReport.set(true);
+    this.coordinationService
+      .downloadPreloadPdfReport(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isDownloadingPdfReport.set(false)),
+      )
+      .subscribe(({ blob, fileName }) => {
         this.triggerBrowserDownload(blob, fileName);
       });
   }
