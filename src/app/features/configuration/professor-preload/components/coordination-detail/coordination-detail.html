@@ -52,6 +52,35 @@
             size="sm"
             variant="outline"
             [disabled]="!permissions.canDownloadExcel()"
+            (btnClick)="downloadPreloadPdfReport()"
+          >
+            <img
+              src="/images/file-types/pdf.svg"
+              alt=""
+              aria-hidden="true"
+              class="size-4 shrink-0"
+            />
+            {{
+              isDownloadingPdfReport()
+                ? 'Generando...'
+                : 'Descargar PDF'
+            }}
+          </app-button>
+        </span>
+
+        <span
+          [appTooltip]="
+            coordination().idCarga == null
+              ? 'Asigne una convocatoria para generar el reporte.'
+              : ''
+          "
+          tooltipPlacement="left"
+        >
+          <app-button
+            type="button"
+            size="sm"
+            variant="outline"
+            [disabled]="!permissions.canDownloadExcel()"
             (btnClick)="downloadPreloadReport()"
           >
             <img
