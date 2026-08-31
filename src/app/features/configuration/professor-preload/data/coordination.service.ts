@@ -95,6 +95,30 @@ export class CoordinationService {
   }
 
   /**
+   * Lista las coordinaciones disponibles para Solicitudes CPD.
+   * El backend retorna únicamente cargas en estado AVAL DESARROLLO
+   * asociadas al Decano autenticado.
+   */
+  getCdpRequests(
+    idPeriodoUniversidad: number,
+    idConvocatoria: number,
+  ): Observable<CoordinationItem[]> {
+    return this.webRequestService
+      .get<CoordinationApiItem[]>(
+        `${this.endpoint}/cdp-requests`,
+        {
+          idPeriodoUniversidad,
+          idConvocatoria,
+        },
+      )
+      .pipe(
+        map((items) =>
+          items.map(normalizeCoordinationItem),
+        ),
+      );
+  }
+
+  /**
    * Asigna o actualiza la convocatoria asociada a una coordinación.
    * El backend valida que la convocatoria sea asignable libremente y que no tenga restricciones vigentes.
    *

@@ -22,6 +22,10 @@ export const FUNC_ROUTE_MAP: Record<string, FuncRouteItem> = {
     path: '/rvd/administracion',
     icon: 'adjustmentsHorizontal',
   },
+  '04': {
+    path: '/rvd/solicitudes-cdp',
+    icon: 'documentPlus',
+  },
 };
 
 export const PRELOAD_FUNC = {

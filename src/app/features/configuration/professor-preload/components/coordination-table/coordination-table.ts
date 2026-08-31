@@ -26,6 +26,9 @@ export class CoordinationTable {
   emptyMessage = input('No hay coordinaciones para mostrar.');
   selectedCoordinationIds = model<string[]>([]);
   isStartingPreassignment = input(false);
+  
+  actionLabel = input('Iniciar preasignación');
+  loadingActionLabel = input('Iniciando...');
 
   @Output() refreshCoordination = new EventEmitter<void>();
   @Output() startPreassignment = new EventEmitter<CoordinationItem>();
