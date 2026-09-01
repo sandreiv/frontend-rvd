@@ -80,6 +80,9 @@ export class CdpRequests implements OnInit {
 
   readonly cdpObservationMaxLength = 250;
 
+  readonly isDownloadingReport = signal(false);
+  readonly isDownloadingPdfReport = signal(false);
+
   readonly cdpObservationRemaining = computed(
     () =>
       this.cdpObservationMaxLength -
@@ -399,6 +402,76 @@ export class CdpRequests implements OnInit {
       this.universityPeriods.set([]);
     } finally {
       this.isLoadingPeriods.set(false);
+    }
+  }
+  
+  async downloadCdpReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte CDP:',
+    );
+  }
+
+  async downloadCdpPdfReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingPdfReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpPdfReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte PDF CDP:',
+    );
+  }
+
+  private async runCdpDownload(
+    isDownloading: WritableSignal<boolean>,
+    request: (
+      idConvocatoria: number,
+      idPeriodoUniversidad: number,
+    ) => Observable<{ blob: Blob; fileName: string }>,
+    errorMessage: string,
+  ): Promise<void> {
+    if (
+      this.isDownloadingReport() ||
+      this.isDownloadingPdfReport() ||
+      !this.canDownloadCdpReport()
+    ) {
+      return;
+    }
+
+    const idPeriodoUniversidad =
+      this.resolveSelectedPeriodId();
+    const idConvocatoria =
+      this.resolveSelectedConvocatoriaId();
+
+    if (
+      idPeriodoUniversidad == null ||
+      idConvocatoria == null
+    ) {
+      return;
+    }
+
+    isDownloading.set(true);
+
+    try {
+      const file = await firstValueFrom(
+        request(idConvocatoria, idPeriodoUniversidad),
+      );
+
+      this.triggerBrowserDownload(
+        file.blob,
+        file.fileName,
+      );
+    } catch (error) {
+      console.error(errorMessage, error);
+    } finally {
+      isDownloading.set(false);
     }
   }
 }
