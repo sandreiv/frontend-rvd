@@ -146,11 +146,9 @@
       <!-- TABLA -->
       <app-coordination-table
         [coordinations]="coordinations()"
-        [(selectedCoordinationIds)]="
-          selectedCoordinationIds
-        "
         [emptyMessage]="tableEmptyMessage()"
-        actionLabel="Solicitar CPD"
+        [enableSelection]="false"
+        [showActionButton]="false"
         (refreshCoordination)="
           onRefreshCoordinations()
         "
