@@ -7,6 +7,9 @@ import {
   signal,
 } from '@angular/core';
 
+import { CdpService } from '../../data/cdp.service';
+import { CdpContext } from '../../model/cdp-context.model';
+
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -27,8 +30,6 @@ import {
   CoordinationPreloadCallApi,
 } from '../../../professor-preload/model/coordination.model';
 
-import { CdpRequestDetail } from '../../components/cdp-request-detail/cdp-request-detail';
-
 @Component({
   selector: 'app-cdp-requests',
   imports: [
@@ -36,7 +37,6 @@ import { CdpRequestDetail } from '../../components/cdp-request-detail/cdp-reques
     Select,
     SectionFrame,
     CoordinationTable,
-    CdpRequestDetail,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +44,17 @@ import { CdpRequestDetail } from '../../components/cdp-request-detail/cdp-reques
 export class CdpRequests implements OnInit {
 
   private readonly coordinationService = inject(CoordinationService);
+
+  private readonly cdpService = inject(CdpService);
+
+  readonly cdpContextResource = rxResource<CdpContext, unknown>({
+    stream: () =>
+      this.cdpService.getContext(),
+  });
+
+  readonly cdpContext = computed(
+    () => this.cdpContextResource.value(),
+  );
 
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
@@ -53,9 +64,6 @@ export class CdpRequests implements OnInit {
   readonly appliedPreloadCallId = signal<string | null>(null);
 
   readonly selectedCoordinationIds = signal<string[]>([]);
-  readonly selectedCoordination = signal<CoordinationItem | null>(null);
-
-  readonly showDetail = signal(false);
 
   readonly isLoadingPeriods = signal(false);
 
@@ -227,20 +235,6 @@ export class CdpRequests implements OnInit {
     }
 
     this.cdpRequestsResource.reload();
-  }
-
-  onRequestCdp(
-    coordination: CoordinationItem,
-  ): void {
-    this.selectedCoordination.set(
-      coordination,
-    );
-
-    this.showDetail.set(true);
-  }
-
-  onBackToList(): void {
-    this.showDetail.set(false);
   }
 
   private resolveSelectedPeriodId():
