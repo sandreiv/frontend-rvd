@@ -30,6 +30,9 @@ export class CoordinationTable {
   actionLabel = input('Iniciar preasignación');
   loadingActionLabel = input('Iniciando...');
 
+  enableSelection = input(true);
+  showActionButton = input(true);
+
   @Output() refreshCoordination = new EventEmitter<void>();
   @Output() startPreassignment = new EventEmitter<CoordinationItem>();
 
