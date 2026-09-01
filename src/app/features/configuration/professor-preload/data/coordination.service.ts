@@ -442,6 +442,13 @@ export class CoordinationService {
     );
   }
 
+  deleteProfessorActivityDistribution(idCargaDocente: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/disapprove-professor-preassignment/${idCargaDocente}`,
+      {},
+    );
+  }
+
   /**
    * Consulta el total general de la preasignación docente.
    *
