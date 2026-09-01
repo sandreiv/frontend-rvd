@@ -4,7 +4,7 @@
   [rowIdentity]="rowIdentity"
   [showAddButton]="false"
   [showDeleteButton]="false"
-  [enableSelection]="true"
+  [enableSelection]="enableSelection()"
   [selectedRowKeys]="selectedCoordinationIds()"
   [emptyMessage]="emptyMessage()"
   (toolbarAction)="onToolbarAction($event)"
@@ -12,17 +12,22 @@
   (selectedRowKeysChange)="onSelectedCoordinationIdsChange($event)"
 />
 
-<div class="mt-4 flex justify-end">
-  <app-button
-    type="button"
-    size="sm"
-    [disabled]="selectedCoordinationIds().length === 0 || isStartingPreassignment()"
-    (btnClick)="onStartPreassignment()"
-  >
-    {{
-      isStartingPreassignment()
-        ? loadingActionLabel()
-        : actionLabel()
-    }}
-  </app-button>
-</div>
+@if (showActionButton()) {
+  <div class="mt-4 flex justify-end">
+    <app-button
+      type="button"
+      size="sm"
+      [disabled]="
+        selectedCoordinationIds().length === 0 ||
+        isStartingPreassignment()
+      "
+      (btnClick)="onStartPreassignment()"
+    >
+      {{
+        isStartingPreassignment()
+          ? loadingActionLabel()
+          : actionLabel()
+      }}
+    </app-button>
+  </div>
+}
