@@ -93,6 +93,7 @@ export class CoordinationAdministration implements OnInit {
   readonly selectedCostCenterAssignment = signal<CostCenterAssignmentItem | null>(null);
 
   readonly people = signal<CatalogOptionItem[]>([]);
+  readonly plantProfessors = signal<CatalogOptionItem[]>([]);
 
   readonly peopleCoordinations = signal<PersonCoordinationItem[]>([]);
   readonly selectedPeopleCoordinationIds = signal<string[]>([]);
@@ -582,6 +583,7 @@ export class CoordinationAdministration implements OnInit {
       this.associations.set(associations ?? []);
       //this.costCenterAssignments.set(costCenterAssignments ?? []);
       this.people.set(catalogs.personas ?? []);
+      this.plantProfessors.set(catalogs.docentes ?? []);
       this.peopleCoordinations.set(peopleCoordinations ?? []);
       this.plantProfessorCoordinations.set(plantProfessorCoordinations ?? []);
       this.modalities.set(coordinationCatalogs.modalidades ?? []);
