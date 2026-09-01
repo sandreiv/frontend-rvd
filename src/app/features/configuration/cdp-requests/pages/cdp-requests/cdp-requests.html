@@ -16,6 +16,66 @@
           Solicita el Certificado de Disponibilidad Presupuestal.
         </p>
       </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          [appTooltip]="downloadReportTooltip()"
+          tooltipPlacement="left"
+        >
+          <app-button
+            type="button"
+            size="sm"
+            variant="outline"
+            [disabled]="
+              !canDownloadCdpReport() ||
+              isDownloadingReport() ||
+              isDownloadingPdfReport()
+            "
+            (btnClick)="downloadCdpPdfReport()"
+          >
+            <img
+              src="/images/file-types/pdf.svg"
+              alt=""
+              aria-hidden="true"
+              class="size-4 shrink-0"
+            />
+            {{
+              isDownloadingPdfReport()
+                ? 'Generando...'
+                : 'Descargar PDF'
+            }}
+          </app-button>
+        </span>
+
+        <span
+          [appTooltip]="downloadReportTooltip()"
+          tooltipPlacement="left"
+        >
+          <app-button
+            type="button"
+            size="sm"
+            variant="outline"
+            [disabled]="
+              !canDownloadCdpReport() ||
+              isDownloadingReport() ||
+              isDownloadingPdfReport()
+            "
+            (btnClick)="downloadCdpReport()"
+          >
+            <img
+              src="/images/file-types/xls.svg"
+              alt=""
+              aria-hidden="true"
+              class="size-4 shrink-0"
+            />
+            {{
+              isDownloadingReport()
+                ? 'Generando...'
+                : 'Descargar reporte'
+            }}
+          </app-button>
+        </span>
+      </div>
     </div>
 
     <!-- PERÍODO DE TRABAJO -->
