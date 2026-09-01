@@ -76,13 +76,13 @@
     </section>
 
     <!-- COORDINACIONES -->
-    <app-section-frame
-      class="mt-4"
-      title="Coordinaciones"
-      description="Selecciona las coordinaciones para solicitar el CPD."
-      iconName="documentPlus"
-      iconVariant="brand"
-    >
+    <div class="mt-4">
+      <app-section-frame
+        title="Coordinaciones"
+        description="Selecciona las coordinaciones para solicitar el CPD."
+        iconName="documentPlus"
+        iconVariant="brand"
+      >
 
       <!-- FILTROS -->
       <div
@@ -156,5 +156,174 @@
 
     </app-section-frame>
 
-  </div>
+    <!-- SOLICITAR CPD -->
+    <div class="mt-4 w-full lg:w-1/2">
+      <section
+        class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
+      >
+
+        <!-- TÍTULO -->
+        <div>
+          <h3
+            class="text-base font-semibold text-gray-800 dark:text-white/90"
+          >
+            Solicitar CPD
+          </h3>
+
+          <p
+            class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+          >
+            Registra las observaciones y adjuntos de la solicitud.
+          </p>
+        </div>
+
+        <!-- CONTENIDO -->
+        <div
+          class="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-2"
+        >
+
+          <!-- OBSERVACIONES -->
+          <div>
+            <div class="mb-2 flex h-9 items-center">
+              <label
+                for="cdpObservation"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Observaciones
+              </label>
+            </div>
+
+            <textarea
+              id="cdpObservation"
+              rows="9"
+              [attr.maxlength]="cdpObservationMaxLength"
+              [value]="cdpObservation()"
+              (input)="onCdpObservationChange($event)"
+              placeholder="Ingrese las observaciones de la solicitud..."
+              class="h-56 w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+            ></textarea>
+
+            <div class="mt-1 flex justify-end">
+              <span
+                class="text-xs text-gray-500 dark:text-gray-400"
+              >
+                {{ cdpObservation().length }}
+                /
+                {{ cdpObservationMaxLength }}
+              </span>
+            </div>
+          </div>
+
+          <!-- ADJUNTOS -->
+          <div>
+            <div
+              class="mb-2 flex h-9 items-center justify-between gap-3"
+            >
+              <label
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Adjuntos
+              </label>
+
+              <button
+                type="button"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                title="Agregar adjunto"
+                (click)="cdpFileInput.click()"
+              >
+                <app-icon
+                  name="plus"
+                  size="sm"
+                />
+              </button>
+
+              <input
+                #cdpFileInput
+                type="file"
+                multiple
+                class="hidden"
+                (change)="onCdpAttachmentSelected($event)"
+              />
+            </div>
+
+            <!-- LISTA DE ADJUNTOS -->
+            <div
+              class="h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700"
+            >
+              @if (cdpAttachments().length === 0) {
+
+                <div
+                  class="flex h-full items-center justify-center px-4 text-center"
+                >
+                  <p
+                    class="text-sm text-gray-400 dark:text-gray-500"
+                  >
+                    No hay archivos adjuntos.
+                  </p>
+                </div>
+
+              } @else {
+
+                <div
+                  class="divide-y divide-gray-200 dark:divide-gray-700"
+                >
+                  @for (
+                    file of cdpAttachments();
+                    track $index;
+                    let index = $index
+                  ) {
+                    <div
+                      class="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <div
+                        class="flex min-w-0 flex-1 items-center gap-3"
+                      >
+                        <img
+                          [src]="getFileTypeIconPath(file.name)"
+                          [alt]="file.name"
+                          class="h-7 w-7 shrink-0 object-contain"
+                        />
+
+                        <span
+                          class="min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-gray-300"
+                          [title]="file.name"
+                        >
+                          {{ file.name }}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-500/10"
+                        title="Eliminar adjunto"
+                        (click)="removeCdpAttachment(index)"
+                      >
+                        <app-icon
+                          name="delete"
+                          size="sm"
+                        />
+                      </button>
+                    </div>
+                  }
+                </div>
+
+              }
+            </div>
+
+            <!-- BOTÓN -->
+            <div class="mt-4 flex justify-end">
+              <app-button
+                type="button"
+                size="sm"
+                (btnClick)="onRequestCdp()"
+              >
+                Solicitar CPD
+              </app-button>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+    </div>
 </div>

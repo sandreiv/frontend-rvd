@@ -14,6 +14,8 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
+import { Icon } from '../../../../../shared/ui/icon/icon';
+import { getFileTypeIconPath } from '../../../../../shared/utils/file-type-icon.util';
 import {
   Select,
   type Option as SelectOption,
@@ -37,6 +39,7 @@ import {
     Select,
     SectionFrame,
     CoordinationTable,
+    Icon,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +49,8 @@ export class CdpRequests implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
 
   private readonly cdpService = inject(CdpService);
+
+  readonly getFileTypeIconPath = getFileTypeIconPath;
 
   readonly cdpContextResource = rxResource<CdpContext, unknown>({
     stream: () =>
@@ -66,6 +71,17 @@ export class CdpRequests implements OnInit {
   readonly selectedCoordinationIds = signal<string[]>([]);
 
   readonly isLoadingPeriods = signal(false);
+
+  readonly cdpObservation = signal('');
+  readonly cdpAttachments = signal<File[]>([]);
+
+  readonly cdpObservationMaxLength = 250;
+
+  readonly cdpObservationRemaining = computed(
+    () =>
+      this.cdpObservationMaxLength -
+      this.cdpObservation().length,
+  );
 
   readonly activePreloadCallsResource = rxResource({
     params: () => {
@@ -235,6 +251,61 @@ export class CdpRequests implements OnInit {
     }
 
     this.cdpRequestsResource.reload();
+  }
+
+  onCdpObservationChange(event: Event): void {
+    const textarea =
+      event.target as HTMLTextAreaElement;
+
+    this.cdpObservation.set(
+      textarea.value.slice(
+        0,
+        this.cdpObservationMaxLength,
+      ),
+    );
+  }
+
+  onCdpAttachmentSelected(event: Event): void {
+    const input =
+      event.target as HTMLInputElement;
+
+    const files =
+      Array.from(input.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    this.cdpAttachments.update(
+      (current) => [
+        ...current,
+        ...files,
+      ],
+    );
+
+    input.value = '';
+  }
+
+  removeCdpAttachment(index: number): void {
+    this.cdpAttachments.update(
+      (current) =>
+        current.filter(
+          (_, currentIndex) =>
+            currentIndex !== index,
+        ),
+    );
+  }
+
+  onRequestCdp(): void {
+    console.log(
+      'Solicitud CPD:',
+      {
+        observacion:
+          this.cdpObservation(),
+        adjuntos:
+          this.cdpAttachments(),
+      },
+    );
   }
 
   private resolveSelectedPeriodId():
