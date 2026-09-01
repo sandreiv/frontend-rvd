@@ -43,6 +43,7 @@ export class CoordinationService {
 
   private readonly webRequestService = inject(WebRequestService);
   private readonly endpoint = '/configuration/coordination';
+  private readonly cdpEndpoint = '/configuration/cdp';
 
 
   /**
@@ -105,7 +106,7 @@ export class CoordinationService {
   ): Observable<CoordinationItem[]> {
     return this.webRequestService
       .get<CoordinationApiItem[]>(
-        `${this.endpoint}/cdp-requests`,
+        `${this.cdpEndpoint}/requests`,
         {
           idPeriodoUniversidad,
           idConvocatoria,
