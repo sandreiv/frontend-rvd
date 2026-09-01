@@ -15,6 +15,8 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
+import { Icon } from '../../../../../shared/ui/icon/icon';
+import { getFileTypeIconPath } from '../../../../../shared/utils/file-type-icon.util';
 import {
   Select,
   type Option as SelectOption,
@@ -39,6 +41,7 @@ import {
     Select,
     SectionFrame,
     CoordinationTable,
+    Icon,
     Tooltip,
   ],
   templateUrl: './cdp-requests.html',
@@ -49,6 +52,8 @@ export class CdpRequests implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
 
   private readonly cdpService = inject(CdpService);
+
+  readonly getFileTypeIconPath = getFileTypeIconPath;
 
   readonly cdpContextResource = rxResource<CdpContext, unknown>({
     stream: () =>
@@ -69,8 +74,20 @@ export class CdpRequests implements OnInit {
   readonly selectedCoordinationIds = signal<string[]>([]);
 
   readonly isLoadingPeriods = signal(false);
+
+  readonly cdpObservation = signal('');
+  readonly cdpAttachments = signal<File[]>([]);
+
+  readonly cdpObservationMaxLength = 250;
+
   readonly isDownloadingReport = signal(false);
   readonly isDownloadingPdfReport = signal(false);
+
+  readonly cdpObservationRemaining = computed(
+    () =>
+      this.cdpObservationMaxLength -
+      this.cdpObservation().length,
+  );
 
   readonly activePreloadCallsResource = rxResource({
     params: () => {
@@ -260,74 +277,59 @@ export class CdpRequests implements OnInit {
     this.cdpRequestsResource.reload();
   }
 
-  async downloadCdpReport(): Promise<void> {
-    await this.runCdpDownload(
-      this.isDownloadingReport,
-      (idConvocatoria, idPeriodoUniversidad) =>
-        this.cdpService.downloadCdpReport(
-          idConvocatoria,
-          idPeriodoUniversidad,
-        ),
-      'Error al descargar el reporte CDP:',
+  onCdpObservationChange(event: Event): void {
+    const textarea =
+      event.target as HTMLTextAreaElement;
+
+    this.cdpObservation.set(
+      textarea.value.slice(
+        0,
+        this.cdpObservationMaxLength,
+      ),
     );
   }
 
-  async downloadCdpPdfReport(): Promise<void> {
-    await this.runCdpDownload(
-      this.isDownloadingPdfReport,
-      (idConvocatoria, idPeriodoUniversidad) =>
-        this.cdpService.downloadCdpPdfReport(
-          idConvocatoria,
-          idPeriodoUniversidad,
+  onCdpAttachmentSelected(event: Event): void {
+    const input =
+      event.target as HTMLInputElement;
+
+    const files =
+      Array.from(input.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    this.cdpAttachments.update(
+      (current) => [
+        ...current,
+        ...files,
+      ],
+    );
+
+    input.value = '';
+  }
+
+  removeCdpAttachment(index: number): void {
+    this.cdpAttachments.update(
+      (current) =>
+        current.filter(
+          (_, currentIndex) =>
+            currentIndex !== index,
         ),
-      'Error al descargar el reporte PDF CDP:',
     );
   }
 
-  private async runCdpDownload(
-    isDownloading: WritableSignal<boolean>,
-    request: (
-      idConvocatoria: number,
-      idPeriodoUniversidad: number,
-    ) => Observable<{ blob: Blob; fileName: string }>,
-    errorMessage: string,
-  ): Promise<void> {
-    if (
-      this.isDownloadingReport() ||
-      this.isDownloadingPdfReport() ||
-      !this.canDownloadCdpReport()
-    ) {
-      return;
-    }
-
-    const idPeriodoUniversidad =
-      this.resolveSelectedPeriodId();
-    const idConvocatoria =
-      this.resolveSelectedConvocatoriaId();
-
-    if (
-      idPeriodoUniversidad == null ||
-      idConvocatoria == null
-    ) {
-      return;
-    }
-
-    isDownloading.set(true);
-
-    try {
-      const file = await firstValueFrom(
-        request(idConvocatoria, idPeriodoUniversidad),
-      );
-
-      this.triggerBrowserDownload(
-        file.blob,
-        file.fileName,
-      );
-    } catch (error) {
-      console.error(errorMessage, error);
-    } finally {
-      isDownloading.set(false);
-    }
+  onRequestCdp(): void {
+    console.log(
+      'Solicitud CPD:',
+      {
+        observacion:
+          this.cdpObservation(),
+        adjuntos:
+          this.cdpAttachments(),
+      },
+    );
   }
 
   private resolveSelectedPeriodId():
@@ -400,6 +402,76 @@ export class CdpRequests implements OnInit {
       this.universityPeriods.set([]);
     } finally {
       this.isLoadingPeriods.set(false);
+    }
+  }
+  
+  async downloadCdpReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte CDP:',
+    );
+  }
+
+  async downloadCdpPdfReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingPdfReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpPdfReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte PDF CDP:',
+    );
+  }
+
+  private async runCdpDownload(
+    isDownloading: WritableSignal<boolean>,
+    request: (
+      idConvocatoria: number,
+      idPeriodoUniversidad: number,
+    ) => Observable<{ blob: Blob; fileName: string }>,
+    errorMessage: string,
+  ): Promise<void> {
+    if (
+      this.isDownloadingReport() ||
+      this.isDownloadingPdfReport() ||
+      !this.canDownloadCdpReport()
+    ) {
+      return;
+    }
+
+    const idPeriodoUniversidad =
+      this.resolveSelectedPeriodId();
+    const idConvocatoria =
+      this.resolveSelectedConvocatoriaId();
+
+    if (
+      idPeriodoUniversidad == null ||
+      idConvocatoria == null
+    ) {
+      return;
+    }
+
+    isDownloading.set(true);
+
+    try {
+      const file = await firstValueFrom(
+        request(idConvocatoria, idPeriodoUniversidad),
+      );
+
+      this.triggerBrowserDownload(
+        file.blob,
+        file.fileName,
+      );
+    } catch (error) {
+      console.error(errorMessage, error);
+    } finally {
+      isDownloading.set(false);
     }
   }
 }
