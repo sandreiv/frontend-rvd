@@ -5,13 +5,14 @@ import {
   inject,
   OnInit,
   signal,
+  WritableSignal,
 } from '@angular/core';
 
 import { CdpService } from '../../data/cdp.service';
 import { CdpContext } from '../../model/cdp-context.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
 import {
@@ -19,6 +20,7 @@ import {
   type Option as SelectOption,
 } from '../../../../../shared/components/form/select/select';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.model';
 
@@ -37,6 +39,7 @@ import {
     Select,
     SectionFrame,
     CoordinationTable,
+    Tooltip,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,6 +69,8 @@ export class CdpRequests implements OnInit {
   readonly selectedCoordinationIds = signal<string[]>([]);
 
   readonly isLoadingPeriods = signal(false);
+  readonly isDownloadingReport = signal(false);
+  readonly isDownloadingPdfReport = signal(false);
 
   readonly activePreloadCallsResource = rxResource({
     params: () => {
@@ -177,6 +182,24 @@ export class CdpRequests implements OnInit {
     return 'Seleccione una convocatoria y pulse Filtrar.';
   });
 
+  readonly canDownloadCdpReport = computed(() => {
+    const periodId = this.resolveSelectedPeriodId();
+    const convocatoriaId =
+      this.resolveSelectedConvocatoriaId();
+
+    return periodId != null && convocatoriaId != null;
+  });
+
+  readonly downloadReportTooltip = computed(() => {
+    if (this.canDownloadCdpReport()) {
+      return '';
+    }
+
+    return (
+      'Seleccione periodo y convocatoria para generar el reporte.'
+    );
+  });
+
   ngOnInit(): void {
     void this.loadUniversityPeriods();
   }
@@ -237,6 +260,76 @@ export class CdpRequests implements OnInit {
     this.cdpRequestsResource.reload();
   }
 
+  async downloadCdpReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte CDP:',
+    );
+  }
+
+  async downloadCdpPdfReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingPdfReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpPdfReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte PDF CDP:',
+    );
+  }
+
+  private async runCdpDownload(
+    isDownloading: WritableSignal<boolean>,
+    request: (
+      idConvocatoria: number,
+      idPeriodoUniversidad: number,
+    ) => Observable<{ blob: Blob; fileName: string }>,
+    errorMessage: string,
+  ): Promise<void> {
+    if (
+      this.isDownloadingReport() ||
+      this.isDownloadingPdfReport() ||
+      !this.canDownloadCdpReport()
+    ) {
+      return;
+    }
+
+    const idPeriodoUniversidad =
+      this.resolveSelectedPeriodId();
+    const idConvocatoria =
+      this.resolveSelectedConvocatoriaId();
+
+    if (
+      idPeriodoUniversidad == null ||
+      idConvocatoria == null
+    ) {
+      return;
+    }
+
+    isDownloading.set(true);
+
+    try {
+      const file = await firstValueFrom(
+        request(idConvocatoria, idPeriodoUniversidad),
+      );
+
+      this.triggerBrowserDownload(
+        file.blob,
+        file.fileName,
+      );
+    } catch (error) {
+      console.error(errorMessage, error);
+    } finally {
+      isDownloading.set(false);
+    }
+  }
+
   private resolveSelectedPeriodId():
     number | null {
 
@@ -252,6 +345,35 @@ export class CdpRequests implements OnInit {
     return Number.isNaN(parsed)
       ? null
       : parsed;
+  }
+
+  private resolveSelectedConvocatoriaId():
+    number | null {
+
+    const convocatoriaId =
+      this.selectedPreloadCallId();
+
+    if (!convocatoriaId) {
+      return null;
+    }
+
+    const parsed = Number(convocatoriaId);
+
+    return Number.isNaN(parsed)
+      ? null
+      : parsed;
+  }
+
+  private triggerBrowserDownload(
+    blob: Blob,
+    fileName: string,
+  ): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   private async loadUniversityPeriods():

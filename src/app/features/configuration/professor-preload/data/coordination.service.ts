@@ -526,26 +526,6 @@ export class CoordinationService {
   }
 
   /**
-   * Descarga el reporte PDF de preasignación de una carga.
-   *
-   * @param idCarga Identificador de la carga.
-   * @returns Observable con el archivo y el nombre sugerido.
-   */
-  downloadPreloadPdfReport(idCarga: number): Observable<{ blob: Blob; fileName: string }> {
-    return this.webRequestService
-      .getBlobResponse(`${this.endpoint}/preload-pdf-report/${idCarga}`)
-      .pipe(
-        map((response) => ({
-          blob: response.body as Blob,
-          fileName: resolveDownloadFileName(
-            response.headers.get('content-disposition'),
-            `preasignacion-carga-${idCarga}.pdf`,
-          ),
-        })),
-      );
-  }
-
-  /**
    * Activa el aval de la carga para cambiar su estado a inscrito y pasar al decano.
    * 
    * @param idCarga Identificador de la carga.
