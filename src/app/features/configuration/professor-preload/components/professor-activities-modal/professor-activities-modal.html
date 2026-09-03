@@ -229,7 +229,7 @@
           <app-button
             type="button"
             [disabled]="approveButtonDisabled()"
-            (btnClick)="onApprove()"
+            (btnClick)="isPreassignmentApproved() ? onDisapprove() : onApprove()"
           >
             {{ approveButtonText() }}
           </app-button>
