@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { CdpService } from '../../data/cdp.service';
-import { CdpContext } from '../../model/cdp-context.model';
+import { CdpContext, FacultyCoordinationItem } from '../../model/cdp-context.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable } from 'rxjs';
@@ -33,6 +33,8 @@ import {
   CoordinationItem,
   CoordinationPreloadCallApi,
 } from '../../../professor-preload/model/coordination.model';
+import { PermissionService } from '../../../../../core/service/permission-service';
+import { AuthService } from '../../../../../core/service/auth-service';
 
 @Component({
   selector: 'app-cdp-requests',
@@ -50,19 +52,12 @@ import {
 export class CdpRequests implements OnInit {
 
   private readonly coordinationService = inject(CoordinationService);
-
   private readonly cdpService = inject(CdpService);
+  private readonly authService = inject(AuthService);
+  readonly permissions = inject(PermissionService);
 
   readonly getFileTypeIconPath = getFileTypeIconPath;
 
-  readonly cdpContextResource = rxResource<CdpContext, unknown>({
-    stream: () =>
-      this.cdpService.getContext(),
-  });
-
-  readonly cdpContext = computed(
-    () => this.cdpContextResource.value(),
-  );
 
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
@@ -82,6 +77,26 @@ export class CdpRequests implements OnInit {
 
   readonly isDownloadingReport = signal(false);
   readonly isDownloadingPdfReport = signal(false);
+
+
+  readonly isDean = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Decano');
+  });
+
+  readonly cdpContextResource = rxResource<CdpContext, unknown>({
+    params: () => {
+      return this.isDean() ? {} : undefined;
+    },
+    stream: () =>
+      this.cdpService.getContext(),
+  });
+
+  readonly cdpContext = computed(
+    () => this.cdpContextResource.value(),
+  );
+
 
   readonly cdpObservationRemaining = computed(
     () =>
@@ -111,7 +126,7 @@ export class CdpRequests implements OnInit {
     defaultValue: [] as CoordinationPreloadCallApi[],
   });
 
-  readonly cdpRequestsResource = rxResource({
+  readonly cdpRequestsForDeanResource = rxResource({
     params: () => {
       const idPeriodoUniversidad =
         this.appliedPeriodId();
@@ -134,6 +149,10 @@ export class CdpRequests implements OnInit {
         return undefined;
       }
 
+      if (!this.isDean()) {
+        return undefined;
+      }
+
       return {
         idPeriodoUniversidad,
         idConvocatoria,
@@ -147,6 +166,28 @@ export class CdpRequests implements OnInit {
       ),
 
     defaultValue: [] as CoordinationItem[],
+  });
+
+  readonly cdpRequestsForAcademicDevelopmentResource = rxResource({
+    params: () => {
+      const idPeriodoUniversidad = this.appliedPeriodId();
+
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+      if (this.isDean()) {
+        return undefined;
+      }
+
+      return { idPeriodoUniversidad };
+    },
+
+    stream: ({ params }) =>
+      this.coordinationService.getCdpRequestsForAcademicDevelopment(
+        params.idPeriodoUniversidad,
+      ),
+
+    defaultValue: [] as FacultyCoordinationItem[],
   });
 
   readonly periodOptions =
@@ -167,9 +208,9 @@ export class CdpRequests implements OnInit {
         })),
     );
 
-  readonly coordinations = computed(
-    () => this.cdpRequestsResource.value(),
-  );
+  readonly coordinations = computed(() => this.cdpRequestsForDeanResource.value());
+
+  readonly faculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.value())
 
   readonly isLoadingPreloadCalls = computed(
     () =>
@@ -178,31 +219,59 @@ export class CdpRequests implements OnInit {
 
   readonly isLoadingCoordinations = computed(
     () =>
-      this.cdpRequestsResource.isLoading(),
+      this.cdpRequestsForDeanResource.isLoading(),
   );
 
-  readonly hasAppliedFilter = computed(
+  readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.isLoading())
+
+  readonly hasAppliedFilterForDean = computed(
     () =>
       this.appliedPeriodId() != null &&
-      this.appliedPreloadCallId() != null,
+      this.appliedPreloadCallId() != null &&
+      this.isDean(),
+  );
+
+  readonly hasAppliedFilterForAcademicDevelopment = computed(
+    () =>
+      this.appliedPeriodId() != null &&
+      !this.isDean(),
   );
 
   readonly tableEmptyMessage = computed(() => {
-    if (this.hasAppliedFilter()) {
-      return 'No hay solicitudes CPD para mostrar.';
+    if (this.hasAppliedFilterForDean() || this.hasAppliedFilterForAcademicDevelopment()) {
+      return 'No hay solicitudes CDP para mostrar.';
     }
 
     if (!this.selectedPeriodId()) {
       return 'Seleccione un periodo y pulse Filtrar.';
     }
 
-    return 'Seleccione una convocatoria y pulse Filtrar.';
+    return this.isDean() ? 'Seleccione una convocatoria y pulse Filtrar.' : 'Seleccione un periodo y pulse Filtrar.';
   });
 
+  readonly titleSection = computed(() => {
+    return this.isDean() ? 'Coordinaciones' : 'Facultades';
+  })
+  readonly descriptionSection = computed(() => {
+    return this.isDean() ? 'Selecciona las coordinaciones para solicitar el CDP.' : 'Selecciona las facultades para revisar el CDP.';
+  })
+
+  readonly titleCdpSection = computed(() => {
+    return this.isDean() ? 'Solicitar CDP' : 'Revisar CDP';
+  })
+  readonly descriptionCdpSection = computed(() => {
+    return this.isDean() ? 'Registra las observaciones y adjuntos de la solicitud.' : 'Revisa las observaciones y adjuntos de la solicitud.';
+  })
+
+  readonly canShowCdpReportButtons = computed(() => this.permissions.canDownloadCdpReport());
+
   readonly canDownloadCdpReport = computed(() => {
+    if (!this.canShowCdpReportButtons) {
+      return;
+    }
+
     const periodId = this.resolveSelectedPeriodId();
-    const convocatoriaId =
-      this.resolveSelectedConvocatoriaId();
+    const convocatoriaId = this.resolveSelectedConvocatoriaId();
 
     return periodId != null && convocatoriaId != null;
   });
@@ -215,6 +284,14 @@ export class CdpRequests implements OnInit {
     return (
       'Seleccione periodo y convocatoria para generar el reporte.'
     );
+  });
+
+  readonly disabledFilterOptionsForDean = computed(() => {
+    return this.isLoadingPeriods() || !this.selectedPeriodId() || !this.selectedPreloadCallId() || this.isLoadingPreloadCalls() || this.isLoadingCoordinations();
+  });
+
+  readonly disabledFilterOptionsForAcademicDevelopment = computed(() => {
+    return this.isLoadingPeriods() || !this.selectedPeriodId() || this.isLoadingFaculties();
   });
 
   ngOnInit(): void {
@@ -234,7 +311,7 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onApplyFilter(): void {
+  onApplyFilterForDean(): void {
     const periodId =
       this.selectedPeriodId();
 
@@ -266,6 +343,23 @@ export class CdpRequests implements OnInit {
     this.selectedCoordinationIds.set([]);
   }
 
+  onApplyFilterForAcademicDevelopment(): void {
+    const periodId = this.selectedPeriodId();
+
+    if (!periodId) {
+      this.appliedPeriodId.set(null);
+      return;
+    }
+
+    const parsedPeriodId = Number(periodId);
+
+    if (Number.isNaN(parsedPeriodId)) {
+      return;
+    }
+
+    this.appliedPeriodId.set(parsedPeriodId);
+  }
+
   onRefreshCoordinations(): void {
     if (
       this.appliedPeriodId() == null ||
@@ -274,7 +368,15 @@ export class CdpRequests implements OnInit {
       return;
     }
 
-    this.cdpRequestsResource.reload();
+    this.cdpRequestsForDeanResource.reload();
+  }
+
+  onRefreshFaculties(): void {
+    if (this.appliedPeriodId() == null) {
+      return;
+    }
+
+    this.cdpRequestsForAcademicDevelopmentResource.reload();
   }
 
   onCdpObservationChange(event: Event): void {
@@ -322,7 +424,7 @@ export class CdpRequests implements OnInit {
 
   onRequestCdp(): void {
     console.log(
-      'Solicitud CPD:',
+      'Solicitud CDP:',
       {
         observacion:
           this.cdpObservation(),

@@ -35,6 +35,7 @@ import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professo
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
+import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 
 @Injectable({
   providedIn: 'root',
@@ -96,7 +97,7 @@ export class CoordinationService {
   }
 
   /**
-   * Lista las coordinaciones disponibles para Solicitudes CPD.
+   * Lista las coordinaciones disponibles para Solicitudes CDP.
    * El backend retorna únicamente cargas en estado AVAL DESARROLLO
    * asociadas al Decano autenticado.
    */
@@ -117,6 +118,23 @@ export class CoordinationService {
           items.map(normalizeCoordinationItem),
         ),
       );
+  }
+
+  /**
+   * Lista las facultades disponibles para revisión de CDP con estado DESARROLLO ACADEMICO.
+   * @param idPeriodoUniversidad Identificador del periodo.
+   * @returns Observable con las facultades que tienen solicitudes de CDPs y sus detalles.
+   */
+  getCdpRequestsForAcademicDevelopment(idPeriodoUniversidad: number): Observable<FacultyCoordinationItem[]> {
+    return this.webRequestService.get<FacultyRequestCdpApiItem[]>(
+      `${this.cdpEndpoint}/requests-for-academic-development`,
+        { idPeriodoUniversidad },
+    )
+    .pipe(
+      map((items) =>
+        items.map(normalizeFacultyRequestCdpItem),
+      ),
+    );
   }
 
   /**

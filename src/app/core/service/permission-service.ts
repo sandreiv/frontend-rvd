@@ -1,5 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
-import { PRELOAD_FUNC } from '../config/func-route.map';
+import { CDP_FUNC, PRELOAD_FUNC } from '../config/func-route.map';
 import { FuncionalidadNodo } from '../model/funcionalidad.model';
 import { forNext } from '../utils/for-next.function';
 import { MenuService } from './menu-service';
@@ -24,7 +24,7 @@ export class PermissionService {
     return this.can(PRELOAD_FUNC.LIST);
   }*/
 
-  canDownloadExcel(): boolean {
+  canDownloadPreloadExcel(): boolean {
     return this.can(PRELOAD_FUNC.DOWNLOAD);
   }
 
@@ -77,6 +77,12 @@ export class PermissionService {
    */
   canViewActivitiesGraph(): boolean {
     return this.can(PRELOAD_FUNC.VIEW_ACTIVITIES_GRAPH);
+  }
+
+
+  
+  canDownloadCdpReport(): boolean {
+    return this.can(CDP_FUNC.DOWNLOAD);
   }
 
 }

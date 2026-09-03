@@ -178,7 +178,7 @@ export class CoordinationDetail {
   }
 
   downloadPreloadReport(): void {
-    if (!this.permissions.canDownloadExcel()) {
+    if (!this.permissions.canDownloadPreloadExcel()) {
       return;
     }
 

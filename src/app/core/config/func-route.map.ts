@@ -45,6 +45,11 @@ export const PRELOAD_FUNC = {
   PARENT: '02',
 } as const;
 
+export const CDP_FUNC = {
+  DOWNLOAD: '04_01',
+  PARENT: '04',
+} as const;
+
 export function resolveFuncCodigoFromUrl(url: string): string | null {
   const path = url.split('?')[0].split('#')[0];
   const entries = Object.entries(FUNC_ROUTE_MAP);

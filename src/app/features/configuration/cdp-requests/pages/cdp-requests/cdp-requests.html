@@ -7,7 +7,7 @@
         <h3
           class="text-base font-semibold text-gray-800 dark:text-white/90"
         >
-          Solicitar CPD
+          Solicitar CDP
         </h3>
 
         <p
@@ -17,129 +17,133 @@
         </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
-        <span
-          [appTooltip]="downloadReportTooltip()"
-          tooltipPlacement="left"
-        >
-          <app-button
-            type="button"
-            size="sm"
-            variant="outline"
-            [disabled]="
-              !canDownloadCdpReport() ||
-              isDownloadingReport() ||
-              isDownloadingPdfReport()
-            "
-            (btnClick)="downloadCdpPdfReport()"
+      @if (canShowCdpReportButtons()) {
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            [appTooltip]="downloadReportTooltip()"
+            tooltipPlacement="left"
           >
-            <img
-              src="/images/file-types/pdf.svg"
-              alt=""
-              aria-hidden="true"
-              class="size-4 shrink-0"
-            />
-            {{
-              isDownloadingPdfReport()
-                ? 'Generando...'
-                : 'Descargar PDF'
-            }}
-          </app-button>
-        </span>
+            <app-button
+              type="button"
+              size="sm"
+              variant="outline"
+              [disabled]="
+                !canDownloadCdpReport() ||
+                isDownloadingReport() ||
+                isDownloadingPdfReport()
+              "
+              (btnClick)="downloadCdpPdfReport()"
+            >
+              <img
+                src="/images/file-types/pdf.svg"
+                alt=""
+                aria-hidden="true"
+                class="size-4 shrink-0"
+              />
+              {{
+                isDownloadingPdfReport()
+                  ? 'Generando...'
+                  : 'Descargar PDF'
+              }}
+            </app-button>
+          </span>
 
-        <span
-          [appTooltip]="downloadReportTooltip()"
-          tooltipPlacement="left"
-        >
-          <app-button
-            type="button"
-            size="sm"
-            variant="outline"
-            [disabled]="
-              !canDownloadCdpReport() ||
-              isDownloadingReport() ||
-              isDownloadingPdfReport()
-            "
-            (btnClick)="downloadCdpReport()"
+          <span
+            [appTooltip]="downloadReportTooltip()"
+            tooltipPlacement="left"
           >
-            <img
-              src="/images/file-types/xls.svg"
-              alt=""
-              aria-hidden="true"
-              class="size-4 shrink-0"
-            />
-            {{
-              isDownloadingReport()
-                ? 'Generando...'
-                : 'Descargar reporte'
-            }}
-          </app-button>
-        </span>
-      </div>
+            <app-button
+              type="button"
+              size="sm"
+              variant="outline"
+              [disabled]="
+                !canDownloadCdpReport() ||
+                isDownloadingReport() ||
+                isDownloadingPdfReport()
+              "
+              (btnClick)="downloadCdpReport()"
+            >
+              <img
+                src="/images/file-types/xls.svg"
+                alt=""
+                aria-hidden="true"
+                class="size-4 shrink-0"
+              />
+              {{
+                isDownloadingReport()
+                  ? 'Generando...'
+                  : 'Descargar reporte'
+              }}
+            </app-button>
+          </span>
+        </div>
+      }
     </div>
 
     <!-- PERÍODO DE TRABAJO -->
-    <section
-      class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
-    >
-      <div class="flex items-center justify-between gap-3">
-        <h3
-          class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400"
-        >
-          Período de trabajo
-        </h3>
-      </div>
-
-      <div
-        class="mt-5 flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-0"
+    @if (isDean()) {
+      <section
+        class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
       >
-
-        <!-- UNIDAD ACADÉMICA -->
-        <div class="min-w-0 flex-1 lg:pr-5">
-          <span
-            class="block rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800"
+        <div class="flex items-center justify-between gap-3">
+          <h3
+            class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400"
           >
-            <p
-              class="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
-            >
-              Unidad académica
-            </p>
-
-            <p
-              class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
-            >
-              {{ cdpContext()?.unidadAcademica || '-' }}
-            </p>
-          </span>
+            Período de trabajo
+          </h3>
         </div>
 
-        <!-- FACULTAD -->
-        <div class="min-w-0 flex-1 lg:pl-5">
-          <span
-            class="block rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800"
-          >
-            <p
-              class="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
-            >
-              Facultad
-            </p>
+        <div
+          class="mt-5 flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-0"
+        >
 
-            <p
-              class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
+          <!-- UNIDAD ACADÉMICA -->
+          <div class="min-w-0 flex-1 lg:pr-5">
+            <span
+              class="block rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800"
             >
-              {{ cdpContext()?.facultad || '-' }}
-            </p>
-          </span>
+              <p
+                class="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
+              >
+                Unidad académica
+              </p>
+
+              <p
+                class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
+              >
+                {{ cdpContext()?.unidadAcademica || '-' }}
+              </p>
+            </span>
+          </div>
+
+          <!-- FACULTAD -->
+          <div class="min-w-0 flex-1 lg:pl-5">
+            <span
+              class="block rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800"
+            >
+              <p
+                class="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
+              >
+                Facultad
+              </p>
+
+              <p
+                class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
+              >
+                {{ cdpContext()?.facultad || '-' }}
+              </p>
+            </span>
+          </div>
+
         </div>
-
-      </div>
-    </section>
+      </section>
+    }
 
     <!-- COORDINACIONES -->
     <div class="mt-4">
       <app-section-frame
-        title="Coordinaciones"
-        description="Selecciona las coordinaciones para solicitar el CPD."
+        [title]="titleSection()"
+        [description]="descriptionSection()"
         iconName="documentPlus"
         iconVariant="brand"
       >
@@ -166,37 +170,33 @@
         </div>
 
         <!-- CONVOCATORIA -->
-        <div
-          class="min-w-0 flex-1 sm:flex-none sm:w-64"
-        >
-          <app-select
-            [options]="preloadCallOptions()"
-            [value]="selectedPreloadCallId()"
-            [disabled]="
-              isLoadingPeriods() ||
-              !selectedPeriodId() ||
-              isLoadingPreloadCalls()
-            "
-            placeholder="Seleccione la convocatoria"
-            searchPlaceholder="Buscar convocatoria..."
-            emptyText="No hay convocatorias activas"
-            (valueChange)="onPreloadCallChange($event)"
-          />
-        </div>
+        @if (isDean()) {
+          <div
+            class="min-w-0 flex-1 sm:flex-none sm:w-64"
+          >
+            <app-select
+              [options]="preloadCallOptions()"
+              [value]="selectedPreloadCallId()"
+              [disabled]="
+                isLoadingPeriods() ||
+                !selectedPeriodId() ||
+                isLoadingPreloadCalls()
+              "
+              placeholder="Seleccione la convocatoria"
+              searchPlaceholder="Buscar convocatoria..."
+              emptyText="No hay convocatorias activas"
+              (valueChange)="onPreloadCallChange($event)"
+            />
+          </div>
+        }
 
         <!-- FILTRAR -->
         <app-button
           type="button"
           size="sm"
           className="h-11 shrink-0 whitespace-nowrap"
-          [disabled]="
-            isLoadingPeriods() ||
-            !selectedPeriodId() ||
-            !selectedPreloadCallId() ||
-            isLoadingPreloadCalls() ||
-            isLoadingCoordinations()
-          "
-          (btnClick)="onApplyFilter()"
+          [disabled]="isDean() ? disabledFilterOptionsForDean() : disabledFilterOptionsForAcademicDevelopment()"
+          (btnClick)="isDean() ? onApplyFilterForDean() : onApplyFilterForAcademicDevelopment()"
         >
           Filtrar
         </app-button>
@@ -205,18 +205,16 @@
 
       <!-- TABLA -->
       <app-coordination-table
-        [coordinations]="coordinations()"
+        [coordinations]="isDean() ? coordinations() : faculties()"
         [emptyMessage]="tableEmptyMessage()"
         [enableSelection]="false"
         [showActionButton]="false"
-        (refreshCoordination)="
-          onRefreshCoordinations()
-        "
+        (refreshCoordination)="isDean() ? onRefreshCoordinations() : onRefreshFaculties()"
       />
 
     </app-section-frame>
 
-    <!-- SOLICITAR CPD -->
+    <!-- SOLICITAR CDP -->
     <div class="mt-4 w-full lg:w-1/2">
       <section
         class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
@@ -227,13 +225,13 @@
           <h3
             class="text-base font-semibold text-gray-800 dark:text-white/90"
           >
-            Solicitar CPD
+            {{titleCdpSection()}}
           </h3>
 
           <p
             class="mt-1 text-sm text-gray-500 dark:text-gray-400"
           >
-            Registra las observaciones y adjuntos de la solicitud.
+            {{descriptionCdpSection()}}
           </p>
         </div>
 
@@ -377,7 +375,7 @@
                 size="sm"
                 (btnClick)="onRequestCdp()"
               >
-                Solicitar CPD
+                Solicitar CDP
               </app-button>
             </div>
           </div>

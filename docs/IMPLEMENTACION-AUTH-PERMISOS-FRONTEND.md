@@ -168,7 +168,7 @@ Misma pantalla, mismo componente, **sin** `if (rol === 'ADMIN')`. Solo cambia el
 4. ADMIN: 200 y **no** aparece `02_02`.
 5. En Precarga, Coordinador ve «Agregar docente»; ADMIN no.
 
-Otro botón del mismo patrón: «Descargar Reporte» (`02_01`) en `coordination-detail.html`, con `permissions.canDownloadExcel()`.
+Otro botón del mismo patrón: «Descargar Reporte» (`02_01`) en `coordination-detail.html`, con `permissions.canDownloadPreloadExcel()`.
 
 ---
 
