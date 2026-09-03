@@ -354,8 +354,11 @@
                       <div
                         class="flex items-center justify-between gap-3 px-4 py-3"
                       >
-                        <div
-                          class="flex min-w-0 flex-1 items-center gap-3"
+                        <button
+                          type="button"
+                          class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                          title="Previsualizar adjunto"
+                          (click)="openAttachmentPreview(adjunto)"
                         >
                           <img
                             [src]="getFileTypeIconPath(adjunto.nombre)"
@@ -364,12 +367,12 @@
                           />
 
                           <span
-                            class="min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-gray-300"
+                            class="min-w-0 flex-1 truncate text-sm text-gray-700 transition hover:text-brand-600 dark:text-gray-300"
                             [title]="adjunto.nombre"
                           >
                             {{ adjunto.nombre }}
                           </span>
-                        </div>
+                        </button>
 
                         <button
                           type="button"
@@ -416,8 +419,11 @@
                       <div
                         class="flex items-center justify-between gap-3 px-4 py-3"
                       >
-                        <div
-                          class="flex min-w-0 flex-1 items-center gap-3"
+                        <button
+                          type="button"
+                          class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                          title="Previsualizar adjunto"
+                          (click)="openLocalAttachmentPreview(file)"
                         >
                           <img
                             [src]="getFileTypeIconPath(file.name)"
@@ -426,12 +432,12 @@
                           />
 
                           <span
-                            class="min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-gray-300"
+                            class="min-w-0 flex-1 truncate text-sm text-gray-700 transition hover:text-brand-600 dark:text-gray-300"
                             [title]="file.name"
                           >
                             {{ file.name }}
                           </span>
-                        </div>
+                        </button>
 
                         <button
                           type="button"
@@ -490,6 +496,12 @@
       cancelButtonText="No, cancelar"
       (confirm)="onRequestCdp()"
       (close)="closeRequestCdpModal()"
+    />
+
+    <app-document-preview
+      [isOpen]="showDocumentPreview()"
+      [document]="selectedDocument()"
+      (close)="closeDocumentPreview()"
     />
 
 

@@ -12,7 +12,13 @@ import { NotificationService } from '../../../../../core/service/notification-se
 
 import { CdpService } from '../../data/cdp.service';
 import { CdpContext } from '../../model/cdp-context.model';
-import { CdpRequest } from '../../model/cdp-request.model';
+import {
+  CdpAttachment,
+  CdpRequest,
+} from '../../model/cdp-request.model';
+
+import { DocumentPreview } from '../../../../../shared/components/form/document-preview/document-preview';
+import { DocumentRequest } from '../../../../../shared/model/document.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable } from 'rxjs';
@@ -49,6 +55,7 @@ import {
     Icon,
     Tooltip,
     NewModal,
+    DocumentPreview,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -89,6 +96,9 @@ export class CdpRequests implements OnInit {
 
   readonly currentCdpRequest = signal<CdpRequest | null>(null);
   readonly isLoadingCurrentCdpRequest = signal(false);
+
+  readonly showDocumentPreview = signal(false);
+  readonly selectedDocument = signal<DocumentRequest | null>(null);
 
   readonly hasCdpRequest = computed(
     () => this.currentCdpRequest() != null,
@@ -589,6 +599,56 @@ export class CdpRequests implements OnInit {
     }
 
     this.showRequestCdpModal.set(false);
+  }
+
+  openAttachmentPreview(
+    adjunto: CdpAttachment,
+  ): void {
+    const extension =
+      adjunto.nombre
+        .split('.')
+        .pop()
+        ?.toLowerCase() ?? '';
+
+    this.selectedDocument.set({
+      mimeType: '',
+      tamano: 0,
+      extension,
+      path: adjunto.path,
+      descripcion: adjunto.nombre,
+      nombreArchivo: adjunto.nombre,
+    });
+
+    this.showDocumentPreview.set(true);
+  }
+
+  openLocalAttachmentPreview(
+    file: File,
+  ): void {
+    const extension =
+      file.name
+        .split('.')
+        .pop()
+        ?.toLowerCase() ?? '';
+
+    this.selectedDocument.set({
+      archivo: file,
+      mimeType:
+        file.type ||
+        'application/octet-stream',
+      tamano: file.size,
+      extension,
+      path: '',
+      descripcion: file.name,
+      nombreArchivo: file.name,
+    });
+
+    this.showDocumentPreview.set(true);
+  }
+
+  closeDocumentPreview(): void {
+    this.showDocumentPreview.set(false);
+    this.selectedDocument.set(null);
   }
 
 }
