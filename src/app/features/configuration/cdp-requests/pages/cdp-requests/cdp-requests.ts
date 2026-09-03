@@ -8,8 +8,11 @@ import {
   WritableSignal,
 } from '@angular/core';
 
+import { NotificationService } from '../../../../../core/service/notification-service';
+
 import { CdpService } from '../../data/cdp.service';
 import { CdpContext } from '../../model/cdp-context.model';
+import { CdpRequest } from '../../model/cdp-request.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable } from 'rxjs';
@@ -29,6 +32,8 @@ import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.m
 import { CoordinationTable } from '../../../professor-preload/components/coordination-table/coordination-table';
 import { CoordinationService } from '../../../professor-preload/data/coordination.service';
 
+import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
+
 import {
   CoordinationItem,
   CoordinationPreloadCallApi,
@@ -43,6 +48,7 @@ import {
     CoordinationTable,
     Icon,
     Tooltip,
+    NewModal,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +58,8 @@ export class CdpRequests implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
 
   private readonly cdpService = inject(CdpService);
+
+  private readonly notificationService = inject(NotificationService);
 
   readonly getFileTypeIconPath = getFileTypeIconPath;
 
@@ -77,8 +85,29 @@ export class CdpRequests implements OnInit {
 
   readonly cdpObservation = signal('');
   readonly cdpAttachments = signal<File[]>([]);
+  readonly isRequestingCdp = signal(false);
+
+  readonly currentCdpRequest = signal<CdpRequest | null>(null);
+  readonly isLoadingCurrentCdpRequest = signal(false);
+
+  readonly hasCdpRequest = computed(
+    () => this.currentCdpRequest() != null,
+  );
+
+  readonly showRequestCdpModal = signal(false);
 
   readonly cdpObservationMaxLength = 250;
+
+  readonly canRequestCdp = computed(
+    () =>
+      !this.hasCdpRequest() &&
+      this.cdpObservation().trim().length > 0 &&
+      this.cdpAttachments().length > 0 &&
+      !this.isRequestingCdp(),
+  );
+
+  readonly isDownloadingReport = signal(false);
+  readonly isDownloadingPdfReport = signal(false);
 
   readonly cdpObservationRemaining = computed(
     () =>
@@ -216,6 +245,7 @@ export class CdpRequests implements OnInit {
 
   ngOnInit(): void {
     void this.loadUniversityPeriods();
+    void this.loadCurrentCdpRequest();
   }
 
   onPeriodChange(periodId: string): void {
@@ -317,16 +347,57 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onRequestCdp(): void {
-    console.log(
-      'Solicitud CPD:',
-      {
-        observacion:
+  async onRequestCdp(): Promise<void> {
+
+    if (
+      this.isRequestingCdp() ||
+      !this.canRequestCdp()
+    ) {
+      return;
+    }
+
+    this.isRequestingCdp.set(true);
+
+    try {
+
+      await firstValueFrom(
+        this.cdpService.createRequest(
           this.cdpObservation(),
-        adjuntos:
           this.cdpAttachments(),
-      },
-    );
+        ),
+      );
+
+      this.notificationService.success(
+        'La solicitud CPD fue registrada correctamente.',
+        'Solicitud CPD',
+      );
+
+      this.showRequestCdpModal.set(false);
+
+      await this.loadCurrentCdpRequest();
+
+      this.cdpObservation.set('');
+      this.cdpAttachments.set([]);
+
+      this.showRequestCdpModal.set(false);
+
+    } catch (error) {
+
+      console.error(
+        'Error al registrar la solicitud CPD:',
+        error,
+      );
+
+      this.notificationService.error(
+        'No fue posible registrar la solicitud CPD.',
+        'Solicitud CPD',
+      );
+
+    } finally {
+
+      this.isRequestingCdp.set(false);
+
+    }
   }
 
   private resolveSelectedPeriodId():
@@ -401,4 +472,123 @@ export class CdpRequests implements OnInit {
       this.isLoadingPeriods.set(false);
     }
   }
+
+  async downloadCdpReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte CDP:',
+    );
+  }
+
+  async downloadCdpPdfReport(): Promise<void> {
+    await this.runCdpDownload(
+      this.isDownloadingPdfReport,
+      (idConvocatoria, idPeriodoUniversidad) =>
+        this.cdpService.downloadCdpPdfReport(
+          idConvocatoria,
+          idPeriodoUniversidad,
+        ),
+      'Error al descargar el reporte PDF CDP:',
+    );
+  }
+
+  private async runCdpDownload(
+    isDownloading: WritableSignal<boolean>,
+    request: (
+      idConvocatoria: number,
+      idPeriodoUniversidad: number,
+    ) => Observable<{ blob: Blob; fileName: string }>,
+    errorMessage: string,
+  ): Promise<void> {
+    if (
+      this.isDownloadingReport() ||
+      this.isDownloadingPdfReport() ||
+      !this.canDownloadCdpReport()
+    ) {
+      return;
+    }
+
+    const idPeriodoUniversidad =
+      this.resolveSelectedPeriodId();
+    const idConvocatoria =
+      this.resolveSelectedConvocatoriaId();
+
+    if (
+      idPeriodoUniversidad == null ||
+      idConvocatoria == null
+    ) {
+      return;
+    }
+
+    isDownloading.set(true);
+
+    try {
+      const file = await firstValueFrom(
+        request(idConvocatoria, idPeriodoUniversidad),
+      );
+
+      this.triggerBrowserDownload(
+        file.blob,
+        file.fileName,
+      );
+    } catch (error) {
+      console.error(errorMessage, error);
+    } finally {
+      isDownloading.set(false);
+    }
+  }
+
+  private async loadCurrentCdpRequest():
+    Promise<void> {
+
+    this.isLoadingCurrentCdpRequest.set(true);
+
+    try {
+
+      const request =
+        await firstValueFrom(
+          this.cdpService.getCurrentRequest(),
+        );
+
+      this.currentCdpRequest.set(
+        request ?? null,
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Error al cargar la solicitud CPD:',
+        error,
+      );
+
+      this.currentCdpRequest.set(null);
+
+    } finally {
+
+      this.isLoadingCurrentCdpRequest.set(false);
+
+    }
+  }
+
+  openRequestCdpModal(): void {
+    if (!this.canRequestCdp()) {
+      return;
+    }
+
+    this.showRequestCdpModal.set(true);
+  }
+
+  closeRequestCdpModal(): void {
+    if (this.isRequestingCdp()) {
+      return;
+    }
+
+    this.showRequestCdpModal.set(false);
+  }
+
 }

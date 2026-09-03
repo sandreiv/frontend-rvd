@@ -3,6 +3,7 @@ import { map, Observable } from 'rxjs';
 
 import { WebRequestService } from '../../../../core/service/web-request-service';
 import { CdpContext } from '../model/cdp-context.model';
+import { CdpRequest } from '../model/cdp-request.model';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +17,12 @@ export class CdpService {
   getContext(): Observable<CdpContext> {
     return this.webRequestService.get<CdpContext>(
       `${this.endpoint}/context`,
+    );
+  }
+
+  getCurrentRequest(): Observable<CdpRequest | null> {
+    return this.webRequestService.get<CdpRequest | null>(
+      `${this.endpoint}/request`,
     );
   }
 
@@ -97,6 +104,34 @@ export class CdpService {
 
     return params;
   }
+
+  createRequest(
+    observacion: string,
+    archivos: File[],
+    ): Observable<void> {
+
+    const formData = new FormData();
+
+    if (observacion.trim()) {
+        formData.append(
+        'observacion',
+        observacion.trim(),
+        );
+    }
+
+    archivos.forEach((archivo) => {
+        formData.append(
+        'archivos',
+        archivo,
+        archivo.name,
+        );
+    });
+
+    return this.webRequestService.postFormData<void>(
+        `${this.endpoint}/requests`,
+        formData,
+    );
+    }    
 
 }
 
