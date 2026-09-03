@@ -108,6 +108,12 @@ export class CdpRequests implements OnInit {
 
   readonly cdpObservationMaxLength = 250;
 
+  readonly cdpMaxFileSize =
+    10 * 1024 * 1024;
+
+  readonly cdpMaxTotalSize =
+    100 * 1024 * 1024;
+
   readonly canRequestCdp = computed(
     () =>
       !this.hasCdpRequest() &&
@@ -326,25 +332,72 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onCdpAttachmentSelected(event: Event): void {
+  onCdpAttachmentSelected(
+    event: Event,
+  ): void {
+
     const input =
       event.target as HTMLInputElement;
 
-    const files =
+    const selectedFiles =
       Array.from(input.files ?? []);
 
-    if (!files.length) {
+    input.value = '';
+
+    if (!selectedFiles.length) {
+      return;
+    }
+
+    const oversizedFile =
+      selectedFiles.find(
+        (file) =>
+          file.size > this.cdpMaxFileSize,
+      );
+
+    if (oversizedFile) {
+
+      this.notificationService.error(
+        `El archivo "${oversizedFile.name}" supera el tamaño máximo permitido de 10 MB.`,
+        'Adjunto no permitido',
+      );
+
+      return;
+    }
+
+    const currentTotal =
+      this.cdpAttachments()
+        .reduce(
+          (total, file) =>
+            total + file.size,
+          0,
+        );
+
+    const selectedTotal =
+      selectedFiles.reduce(
+        (total, file) =>
+          total + file.size,
+        0,
+      );
+
+    if (
+      currentTotal + selectedTotal >
+      this.cdpMaxTotalSize
+    ) {
+
+      this.notificationService.error(
+        'Los archivos adjuntos no pueden superar los 100 MB por solicitud.',
+        'Límite de adjuntos',
+      );
+
       return;
     }
 
     this.cdpAttachments.update(
       (current) => [
         ...current,
-        ...files,
+        ...selectedFiles,
       ],
     );
-
-    input.value = '';
   }
 
   removeCdpAttachment(index: number): void {
