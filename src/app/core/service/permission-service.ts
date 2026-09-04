@@ -85,6 +85,14 @@ export class PermissionService {
     return this.can(CDP_FUNC.DOWNLOAD);
   }
 
+  canReviewAttachments(): boolean {
+    return this.can(CDP_FUNC.REVIEW_ATTACHMENTS);
+  }
+
+  canAddCdpRequest(): boolean {
+    return this.can(CDP_FUNC.ADD_CDP_REQUEST);
+  }
+
 }
 
 function collectCodes(

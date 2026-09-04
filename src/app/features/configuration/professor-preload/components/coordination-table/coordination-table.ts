@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   EventEmitter,
   input,
   model,
@@ -9,7 +10,9 @@ import {
 import { Button } from '../../../../../shared/ui/button/button';
 import { DataTable } from '../../../../../shared/ui/data-table/data-table';
 import {
+  DataTableActionEvent,
   DataTableColumn,
+  DataTableRowAction,
   DataTableSearchEvent,
   DataTableToolbarActionEvent,
 } from '../../../../../shared/ui/data-table/table.types';
@@ -32,9 +35,11 @@ export class CoordinationTable {
 
   enableSelection = input(true);
   showActionButton = input(true);
+  enableRowActions = input(false);
 
   @Output() refreshCoordination = new EventEmitter<void>();
   @Output() startPreassignment = new EventEmitter<CoordinationItem>();
+  @Output() openObservations = new EventEmitter<CoordinationItem>();
 
   readonly rowIdentity = (row: CoordinationItem): string => String(row.id);
 
@@ -92,6 +97,25 @@ export class CoordinationTable {
       formatAsSentence: true,
     },
   ];
+
+  readonly rowActions = computed((): DataTableRowAction<CoordinationItem>[] => {
+    if (!this.enableRowActions()) return []
+
+    return [
+      {
+        id: 'showRequests',
+        label: 'Mostrar solicitudes CDP',
+        icon: 'pencil'
+      }
+    ]
+  });
+
+  onTableAction(event: DataTableActionEvent<CoordinationItem>): void {
+    if (event.actionId === 'showRequests') {
+      this.openObservations.emit(event.row);
+      return;
+    }
+  }
 
   onToolbarAction(event: DataTableToolbarActionEvent<CoordinationItem>): void {
     if (event.actionId === 'refresh') {

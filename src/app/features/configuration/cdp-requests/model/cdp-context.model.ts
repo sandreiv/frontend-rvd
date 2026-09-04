@@ -1,4 +1,5 @@
 import { CoordinationItem, CoordinationLookupItem, CoordinationUniversityPeriod } from "../../professor-preload/model/coordination.model";
+import { CdpRequest } from "./cdp-request.model";
 
 export interface CdpContext {
   idUnidadAcademica: number;
@@ -18,21 +19,11 @@ export interface FacultyRequestCdpApiItem {
   metodologia: CoordinationLookupItem | null;
   modalidad: CoordinationLookupItem | null;
   periodoUniversidad: CoordinationUniversityPeriod;
-  solicitud: SolicitudesItem;
-}
-
-export interface SolicitudesItem {
-  id: number;
-  estado: string;
-  observacion: string;
-  anexos: {
-    nombre: string,
-    path: string
-  }[]
+  solicitud: CdpRequest;
 }
 
 export interface FacultyCoordinationItem extends CoordinationItem {
-  solicitud: SolicitudesItem
+  solicitud: CdpRequest
 }
 
 

@@ -47,6 +47,8 @@ export const PRELOAD_FUNC = {
 
 export const CDP_FUNC = {
   DOWNLOAD: '04_01',
+  REVIEW_ATTACHMENTS: '04_02',
+  ADD_CDP_REQUEST: '04_03',
   PARENT: '04',
 } as const;
 
