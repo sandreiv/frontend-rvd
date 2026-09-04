@@ -118,7 +118,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 const UNASSIGNED_DOT =
   `${DOT_BASE} border border-dashed border-gray-400 dark:border-gray-500`;
 
-const VERIFIED_MODALITY_STATE = '2';
+const ON_REGISTER_STATE = '0';  // Estado CargaDocente 'En registro'
 
 @Component({
   selector: 'app-contract-modality-detail',
@@ -517,7 +517,7 @@ export class ContractModalityDetail {
     }
 
     const verified = professors.filter(
-      (professor) => professor.estado === VERIFIED_MODALITY_STATE,
+      (professor) => professor.estado !== ON_REGISTER_STATE,
     ).length;
 
     return {

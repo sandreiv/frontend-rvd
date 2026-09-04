@@ -380,7 +380,7 @@
                             type="button"
                             disabled
                             class="inline-flex h-8 w-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md text-gray-300 opacity-50"
-                            title="La solicitud CPD ya fue enviada"
+                            title="La solicitud CDP ya fue enviada"
                           >
                             <app-icon
                               name="delete"
@@ -533,8 +533,8 @@
     @if (canCreateCdpRequest()) {
       <app-new-modal
         [isOpen]="showRequestCdpModal()"
-        title="Solicitar CPD"
-        message="¿Seguro que deseas enviar la solicitud CPD con las observaciones y adjuntos registrados?"
+        title="Solicitar CDP"
+        message="¿Seguro que deseas enviar la solicitud CDP con las observaciones y adjuntos registrados?"
         iconVariant="warning"
         [buttonText]="
           isRequestingCdp()

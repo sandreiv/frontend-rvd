@@ -526,8 +526,8 @@ export class CdpRequests implements OnInit {
       );
 
       this.notificationService.success(
-        'La solicitud CPD fue registrada correctamente.',
-        'Solicitud CPD',
+        'La solicitud CDP fue registrada correctamente.',
+        'Solicitud CDP',
       );
 
       this.showRequestCdpModal.set(false);
@@ -542,13 +542,13 @@ export class CdpRequests implements OnInit {
     } catch (error) {
 
       console.error(
-        'Error al registrar la solicitud CPD:',
+        'Error al registrar la solicitud CDP:',
         error,
       );
 
       this.notificationService.error(
-        'No fue posible registrar la solicitud CPD.',
-        'Solicitud CPD',
+        'No fue posible registrar la solicitud CDP.',
+        'Solicitud CDP',
       );
 
     } finally {
@@ -721,7 +721,7 @@ export class CdpRequests implements OnInit {
     } catch (error) {
 
       console.error(
-        'Error al cargar la solicitud CPD:',
+        'Error al cargar la solicitud CDP:',
         error,
       );
 
