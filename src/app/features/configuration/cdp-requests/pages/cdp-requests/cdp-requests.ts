@@ -8,8 +8,17 @@ import {
   WritableSignal,
 } from '@angular/core';
 
+import { NotificationService } from '../../../../../core/service/notification-service';
+
 import { CdpService } from '../../data/cdp.service';
 import { CdpContext, FacultyCoordinationItem } from '../../model/cdp-context.model';
+import {
+  CdpAttachment,
+  CdpRequest,
+} from '../../model/cdp-request.model';
+
+import { DocumentPreview } from '../../../../../shared/components/form/document-preview/document-preview';
+import { DocumentRequest } from '../../../../../shared/model/document.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable } from 'rxjs';
@@ -29,6 +38,8 @@ import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.m
 import { CoordinationTable } from '../../../professor-preload/components/coordination-table/coordination-table';
 import { CoordinationService } from '../../../professor-preload/data/coordination.service';
 
+import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
+
 import {
   CoordinationItem,
   CoordinationPreloadCallApi,
@@ -45,6 +56,8 @@ import { AuthService } from '../../../../../core/service/auth-service';
     CoordinationTable,
     Icon,
     Tooltip,
+    NewModal,
+    DocumentPreview,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +67,8 @@ export class CdpRequests implements OnInit {
   private readonly coordinationService = inject(CoordinationService);
   private readonly cdpService = inject(CdpService);
   private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
+
   readonly permissions = inject(PermissionService);
 
   readonly getFileTypeIconPath = getFileTypeIconPath;
@@ -72,8 +87,35 @@ export class CdpRequests implements OnInit {
 
   readonly cdpObservation = signal('');
   readonly cdpAttachments = signal<File[]>([]);
+  readonly isRequestingCdp = signal(false);
+
+  readonly currentCdpRequest = signal<CdpRequest | null>(null);
+  readonly isLoadingCurrentCdpRequest = signal(false);
+
+  readonly showDocumentPreview = signal(false);
+  readonly selectedDocument = signal<DocumentRequest | null>(null);
+
+  readonly hasCdpRequest = computed(
+    () => this.currentCdpRequest() != null,
+  );
+
+  readonly showRequestCdpModal = signal(false);
 
   readonly cdpObservationMaxLength = 250;
+
+  readonly cdpMaxFileSize =
+    10 * 1024 * 1024;
+
+  readonly cdpMaxTotalSize =
+    100 * 1024 * 1024;
+
+  readonly canRequestCdp = computed(
+    () =>
+      !this.hasCdpRequest() &&
+      this.cdpObservation().trim().length > 0 &&
+      this.cdpAttachments().length > 0 &&
+      !this.isRequestingCdp(),
+  );
 
   readonly isDownloadingReport = signal(false);
   readonly isDownloadingPdfReport = signal(false);
@@ -296,6 +338,7 @@ export class CdpRequests implements OnInit {
 
   ngOnInit(): void {
     void this.loadUniversityPeriods();
+    void this.loadCurrentCdpRequest();
   }
 
   onPeriodChange(periodId: string): void {
@@ -391,25 +434,72 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onCdpAttachmentSelected(event: Event): void {
+  onCdpAttachmentSelected(
+    event: Event,
+  ): void {
+
     const input =
       event.target as HTMLInputElement;
 
-    const files =
+    const selectedFiles =
       Array.from(input.files ?? []);
 
-    if (!files.length) {
+    input.value = '';
+
+    if (!selectedFiles.length) {
+      return;
+    }
+
+    const oversizedFile =
+      selectedFiles.find(
+        (file) =>
+          file.size > this.cdpMaxFileSize,
+      );
+
+    if (oversizedFile) {
+
+      this.notificationService.error(
+        `El archivo "${oversizedFile.name}" supera el tamaño máximo permitido de 10 MB.`,
+        'Adjunto no permitido',
+      );
+
+      return;
+    }
+
+    const currentTotal =
+      this.cdpAttachments()
+        .reduce(
+          (total, file) =>
+            total + file.size,
+          0,
+        );
+
+    const selectedTotal =
+      selectedFiles.reduce(
+        (total, file) =>
+          total + file.size,
+        0,
+      );
+
+    if (
+      currentTotal + selectedTotal >
+      this.cdpMaxTotalSize
+    ) {
+
+      this.notificationService.error(
+        'Los archivos adjuntos no pueden superar los 100 MB por solicitud.',
+        'Límite de adjuntos',
+      );
+
       return;
     }
 
     this.cdpAttachments.update(
       (current) => [
         ...current,
-        ...files,
+        ...selectedFiles,
       ],
     );
-
-    input.value = '';
   }
 
   removeCdpAttachment(index: number): void {
@@ -422,16 +512,57 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onRequestCdp(): void {
-    console.log(
-      'Solicitud CDP:',
-      {
-        observacion:
+  async onRequestCdp(): Promise<void> {
+
+    if (
+      this.isRequestingCdp() ||
+      !this.canRequestCdp()
+    ) {
+      return;
+    }
+
+    this.isRequestingCdp.set(true);
+
+    try {
+
+      await firstValueFrom(
+        this.cdpService.createRequest(
           this.cdpObservation(),
-        adjuntos:
           this.cdpAttachments(),
-      },
-    );
+        ),
+      );
+
+      this.notificationService.success(
+        'La solicitud CPD fue registrada correctamente.',
+        'Solicitud CPD',
+      );
+
+      this.showRequestCdpModal.set(false);
+
+      await this.loadCurrentCdpRequest();
+
+      this.cdpObservation.set('');
+      this.cdpAttachments.set([]);
+
+      this.showRequestCdpModal.set(false);
+
+    } catch (error) {
+
+      console.error(
+        'Error al registrar la solicitud CPD:',
+        error,
+      );
+
+      this.notificationService.error(
+        'No fue posible registrar la solicitud CPD.',
+        'Solicitud CPD',
+      );
+
+    } finally {
+
+      this.isRequestingCdp.set(false);
+
+    }
   }
 
   private resolveSelectedPeriodId():
@@ -506,7 +637,7 @@ export class CdpRequests implements OnInit {
       this.isLoadingPeriods.set(false);
     }
   }
-  
+
   async downloadCdpReport(): Promise<void> {
     await this.runCdpDownload(
       this.isDownloadingReport,
@@ -576,4 +707,103 @@ export class CdpRequests implements OnInit {
       isDownloading.set(false);
     }
   }
+
+  private async loadCurrentCdpRequest():
+    Promise<void> {
+
+    this.isLoadingCurrentCdpRequest.set(true);
+
+    try {
+
+      const request =
+        await firstValueFrom(
+          this.cdpService.getCurrentRequest(),
+        );
+
+      this.currentCdpRequest.set(
+        request ?? null,
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Error al cargar la solicitud CPD:',
+        error,
+      );
+
+      this.currentCdpRequest.set(null);
+
+    } finally {
+
+      this.isLoadingCurrentCdpRequest.set(false);
+
+    }
+  }
+
+  openRequestCdpModal(): void {
+    if (!this.canRequestCdp()) {
+      return;
+    }
+
+    this.showRequestCdpModal.set(true);
+  }
+
+  closeRequestCdpModal(): void {
+    if (this.isRequestingCdp()) {
+      return;
+    }
+
+    this.showRequestCdpModal.set(false);
+  }
+
+  openAttachmentPreview(
+    adjunto: CdpAttachment,
+  ): void {
+    const extension =
+      adjunto.nombre
+        .split('.')
+        .pop()
+        ?.toLowerCase() ?? '';
+
+    this.selectedDocument.set({
+      mimeType: '',
+      tamano: 0,
+      extension,
+      path: adjunto.path,
+      descripcion: adjunto.nombre,
+      nombreArchivo: adjunto.nombre,
+    });
+
+    this.showDocumentPreview.set(true);
+  }
+
+  openLocalAttachmentPreview(
+    file: File,
+  ): void {
+    const extension =
+      file.name
+        .split('.')
+        .pop()
+        ?.toLowerCase() ?? '';
+
+    this.selectedDocument.set({
+      archivo: file,
+      mimeType:
+        file.type ||
+        'application/octet-stream',
+      tamano: file.size,
+      extension,
+      path: '',
+      descripcion: file.name,
+      nombreArchivo: file.name,
+    });
+
+    this.showDocumentPreview.set(true);
+  }
+
+  closeDocumentPreview(): void {
+    this.showDocumentPreview.set(false);
+    this.selectedDocument.set(null);
+  }
+
 }
