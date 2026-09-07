@@ -57,6 +57,10 @@ export const CDP_FUNC = {
   PARENT: '04',
 } as const;
 
+export const VERIFY_FUNC = {
+  PARENT: '05',
+} as const;
+
 export const VERIFY_PROFESSORS_FUNC = {
   VERIFY: '05_01',
   DECLINE: '05_02',

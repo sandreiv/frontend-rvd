@@ -5,6 +5,7 @@ import { UniversityPeriodItem } from '../../preload-call/model/preload-call.mode
 import { ProfessorLoadSummaryApi } from '../../professor-preload/model/professor-summary.model';
 import {
   AcademicCoordinationItem,
+  PendingVerifyProfessorsList,
   VerifyPreloadCallItem,
   VerifyProfessorItem,
   VerifyProfessorsFilter,
@@ -55,9 +56,7 @@ export class VerifyProfessorsService {
   /**
    * Lista docentes en estado para verificar.
    */
-  listProfessors(
-    filter: VerifyProfessorsFilter,
-  ): Observable<VerifyProfessorItem[]> {
+  listProfessors(filter: VerifyProfessorsFilter): Observable<VerifyProfessorItem[]> {
     return this.webRequestService.get<VerifyProfessorItem[]>(
       `${this.endpoint}/list-professors`,
       {
@@ -65,6 +64,15 @@ export class VerifyProfessorsService {
         idConvocatoria: filter.idConvocatoria,
         idCoordinacion: filter.idCoordinacion,
       },
+    );
+  }
+
+  /**
+   * Lista docentes pendientes de verificación para el header.
+   */
+  listPendingProfessors(): Observable<PendingVerifyProfessorsList> {
+    return this.webRequestService.get<PendingVerifyProfessorsList>(
+      `${this.endpoint}/pending`,
     );
   }
 
