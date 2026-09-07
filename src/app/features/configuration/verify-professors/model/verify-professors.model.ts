@@ -50,6 +50,51 @@ export interface VerifyProfessorsFilter {
   idCoordinacion: number;
 }
 
+export interface PendingVerifyProfessorItem {
+  idCargaDocente: number;
+  nombreCompleto: string | null;
+  idPeriodoUniversidad: number;
+  idConvocatoria: number;
+  idCoordinacion: number;
+  nombreCoordinacion: string | null;
+}
+
+export interface PendingVerifyProfessorsList {
+  total: number;
+  items: PendingVerifyProfessorItem[];
+}
+
+export const VERIFY_PROFESSORS_PATH = '/rvd/verificar-docentes';
+
+export const VERIFY_PROFESSORS_QUERY = {
+  PERIODO: 'periodo',
+  CONVOCATORIA: 'convocatoria',
+  COORDINACION: 'coordinacion',
+} as const;
+
+const NN_LABEL = 'NN';
+const PENDING_BADGE_MAX = 99;
+
+export function pendingProfessorName(
+  item: PendingVerifyProfessorItem,
+): string {
+  return item.nombreCompleto?.trim() || NN_LABEL;
+}
+
+export function pendingCoordinationName(
+  item: PendingVerifyProfessorItem,
+): string {
+  return item.nombreCoordinacion?.trim() || '-';
+}
+
+export function formatPendingBadgeCount(total: number): string {
+  if (total > PENDING_BADGE_MAX) {
+    return `${PENDING_BADGE_MAX}+`;
+  }
+
+  return String(total);
+}
+
 const EMPTY_COORDINATION: Omit<
   CoordinationItem,
   'id' | 'nombre' | 'descripcion' | 'codigo'

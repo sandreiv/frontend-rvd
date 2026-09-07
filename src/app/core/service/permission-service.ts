@@ -1,5 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
-import { CDP_FUNC, PRELOAD_FUNC } from '../config/func-route.map';
+import { CDP_FUNC, PRELOAD_FUNC, VERIFY_FUNC } from '../config/func-route.map';
 import { FuncionalidadNodo } from '../model/funcionalidad.model';
 import { forNext } from '../utils/for-next.function';
 import { MenuService } from './menu-service';
@@ -95,6 +95,10 @@ export class PermissionService {
 
   canAddCdpRequest(): boolean {
     return this.can(CDP_FUNC.ADD_CDP_REQUEST);
+  }
+
+  canVerifyProfessors(): boolean {
+    return this.can(VERIFY_FUNC.PARENT);
   }
 
 }

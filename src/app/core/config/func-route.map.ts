@@ -57,6 +57,10 @@ export const CDP_FUNC = {
   PARENT: '04',
 } as const;
 
+export const VERIFY_FUNC = {
+  PARENT: '05',
+} as const;
+
 export function resolveFuncCodigoFromUrl(url: string): string | null {
   const path = url.split('?')[0].split('#')[0];
   const entries = Object.entries(FUNC_ROUTE_MAP);
