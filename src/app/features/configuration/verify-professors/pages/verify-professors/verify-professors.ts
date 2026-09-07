@@ -30,6 +30,8 @@ import {
   toModalityProfessor,
   toSummaryCoordination,
 } from '../../model/verify-professors.model';
+import { PermissionService } from '../../../../../core/service/permission-service';
+import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
 
 @Component({
   selector: 'app-verify-professors',
@@ -39,6 +41,7 @@ import {
     SectionFrame,
     VerifyProfessorsTable,
     ProfessorSummary,
+    NewModal,
   ],
   templateUrl: './verify-professors.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +50,7 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   private readonly verifyProfessorsService = inject(VerifyProfessorsService);
   private readonly breadcrumbTitle = inject(BreadcrumbTitle);
 
+  readonly permissions = inject(PermissionService);
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
   readonly selectedPreloadCallId = signal('');
@@ -54,6 +58,35 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   readonly appliedFilter = signal<VerifyProfessorsFilter | null>(null);
   readonly selectedProfessor = signal<VerifyProfessorItem | null>(null);
   readonly showSummary = signal(false);
+  readonly isReviewing = signal(false);
+
+  readonly pendingReview = signal<{
+    action: 'verify' | 'decline';
+    idCargaDocente: number;
+    observacion: string;
+  } | null>(null);
+
+  readonly reviewTitle = computed(() =>
+    this.pendingReview()?.action === 'verify'
+      ? 'Verificar docente'
+      : 'Devolver docente',
+  );
+
+  readonly reviewMessage = computed(() =>
+    this.pendingReview()?.action === 'verify'
+      ? '¿Seguro que deseas verificar este docente? Su estado cambiará a Verificado.'
+      : '¿Seguro que deseas devolver este docente? Volverá a En registro para que el coordinador pueda realizar las correcciones.',
+  );
+
+  readonly reviewButtonText = computed(() => {
+    const verifying = this.pendingReview()?.action === 'verify';
+
+    if (this.isReviewing()) {
+      return verifying ? 'Verificando...' : 'Devolviendo...';
+    }
+
+    return verifying ? 'Sí, verificar' : 'Sí, devolver';
+  });
   readonly isLoadingPeriods = signal(false);
 
   readonly activePreloadCallsResource = rxResource({
@@ -235,7 +268,11 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   }
 
   onViewSummary(professor: VerifyProfessorItem): void {
-    if (professor.idCargaDocente == null) {
+    if (
+      professor.idCargaDocente == null ||
+      this.pendingReview() != null ||
+      this.isReviewing()
+    ) {
       return;
     }
 
@@ -244,8 +281,108 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   }
 
   onCloseSummary(): void {
+    if (this.pendingReview() != null || this.isReviewing()) {
+      return;
+    }
+
     this.showSummary.set(false);
     this.selectedProfessor.set(null);
+  }
+
+  onRequestReview(
+    action: 'verify' | 'decline',
+    observation: string,
+  ): void {
+    if (
+      !this.showSummary() ||
+      this.pendingReview() != null ||
+      this.isReviewing()
+    ) {
+      return;
+    }
+
+    const professor = this.summaryProfessor();
+
+    if (
+      professor?.idCargaDocente == null ||
+      professor.estado !== '1'
+    ) {
+      return;
+    }
+
+    const allowed = action === 'verify'
+      ? this.permissions.canVerifyProfessor()
+      : this.permissions.canDeclineProfessorVerification();
+
+    if (!allowed) {
+      return;
+    }
+
+    const observacion = observation.trim();
+
+    if (observacion.length > 500) {
+      return;
+    }
+
+    this.pendingReview.set({
+      action,
+      idCargaDocente: professor.idCargaDocente,
+      observacion,
+    });
+  }
+
+  onCancelReview(): void {
+    if (this.isReviewing()) {
+      return;
+    }
+
+    this.pendingReview.set(null);
+  }
+
+  async onConfirmReview(): Promise<void> {
+    const review = this.pendingReview();
+
+    if (review == null || this.isReviewing()) {
+      return;
+    }
+
+    const allowed = review.action === 'verify'
+      ? this.permissions.canVerifyProfessor()
+      : this.permissions.canDeclineProfessorVerification();
+
+    if (!allowed) {
+      this.pendingReview.set(null);
+      return;
+    }
+
+    this.isReviewing.set(true);
+
+    try {
+      const request = review.action === 'verify'
+        ? this.verifyProfessorsService.verifyProfessor(
+            review.idCargaDocente,
+            review.observacion,
+          )
+        : this.verifyProfessorsService.declineProfessor(
+            review.idCargaDocente,
+            review.observacion,
+          );
+
+      await firstValueFrom(request);
+    } catch {
+      // El interceptor existente muestra el error.
+      // Conservamos el resumen y la observación.
+      return;
+    } finally {
+      this.isReviewing.set(false);
+      this.pendingReview.set(null);
+    }
+
+    this.showSummary.set(false);
+    this.selectedProfessor.set(null);
+
+    this.professorsResource.reload();
+    this.coordinationsResource.reload();
   }
 
   private parseId(value: string): number | null {

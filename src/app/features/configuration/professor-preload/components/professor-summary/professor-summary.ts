@@ -53,6 +53,33 @@ export class ProfessorSummary {
   >(null);
   close = output<void>();
 
+  verificationMode = input(false);
+  isProcessing = input(false);
+
+  canVerify = input(false);
+  canDecline = input(false);
+
+  verify = output<string>();
+  decline = output<string>();
+
+  readonly observation = signal('');
+
+  readonly showVerificationActions = computed(
+    () =>
+      this.verificationMode() &&
+      this.professor()?.estado === '1',
+  );
+
+  readonly reviewActionsDisabled = computed(
+    () =>
+      !this.isOpen() ||
+      !this.showVerificationActions() ||
+      this.isLoading() ||
+      this.isProcessing() ||
+      this.professor()?.idCargaDocente == null ||
+      this.observation().trim().length > 500,
+  );
+
   readonly sections = PROFESSOR_SUMMARY_SECTIONS;
 
   readonly isPlanta = computed(() => {
@@ -138,12 +165,16 @@ export class ProfessorSummary {
 
   constructor() {
     effect(() => {
-      if (!this.isOpen()) {
+      const isOpen = this.isOpen();
+      const idCargaDocente = this.professor()?.idCargaDocente;
+
+      if (!isOpen || idCargaDocente == null) {
         return;
       }
 
       untracked(() => {
         this.expandedSections.set(createInitialExpandedSections());
+        this.observation.set('');
       });
     });
   }
@@ -167,6 +198,34 @@ export class ProfessorSummary {
   }
 
   onClose(): void {
+    if (this.isProcessing()) {
+      return;
+    }
+
     this.close.emit();
   }
+
+  onObservationInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    this.observation.set(textarea.value);
+  }
+
+  onVerify(): void {
+    if (this.reviewActionsDisabled() || !this.canVerify()) {
+      return;
+    }
+
+    this.verify.emit(this.observation().trim());
+  }
+
+  onDecline(): void {
+    if (this.reviewActionsDisabled() || !this.canDecline()) {
+      return;
+    }
+
+    this.decline.emit(this.observation().trim());
+  }
+
+
+
 }

@@ -83,5 +83,28 @@
   [coordination]="summaryCoordination()"
   [contractModality]="summaryModality()"
   [summaryFetcher]="loadSummary"
+  [verificationMode]="true"
+  [canVerify]="permissions.canVerifyProfessor()"
+  [canDecline]="permissions.canDeclineProfessorVerification()"
+  [isProcessing]="pendingReview() !== null || isReviewing()"
+  (verify)="onRequestReview('verify', $event)"
+  (decline)="onRequestReview('decline', $event)"
   (close)="onCloseSummary()"
 />
+
+@if (pendingReview() !== null) {
+  <app-new-modal
+    [isOpen]="true"
+    [title]="reviewTitle()"
+    [message]="reviewMessage()"
+    [buttonText]="reviewButtonText()"
+    [iconVariant]="
+      pendingReview()?.action === 'verify' ? 'warning' : 'danger'
+    "
+    [showCancelButton]="!isReviewing()"
+    [showCloseButton]="!isReviewing()"
+    cancelButtonText="No, cancelar"
+    (confirm)="onConfirmReview()"
+    (close)="onCancelReview()"
+  />
+}

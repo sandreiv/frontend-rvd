@@ -213,7 +213,11 @@
       >
         <app-button
           type="button"
-          [variant]="showSendForVerificationButton() ? 'outline' : 'primary'"
+          [variant]="
+            showSendForVerificationButton() || showApproveButton()
+              ? 'outline'
+              : 'primary'
+          "
           [disabled]="saveButtonDisabled()"
           (btnClick)="onSave()"
         >
@@ -232,6 +236,20 @@
             (btnClick)="onSendForVerification()"
           >
             {{ sendForVerificationButtonText() }}
+          </app-button>
+        </span>
+      }
+      @if (showApproveButton()) {
+        <span
+          [appTooltip]="approveButtonTooltip()"
+          tooltipPlacement="top"
+        >
+          <app-button
+            type="button"
+            [disabled]="approveButtonDisabled()"
+            (btnClick)="onApprove()"
+          >
+            {{ approveButtonText() }}
           </app-button>
         </span>
       }

@@ -79,4 +79,26 @@ export class VerifyProfessorsService {
       `${this.endpoint}/professor-load-summary/${idCargaDocente}`,
     );
   }
+
+  verifyProfessor(
+    idCargaDocente: number,
+    observacion: string,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/verify/${idCargaDocente}`,
+      { observacion },
+    );
+  }
+
+  declineProfessor(
+    idCargaDocente: number,
+    observacion: string,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/decline/${idCargaDocente}`,
+      { observacion },
+    );
+  }
+
+  
 }

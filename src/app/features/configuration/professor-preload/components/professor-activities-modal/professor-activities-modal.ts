@@ -111,7 +111,6 @@ export class ProfessorActivitiesModal {
 
   readonly isSaving = signal(false);
   readonly isApproving = signal(false);
-  readonly isDisapproving = signal(false);
   readonly hasSavedDetail = signal(false);
   readonly isPreassignmentApproved = signal(false);
   readonly isSendingForVerification = signal(false);
@@ -491,18 +490,22 @@ export class ProfessorActivitiesModal {
   });
 
   readonly canApproveNow = computed(
-    () => this.hasCompletedWeeklyGoal() && this.permissions.canApprove(),
+    () =>
+      this.professor()?.estado === '2' &&
+      !this.isPreassignmentApproved() &&
+      this.hasCompletedWeeklyGoal() &&
+      this.permissions.canApprove(),
   );
 
-  readonly showApproveButton = computed(() => {
-    if (this.readOnly() || !this.permissions.canApprove()) {
-      return false;
-    }
-
-    return (
-      this.hasCompletedWeeklyGoal() || this.isPreassignmentApproved()
-    );
-  });
+  readonly showApproveButton = computed(
+    () =>
+      !this.readOnly() &&
+      this.permissions.canApprove() &&
+      (
+        this.professor()?.estado === '2' ||
+        this.isPreassignmentApproved()
+      ),
+  );
 
   readonly saveButtonText = computed(() => {
     if (this.readOnly()) {
@@ -514,7 +517,7 @@ export class ProfessorActivitiesModal {
 
   readonly approveButtonText = computed(() => {
     if (this.isPreassignmentApproved()) {
-      return this.isDisapproving() ? 'Desaprobando...' : 'Desaprobar';
+      return 'Aprobado';
     }
 
     return this.isApproving() ? 'Aprobando...' : 'Aprobar';
@@ -578,7 +581,6 @@ export class ProfessorActivitiesModal {
       this.readOnly() ||
       this.isSaving() ||
       this.isApproving() ||
-      this.isDisapproving() ||
       this.isSendingForVerification() ||
       this.isSentForVerification() ||
       !this.isProfessorInRegistration() ||
@@ -599,7 +601,17 @@ export class ProfessorActivitiesModal {
   });
 
   readonly approveButtonDisabled = computed(
-    () => this.isActionBlocked() || !this.canApproveNow(),
+    () =>
+      !this.isOpen() ||
+      this.readOnly() ||
+      this.professor()?.idCargaDocente == null ||
+      this.isSaving() ||
+      this.isApproving() ||
+      this.isSendingForVerification() ||
+      this.isLoadingDetail() ||
+      this.isLoadingActivityCategories() ||
+      this.isLoadingWorkDates() ||
+      !this.canApproveNow(),
   );
 
   constructor() {
@@ -895,47 +907,27 @@ export class ProfessorActivitiesModal {
       return;
     }
 
-    const distribution = this.resolveDistributionPayload();
-    if (distribution == null) {
+    const idCargaDocente = this.professor()?.idCargaDocente;
+
+    if (idCargaDocente == null) {
       return;
     }
-
-    const { idCargaDocente, saveRequest, updateRequests } =
-      distribution;
 
     this.isApproving.set(true);
 
     this.coordinationService
-      .approveProfessorActivityDistribution({
-        idCargaDocente,
-        detallesActualizados: updateRequests,
-        detallesNuevos: saveRequest.detalles,
-      })
+      .approveProfessorPreassignment(idCargaDocente)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => this.completeMutation(true),
+        next: () => {
+          this.isApproving.set(false);
+          this.isPreassignmentApproved.set(true);
+
+          this.saved.emit();
+          this.close.emit();
+        },
         error: () => this.failMutation(),
       });
-  }
-
-  onDisapprove(): void {
-    if (this.approveButtonDisabled()) {
-      return;
-    }
-
-    const idCargaDocente = this.professor()?.idCargaDocente;
-    if (!idCargaDocente) {
-      return;
-    }
-
-    this.isDisapproving.set(true);
-
-    this.coordinationService.deleteProfessorActivityDistribution(idCargaDocente)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe({
-      next: () => this.completeMutation(false),
-      error: () => this.failMutation(),
-    });
   }
 
   onLastPersistedActivityDelete(): void {
@@ -988,7 +980,6 @@ export class ProfessorActivitiesModal {
   private completeMutation(approved: boolean): void {
     this.isSaving.set(false);
     this.isApproving.set(false);
-    this.isDisapproving.set(false);
 
     if (approved) {
       this.isPreassignmentApproved.set(true);
@@ -1005,7 +996,6 @@ export class ProfessorActivitiesModal {
   private failMutation(): void {
     this.isSaving.set(false);
     this.isApproving.set(false);
-    this.isDisapproving.set(false);
   }
 
   private buildSaveInput() {
@@ -1099,7 +1089,6 @@ export class ProfessorActivitiesModal {
     this.addFormOpen.set(createInitialAddFormOpen());
     this.isSaving.set(false);
     this.isApproving.set(false);
-    this.isDisapproving.set(false);
     this.hasSavedDetail.set(false);
     this.isSendingForVerification.set(false);
     this.isSentForVerification.set(false);
