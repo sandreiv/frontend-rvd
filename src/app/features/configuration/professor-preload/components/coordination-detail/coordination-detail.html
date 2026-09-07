@@ -188,7 +188,7 @@
       [canEditPreassignment]="canEditPreassignment()"
       [editBlockReason]="editBlockReason()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
-      (allProfessorsAproved)="onAllProfessorsApproved($event)"
+      (allProfessorsVerified)="onAllProfessorsVerified($event)"
       (preloadChanged)="onPreloadChanged()"
     />
 
@@ -209,7 +209,7 @@
         <app-button
           type="button"
           size="sm"
-          [disabled]="!allProfessorsPreloadApproved()"
+          [disabled]="!allProfessorsPreloadVerified()"
           (btnClick)="endorsePreloadDean()"
         >
           <app-icon name="paperAirplane" size="sm" />

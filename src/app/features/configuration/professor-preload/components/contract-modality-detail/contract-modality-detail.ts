@@ -50,7 +50,9 @@ export type ProfessorManagementStatus =
   | 'incompleto'
   | 'sin-asignar';
 
-type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';  
+type TcoFilter = 'todos' | 'duracion' | 'estado';
+type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';
+type TcoStateFilter = 'todos' | 'enRegistro' | 'porVerificar' | 'verificado' | 'devuelto' | 'aprobado';
 
 interface ProfessorMenuAction {
   id: string;
@@ -60,8 +62,20 @@ interface ProfessorMenuAction {
   tooltip?: string;
 }
 
+interface TcoFilterSwitchItem {
+  id: TcoFilter;
+  label: string;
+  icon: AppIconName;
+}
+
 interface TcoDurationSwitchItem {
   id: TcoDurationFilter;
+  label: string;
+  icon: AppIconName;
+}
+
+interface TcoStateSwitchItem {
+  id: TcoStateFilter;
   label: string;
   icon: AppIconName;
 }
@@ -118,7 +132,11 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 const UNASSIGNED_DOT =
   `${DOT_BASE} border border-dashed border-gray-400 dark:border-gray-500`;
 
-const VERIFIED_MODALITY_STATE = '2';
+const ON_REGISTER_STATE = '0';
+const PENDING_VERIFY_STATE = '1';
+const VERIFIED_STATE = '2';
+const RETURNED_STATE = '3';
+const APPROVED_STATE = '4';
 
 @Component({
   selector: 'app-contract-modality-detail',
@@ -154,16 +172,29 @@ export class ContractModalityDetail {
   editBlockReason = input<string | null>(null);
   hasProfessorsChange = output<boolean>();
   preloadChanged = output<void>();
-  allProfessorsAproved = output<boolean>();
+  allProfessorsVerified = output<boolean>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
-  readonly tcoDurationFilter = signal<TcoDurationFilter>('todos');
-  readonly tcoDurationSwitchItems: TcoDurationSwitchItem[] = [
+  readonly tcoFilter = signal<TcoFilter>('todos');
+  readonly tcoFilterItems: TcoFilterSwitchItem[] = [
     {
       id: 'todos',
       label: 'Todos',
       icon: 'adjustmentsHorizontal',
     },
+    {
+      id: 'duracion',
+      label: 'Duración',
+      icon: 'calendar',
+    },
+    {
+      id: 'estado',
+      label: 'Estado',
+      icon: 'orbit',
+    },
+  ];
+  readonly tcoDurationFilter = signal<TcoDurationFilter>('todos');
+  readonly tcoDurationSwitchItems: TcoDurationSwitchItem[] = [
     {
       id: 'cuatroMeses',
       label: '4 meses',
@@ -175,6 +206,35 @@ export class ContractModalityDetail {
       icon: 'calendar',
     },
   ];
+  readonly tcoStateFilter = signal<TcoStateFilter>('todos');
+  readonly tcoStateSwitchItems: TcoStateSwitchItem[] = [
+    {
+      id: 'enRegistro',
+      label: 'En registro',
+      icon: 'orbit',
+    },
+    {
+      id: 'porVerificar',
+      label: 'Por verificar',
+      icon: 'orbit',
+    },
+    {
+      id: 'verificado',
+      label: 'Verificado',
+      icon: 'orbit',
+    },
+    {
+      id: 'devuelto',
+      label: 'Devuelto',
+      icon: 'orbit',
+    },
+    {
+      id: 'aprobado',
+      label: 'Aprobado',
+      icon: 'orbit',
+    },
+  ];
+
   readonly isProfessorAddModalOpen = signal(false);
   readonly isActivitiesModalOpen = signal(false);
   readonly isSummaryModalOpen = signal(false);
@@ -186,6 +246,7 @@ export class ContractModalityDetail {
   readonly activitiesContractModality = signal<CoordinationContractModality | null>(null);
   readonly isExistingLoadAlertOpen = signal(false);
   readonly pendingExistingLoadProfessor = signal<ProfessorSearchResult | null>(null);
+  readonly openTcoFilterMenu = signal<TcoFilter | null>(null);
   readonly openMenuKey = signal<string | null>(null);
   readonly writeBlockReason = computed(
     () =>
@@ -252,9 +313,20 @@ export class ContractModalityDetail {
     return this.modalityProfessorsMap()[Number(selectedId)] ?? [];
   });
 
- readonly filteredModalityProfessors = computed(() =>
-    this.filterProfessorsByTcoDuration(this.modalityProfessors()),
-  );
+ readonly filteredModalityProfessors = computed(() => {
+    const professors = this.modalityProfessors();
+
+    switch (this.tcoFilter()) {
+      case 'duracion' :
+        return this.filterProfessorsByTcoDuration(professors);
+
+      case 'estado' :
+        return this.filterProfessorsByTcoState(professors);
+      
+      default :
+        return professors;
+    }
+ });
 
   readonly currentProfessorRows = computed<ModalityProfessorRow[]>(() =>
     this.buildProfessorRows(this.filteredModalityProfessors()),
@@ -340,14 +412,14 @@ export class ContractModalityDetail {
     return this.selectedModalityForModals();
   });
 
-  readonly allRequiredProfessorsApproved = computed(() => {
+  readonly allRequiredProfessorsVerified = computed(() => {
     const professors = Object.values(this.modalityProfessorsMap())
       .flat()
       .filter((professor) => professor.tieneCarga === true);
 
     if (professors.length === 0) return false;
 
-    return professors.every((professor) => professor.estado === '1');
+    return professors.every((professor) => professor.estado ===  VERIFIED_STATE);
   });
 
 
@@ -372,15 +444,35 @@ export class ContractModalityDetail {
     });
 
     effect(() => {
-      this.allProfessorsAproved.emit(
-        this.allRequiredProfessorsApproved()
+      this.allProfessorsVerified.emit(
+        this.allRequiredProfessorsVerified()
       );
     });
   }
 
+  toggleTcoFilterMenu(filter: TcoFilter): void {
+    if (filter === 'todos') {
+      this.tcoFilter.set('todos');
+      this.openTcoFilterMenu.set(null);
+      this.tcoDurationFilter.set('todos');
+      this.tcoStateFilter.set('todos');
+      return;
+    }
+
+    this.openTcoFilterMenu.update((current) =>
+      current === filter ? null : filter,
+    );
+  }
+
+  closeTcoFilterMenu(): void {
+    this.openTcoFilterMenu.set(null);
+  }
+
   onContractModalityChange(modalityId: TabBarId | null): void {
     this.selectedContractModalityId.set(modalityId);
+    this.tcoFilter.set('todos');
     this.tcoDurationFilter.set('todos');
+    this.tcoStateFilter.set('todos');
   }
 
   onProfessorAddModalOpen(): void {
@@ -440,7 +532,17 @@ export class ContractModalityDetail {
   }
 
   setTcoDurationFilter(filter: TcoDurationFilter): void {
+    this.tcoFilter.set('duracion');
     this.tcoDurationFilter.set(filter);
+    this.openTcoFilterMenu.set(null);
+    this.tcoStateFilter.set('todos');
+  }
+
+  setTcoStateFilter(filter: TcoStateFilter): void {
+    this.tcoFilter.set('estado');
+    this.tcoStateFilter.set(filter);
+    this.openTcoFilterMenu.set(null);
+    this.tcoDurationFilter.set('todos');
   }
 
   private filterProfessorsByTcoDuration(
@@ -464,6 +566,36 @@ export class ContractModalityDetail {
       }
 
       return onceMeses !== '1';
+    });
+  }
+
+  private filterProfessorsByTcoState(
+    professors: ModalityProfessor[],
+  ): ModalityProfessor[] {
+    if (!this.isTiempoCompletoOcasionalSelected()) {
+      return professors;
+    }
+
+    const filter = this.tcoStateFilter();
+
+    if (filter === 'todos') {
+      return professors;
+    }
+
+    return professors.filter((professor) => {
+      const estado = professor.estado.trim();
+
+      if (filter === 'enRegistro') {
+        return estado === ON_REGISTER_STATE;
+      } else if (filter === 'porVerificar') {
+        return estado === PENDING_VERIFY_STATE;
+      } else if (filter === 'verificado') {
+        return estado === VERIFIED_STATE;
+      } else if (filter === 'devuelto') {
+        return estado === RETURNED_STATE;
+      } else {
+        return estado === APPROVED_STATE;
+      }
     });
   }
   
@@ -517,7 +649,7 @@ export class ContractModalityDetail {
     }
 
     const verified = professors.filter(
-      (professor) => professor.estado === VERIFIED_MODALITY_STATE,
+      (professor) => professor.estado !== ON_REGISTER_STATE,
     ).length;
 
     return {
@@ -562,21 +694,16 @@ export class ContractModalityDetail {
     }
 
     switch (professor.estado) {
-      case '0':
+      case ON_REGISTER_STATE:
         return this.buildStatusBadge('En registro', 'gray');
-
-      case '1':
+      case PENDING_VERIFY_STATE:
         return this.buildStatusBadge('Enviado para verificar', 'warning');
-
-      case '2':
+      case VERIFIED_STATE:
         return this.buildStatusBadge('Verificado', 'brand');
-
-      case '3':
+      case RETURNED_STATE:
         return this.buildStatusBadge('Devuelto', 'warning');
-
-      case '4':
+      case APPROVED_STATE:
         return this.buildStatusBadge('Aprobada', 'success');
-
       default:
         return this.buildStatusBadge('Estado desconocido', 'gray');
     }

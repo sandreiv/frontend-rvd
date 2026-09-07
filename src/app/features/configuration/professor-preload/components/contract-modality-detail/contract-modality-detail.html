@@ -41,40 +41,94 @@
       </div>
 
       @if (isTiempoCompletoOcasionalSelected()) {
-        <div
-          class="inline-flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-theme-xs dark:border-white/10 dark:bg-white/5"
-        >
-          @for (item of tcoDurationSwitchItems; track item.id) {
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30"
-              [class.border-brand-600]="tcoDurationFilter() === item.id"
-              [class.bg-brand-600]="tcoDurationFilter() === item.id"
-              [class.text-white]="tcoDurationFilter() === item.id"
-              [class.shadow-theme-xs]="tcoDurationFilter() === item.id"
-              [class.border-transparent]="tcoDurationFilter() !== item.id"
-              [class.bg-transparent]="tcoDurationFilter() !== item.id"
-              [class.text-gray-700]="tcoDurationFilter() !== item.id"
-              [class.hover:bg-gray-100]="tcoDurationFilter() !== item.id"
-              [class.dark:text-gray-200]="tcoDurationFilter() !== item.id"
-              [class.dark:hover:bg-white/10]="tcoDurationFilter() !== item.id"
-              (click)="setTcoDurationFilter(item.id)"
-            >
-              <app-icon
-                [name]="item.icon"
-                size="sm"
-                [classes]="
-                  tcoDurationFilter() === item.id
-                    ? 'text-white'
-                    : 'text-brand-600 dark:text-brand-400'
-                "
-              />
+      <div
+        class="inline-flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-theme-xs dark:border-white/10 dark:bg-white/5"
+      >
+        @for (item of tcoFilterItems; track item.id) {
+          <button
+            #filterBtn
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-brand-500/30"
+            [class]="
+              tcoFilter() === item.id
+                ? 'border-brand-600 bg-brand-600 text-white shadow-theme-xs'
+                : 'border-transparent bg-transparent text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10'
+            "
+            (click)="toggleTcoFilterMenu(item.id)"
+          >
+            <app-icon
+              [name]="item.icon"
+              size="sm"
+              [classes]="
+                tcoFilter() === item.id
+                  ? 'text-white'
+                  : 'text-brand-600 dark:text-brand-400'
+              "
+            />
 
-              {{ item.label }}
-            </button>
+            {{ item.label }}
+          </button>
+
+          @if (item.id === 'duracion') {
+            <app-dropdown
+              [isOpen]="openTcoFilterMenu() === 'duracion'"
+              [anchor]="filterBtn"
+              className="w-44 p-2"
+              (close)="closeTcoFilterMenu()"
+            >
+              @for (option of tcoDurationSwitchItems; track option.id) {
+                <app-item
+                  (itemClick)="setTcoDurationFilter(option.id)"
+                >
+                  <span class="inline-flex items-center gap-2">
+                    <app-icon
+                      [name]="option.icon"
+                      size="xs"
+                      [classes]="
+                        tcoDurationFilter() === option.id
+                          ? 'text-brand-600 dark:text-brand-400'
+                          : 'text-gray-400'
+                      "
+                    />
+
+                    {{ option.label }}
+                  </span>
+                </app-item>
+              }
+            </app-dropdown>
           }
-        </div>
-      }
+
+          @if (item.id === 'estado') {
+            <app-dropdown
+              [isOpen]="openTcoFilterMenu() === 'estado'"
+              [anchor]="filterBtn"
+              className="w-52 p-2"
+              (close)="closeTcoFilterMenu()"
+            >
+              @for (option of tcoStateSwitchItems; track option.id) {
+                <app-item
+                  (itemClick)="setTcoStateFilter(option.id)"
+                >
+                  <span class="inline-flex items-center gap-2">
+                    <app-icon
+                      [name]="option.icon"
+                      size="xs"
+                      [classes]="
+                        tcoStateFilter() === option.id
+                          ? 'text-brand-600 dark:text-brand-400'
+                          : 'text-gray-400'
+                      "
+                    />
+
+                    {{ option.label }}
+                  </span>
+                </app-item>
+              }
+            </app-dropdown>
+          }
+        }
+      </div>
+    }
     </div>
 
       @if (currentProfessorRows().length) {

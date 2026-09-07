@@ -530,7 +530,50 @@ export class ProfessorActivitiesModal {
 
     return this.coordination()?.estadoCarga === 'REGISTRADO'
       ? ''
-      : 'La preasignación del docente ya fue aprobada.';
+      : 'La preasignación del docente ya fue registrada.';
+  });
+
+  readonly showSendForVerificationButton = computed(
+    () =>
+      !this.readOnly() &&
+      this.permissions.canSendForVerification() &&
+      (
+        this.isProfessorInRegistration() ||
+        this.isSentForVerification()
+      ),
+  );
+
+  readonly sendForVerificationButtonDisabled = computed(
+    () =>
+      this.isActionBlocked() ||
+      !this.permissions.canSendForVerification() ||
+      !this.isProfessorInRegistration() ||
+      this.isSentForVerification() ||
+      !this.hasCompletedWeeklyGoal(),
+  );
+
+  readonly sendForVerificationButtonText = computed(() => {
+    if (this.isSendingForVerification()) {
+      return 'Enviando...';
+    }
+
+    if (this.isSentForVerification()) {
+      return 'Enviado para verificar';
+    }
+
+    return 'Para verificar';
+  });
+
+  readonly sendForVerificationButtonTooltip = computed(() => {
+    if (this.isSentForVerification()) {
+      return 'La distribución del docente ya fue enviada para verificación.';
+    }
+
+    if (!this.hasCompletedWeeklyGoal()) {
+      return 'Debe completar las horas semanales requeridas para enviar a verificación.';
+    }
+
+    return '';
   });
 
   readonly showSendForVerificationButton = computed(
@@ -984,8 +1027,8 @@ export class ProfessorActivitiesModal {
     if (approved) {
       this.isPreassignmentApproved.set(true);
       this.notificationService.success(
-        'La preasignación del docente fue aprobada correctamente.',
-        'Preasignación aprobada',
+        'La preasignación del docente fue registrada correctamente.',
+        'Preasignación registrada',
       );
     }
 
