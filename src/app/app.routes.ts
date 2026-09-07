@@ -9,6 +9,7 @@ import { ProjectTypes } from './features/administration/project-types/pages/proj
 import { SessionRequired } from './features/auth/session-required/session-required';
 import { authGuard } from './core/guards/auth.guard';
 import { homeRedirectGuard, menuGuard } from './core/guards/menu.guard';
+import { VerifyProfessors } from './features/configuration/verify-professors/pages/verify-professors/verify-professors';
 
 export const routes: Routes = [
   {
@@ -40,6 +41,7 @@ export const routes: Routes = [
       { path: 'solicitudes-cdp', component: CdpRequests },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
+      { path: 'verificar-docentes', component: VerifyProfessors }
     ],
   },
 ];
