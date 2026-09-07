@@ -172,7 +172,7 @@ export class ContractModalityDetail {
   editBlockReason = input<string | null>(null);
   hasProfessorsChange = output<boolean>();
   preloadChanged = output<void>();
-  allProfessorsAproved = output<boolean>();
+  allProfessorsVerified = output<boolean>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly tcoFilter = signal<TcoFilter>('todos');
@@ -412,14 +412,14 @@ export class ContractModalityDetail {
     return this.selectedModalityForModals();
   });
 
-  readonly allRequiredProfessorsApproved = computed(() => {
+  readonly allRequiredProfessorsVerified = computed(() => {
     const professors = Object.values(this.modalityProfessorsMap())
       .flat()
       .filter((professor) => professor.tieneCarga === true);
 
     if (professors.length === 0) return false;
 
-    return professors.every((professor) => professor.estado === '1');
+    return professors.every((professor) => professor.estado ===  VERIFIED_STATE);
   });
 
 
@@ -444,8 +444,8 @@ export class ContractModalityDetail {
     });
 
     effect(() => {
-      this.allProfessorsAproved.emit(
-        this.allRequiredProfessorsApproved()
+      this.allProfessorsVerified.emit(
+        this.allRequiredProfessorsVerified()
       );
     });
   }
@@ -535,12 +535,14 @@ export class ContractModalityDetail {
     this.tcoFilter.set('duracion');
     this.tcoDurationFilter.set(filter);
     this.openTcoFilterMenu.set(null);
+    this.tcoStateFilter.set('todos');
   }
 
   setTcoStateFilter(filter: TcoStateFilter): void {
     this.tcoFilter.set('estado');
     this.tcoStateFilter.set(filter);
     this.openTcoFilterMenu.set(null);
+    this.tcoDurationFilter.set('todos');
   }
 
   private filterProfessorsByTcoDuration(

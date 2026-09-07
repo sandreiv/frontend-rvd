@@ -127,7 +127,7 @@ export class ProfessorActivitiesModal {
 
   readonly activityCardsReadOnlyReason = computed(() =>
     this.isPreassignmentApproved()
-      ? 'La preasignación del docente ya fue aprobada.'
+      ? 'La preasignación del docente ya fue registrada.'
       : this.readOnlyMessage(),
   );
 
@@ -503,7 +503,7 @@ export class ProfessorActivitiesModal {
 
     return this.coordination()?.estadoCarga === 'REGISTRADO'
       ? ''
-      : 'La preasignación del docente ya fue aprobada.';
+      : 'La preasignación del docente ya fue registrada.';
   });
 
   readonly isActionBlocked = computed(
@@ -540,7 +540,7 @@ export class ProfessorActivitiesModal {
       const estado = this.professor()?.estado;
 
       untracked(() => {
-        this.isPreassignmentApproved.set(isOpen && estado === '1');
+        this.isPreassignmentApproved.set(isOpen && estado !== '0');
       });
     });
 
@@ -873,8 +873,8 @@ export class ProfessorActivitiesModal {
     if (approved) {
       this.isPreassignmentApproved.set(true);
       this.notificationService.success(
-        'La preasignación del docente fue aprobada correctamente.',
-        'Preasignación aprobada',
+        'La preasignación del docente fue registrada correctamente.',
+        'Preasignación registrada',
       );
     }
 
