@@ -108,6 +108,7 @@ export class CdpService {
   createRequest(
     observacion: string,
     archivos: File[],
+    idPeriodo: string
     ): Observable<void> {
 
     const formData = new FormData();
@@ -126,6 +127,11 @@ export class CdpService {
         archivo.name,
         );
     });
+
+    formData.append(
+      'idPeriodo',
+      idPeriodo.trim()
+    )
 
     return this.webRequestService.postFormData<void>(
         `${this.endpoint}/requests`,

@@ -82,6 +82,7 @@ export class CdpRequests implements OnInit {
   readonly appliedPreloadCallId = signal<string | null>(null);
 
   readonly selectedCoordinationIds = signal<string[]>([]);
+  readonly selectedFaculty = signal<FacultyCoordinationItem | null>(null);
 
   readonly isLoadingPeriods = signal(false);
 
@@ -250,9 +251,11 @@ export class CdpRequests implements OnInit {
         })),
     );
 
-  readonly coordinations = computed(() => this.cdpRequestsForDeanResource.value());
+  readonly tableItems = computed(() => {
+    return this.isDean() ? this.cdpRequestsForDeanResource.value() : this.cdpRequestsForAcademicDevelopmentResource.value();
+  })
 
-  readonly faculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.value())
+  readonly selectedFacultyAttachments = computed(() => this.selectedFaculty()?.solicitud.adjuntos ?? []);
 
   readonly isLoadingPreloadCalls = computed(
     () =>
@@ -266,21 +269,16 @@ export class CdpRequests implements OnInit {
 
   readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.isLoading())
 
-  readonly hasAppliedFilterForDean = computed(
-    () =>
-      this.appliedPeriodId() != null &&
-      this.appliedPreloadCallId() != null &&
-      this.isDean(),
-  );
+  readonly hasAppliedFilter = computed(() => {
+    if (this.isDean()) {
+      return (this.appliedPeriodId() != null) && (this.appliedPreloadCallId() != null)
+    }
 
-  readonly hasAppliedFilterForAcademicDevelopment = computed(
-    () =>
-      this.appliedPeriodId() != null &&
-      !this.isDean(),
-  );
+    return this.appliedPeriodId() != null;
+  })
 
   readonly tableEmptyMessage = computed(() => {
-    if (this.hasAppliedFilterForDean() || this.hasAppliedFilterForAcademicDevelopment()) {
+    if (this.hasAppliedFilter()) {
       return 'No hay solicitudes CDP para mostrar.';
     }
 
@@ -288,7 +286,11 @@ export class CdpRequests implements OnInit {
       return 'Seleccione un periodo y pulse Filtrar.';
     }
 
-    return this.isDean() ? 'Seleccione una convocatoria y pulse Filtrar.' : 'Seleccione un periodo y pulse Filtrar.';
+    if (this.isDean() && !this.selectedPreloadCallId()) {
+      return 'Seleccione una convocatoria y pulse Filtrar.';
+    }
+
+    return 'Seleccione un periodo y pulse Filtrar.';
   });
 
   readonly titleSection = computed(() => {
@@ -302,13 +304,23 @@ export class CdpRequests implements OnInit {
     return this.isDean() ? 'Solicitar CDP' : 'Revisar CDP';
   })
   readonly descriptionCdpSection = computed(() => {
-    return this.isDean() ? 'Registra las observaciones y adjuntos de la solicitud.' : 'Revisa las observaciones y adjuntos de la solicitud.';
+    if (this.isDean()) {
+      return 'Registra las observaciones y adjuntos de la solicitud.';
+    }
+
+    const faculty = this.selectedFaculty();
+    if (faculty) {
+      return `Revisa las observaciones y adjuntos de ${faculty.nombre}.`
+    }
+
+    return 'Revisa las observaciones y adjuntos de la solicitud.';
   })
 
   readonly canShowCdpReportButtons = computed(() => this.permissions.canDownloadCdpReport());
+  readonly canCreateCdpRequest = computed(() => this.permissions.canAddCdpRequest());
 
   readonly canDownloadCdpReport = computed(() => {
-    if (!this.canShowCdpReportButtons) {
+    if (!this.canShowCdpReportButtons()) {
       return;
     }
 
@@ -328,12 +340,22 @@ export class CdpRequests implements OnInit {
     );
   });
 
-  readonly disabledFilterOptionsForDean = computed(() => {
-    return this.isLoadingPeriods() || !this.selectedPeriodId() || !this.selectedPreloadCallId() || this.isLoadingPreloadCalls() || this.isLoadingCoordinations();
-  });
+  readonly isFilterDisabled = computed(() => {
+    if (this.isLoadingPeriods()) return true;
 
-  readonly disabledFilterOptionsForAcademicDevelopment = computed(() => {
-    return this.isLoadingPeriods() || !this.selectedPeriodId() || this.isLoadingFaculties();
+    if (!this.selectedPeriodId()) return true;
+
+    if (this.isDean()) {
+      return !this.selectedPreloadCallId() || this.isLoadingPreloadCalls() || this.isLoadingCoordinations();
+    }
+
+    return this.isLoadingFaculties();
+  })
+
+  readonly canShowCdpSection = computed(() => {
+    if (this.isDean()) return true;
+
+    return this.selectedFaculty() !== null;
   });
 
   ngOnInit(): void {
@@ -354,53 +376,13 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onApplyFilterForDean(): void {
-    const periodId =
-      this.selectedPeriodId();
-
-    const preloadCallId =
-      this.selectedPreloadCallId();
-
-    if (!periodId || !preloadCallId) {
-      this.appliedPeriodId.set(null);
-      this.appliedPreloadCallId.set(null);
-      this.selectedCoordinationIds.set([]);
+  onApplyFilter(): void {
+    if (this.isDean()) {
+      this.applyDeanFilters();
       return;
     }
 
-    const parsedPeriodId =
-      Number(periodId);
-
-    if (Number.isNaN(parsedPeriodId)) {
-      return;
-    }
-
-    this.appliedPeriodId.set(
-      parsedPeriodId,
-    );
-
-    this.appliedPreloadCallId.set(
-      preloadCallId,
-    );
-
-    this.selectedCoordinationIds.set([]);
-  }
-
-  onApplyFilterForAcademicDevelopment(): void {
-    const periodId = this.selectedPeriodId();
-
-    if (!periodId) {
-      this.appliedPeriodId.set(null);
-      return;
-    }
-
-    const parsedPeriodId = Number(periodId);
-
-    if (Number.isNaN(parsedPeriodId)) {
-      return;
-    }
-
-    this.appliedPeriodId.set(parsedPeriodId);
+    this.applyAcademicDevelopmentFilters();
   }
 
   onRefreshCoordinations(): void {
@@ -434,10 +416,18 @@ export class CdpRequests implements OnInit {
     );
   }
 
-  onCdpAttachmentSelected(
-    event: Event,
-  ): void {
+  onOpenFacultyCdpRequest(row: CoordinationItem): void {
+    const faculty = row as FacultyCoordinationItem;
+    this.selectedFaculty.set(faculty);
 
+    this.cdpObservation.set(
+      faculty.solicitud.observacion ?? ''
+    );
+
+    this.cdpAttachments.set([]);
+  }
+
+  onCdpAttachmentSelected(event: Event): void {
     const input =
       event.target as HTMLInputElement;
 
@@ -513,6 +503,8 @@ export class CdpRequests implements OnInit {
   }
 
   async onRequestCdp(): Promise<void> {
+    const periodId = this.selectedPeriodId()
+    if (!periodId) return;
 
     if (
       this.isRequestingCdp() ||
@@ -529,6 +521,7 @@ export class CdpRequests implements OnInit {
         this.cdpService.createRequest(
           this.cdpObservation(),
           this.cdpAttachments(),
+          periodId
         ),
       );
 
@@ -710,6 +703,7 @@ export class CdpRequests implements OnInit {
 
   private async loadCurrentCdpRequest():
     Promise<void> {
+    if (!this.isDean()) return;
 
     this.isLoadingCurrentCdpRequest.set(true);
 
@@ -806,4 +800,52 @@ export class CdpRequests implements OnInit {
     this.selectedDocument.set(null);
   }
 
+  private applyDeanFilters(): void {
+    const periodId =
+      this.selectedPeriodId();
+
+    const preloadCallId =
+      this.selectedPreloadCallId();
+
+    if (!periodId || !preloadCallId) {
+      this.appliedPeriodId.set(null);
+      this.appliedPreloadCallId.set(null);
+      this.selectedCoordinationIds.set([]);
+      return;
+    }
+
+    const parsedPeriodId =
+      Number(periodId);
+
+    if (Number.isNaN(parsedPeriodId)) {
+      return;
+    }
+
+    this.appliedPeriodId.set(
+      parsedPeriodId,
+    );
+
+    this.appliedPreloadCallId.set(
+      preloadCallId,
+    );
+
+    this.selectedCoordinationIds.set([]);
+  }
+
+  private applyAcademicDevelopmentFilters(): void {
+    const periodId = this.selectedPeriodId();
+
+    if (!periodId) {
+      this.appliedPeriodId.set(null);
+      return;
+    }
+
+    const parsedPeriodId = Number(periodId);
+
+    if (Number.isNaN(parsedPeriodId)) {
+      return;
+    }
+
+    this.appliedPeriodId.set(parsedPeriodId);
+  }
 }
