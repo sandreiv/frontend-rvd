@@ -554,23 +554,31 @@ export class ContractModalityDetail {
     };
   }
 
-  modalityStatusBadge(professor: ModalityProfessor): StatusBadge | null{
-
-    if(!professor.estado){
+  modalityStatusBadge(
+    professor: ModalityProfessor,
+  ): StatusBadge | null {
+    if (!professor.estado) {
       return null;
     }
 
     switch (professor.estado) {
       case '0':
         return this.buildStatusBadge('En registro', 'gray');
+
       case '1':
-        return this.buildStatusBadge('Aprobada', 'success');
+        return this.buildStatusBadge('Enviado para verificar', 'warning');
+
       case '2':
-        return this.buildStatusBadge('Verificada', 'brand');
+        return this.buildStatusBadge('Verificado', 'brand');
+
       case '3':
-        return this.buildStatusBadge('Observaciones', 'warning');
+        return this.buildStatusBadge('Devuelto', 'warning');
+
+      case '4':
+        return this.buildStatusBadge('Aprobada', 'success');
+
       default:
-        return this.buildStatusBadge('En registro', 'gray');
+        return this.buildStatusBadge('Estado desconocido', 'gray');
     }
   }
 
