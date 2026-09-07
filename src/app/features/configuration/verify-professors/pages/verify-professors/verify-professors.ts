@@ -1,13 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnDestroy,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbTitle } from '../../../../../core/service/breadcrumb-title';
 import { Button } from '../../../../../shared/ui/button/button';
@@ -25,6 +27,7 @@ import {
   VerifyPreloadCallItem,
   VerifyProfessorItem,
   VerifyProfessorsFilter,
+  VERIFY_PROFESSORS_QUERY,
   coordinationLabel,
   toContractModality,
   toModalityProfessor,
@@ -46,6 +49,8 @@ import {
 export class VerifyProfessors implements OnInit, OnDestroy {
   private readonly verifyProfessorsService = inject(VerifyProfessorsService);
   private readonly breadcrumbTitle = inject(BreadcrumbTitle);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly universityPeriods = signal<UniversityPeriodItem[]>([]);
   readonly selectedPeriodId = signal('');
@@ -184,6 +189,7 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.breadcrumbTitle.setPageTitle('Verificar docentes');
     await this.loadUniversityPeriods();
+    this.listenQueryFilter();
   }
 
   ngOnDestroy(): void {
@@ -246,6 +252,29 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   onCloseSummary(): void {
     this.showSummary.set(false);
     this.selectedProfessor.set(null);
+  }
+
+  private listenQueryFilter(): void {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((query) => this.applyQueryFilter(query));
+  }
+
+  private applyQueryFilter(query: ParamMap): void {
+    const periodo = query.get(VERIFY_PROFESSORS_QUERY.PERIODO) ?? '';
+    const convocatoria =
+      query.get(VERIFY_PROFESSORS_QUERY.CONVOCATORIA) ?? '';
+    const coordinacion =
+      query.get(VERIFY_PROFESSORS_QUERY.COORDINACION) ?? '';
+
+    if (!periodo || !convocatoria || !coordinacion) {
+      return;
+    }
+
+    this.selectedPeriodId.set(periodo);
+    this.selectedPreloadCallId.set(convocatoria);
+    this.selectedCoordinationId.set(coordinacion);
+    this.onApplyFilter();
   }
 
   private parseId(value: string): number | null {
