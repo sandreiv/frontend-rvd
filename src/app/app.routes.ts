@@ -41,7 +41,11 @@ export const routes: Routes = [
       { path: 'solicitudes-cdp', component: CdpRequests },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
-      { path: 'verificar-docentes', component: VerifyProfessors }
+      {
+        path: 'verificar-docentes',
+        component: VerifyProfessors,
+        title: 'Verificar docentes - RVD',
+      },
     ],
   },
 ];

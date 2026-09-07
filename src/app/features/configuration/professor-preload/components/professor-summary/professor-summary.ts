@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { catchError, Observable, of } from 'rxjs';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Button } from '../../../../../shared/ui/button/button';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -29,6 +29,7 @@ import {
   mapContractValueRows,
   mapCostCenterRows,
   PROFESSOR_SUMMARY_SECTIONS,
+  ProfessorLoadSummaryApi,
   ProfessorSummarySectionId,
 } from '../../model/professor-summary.model';
 
@@ -47,6 +48,9 @@ export class ProfessorSummary {
   professor = input<ModalityProfessor | null>(null);
   coordination = input<CoordinationItem | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
+  summaryFetcher = input<
+    ((idCargaDocente: number) => Observable<ProfessorLoadSummaryApi>) | null
+  >(null);
   close = output<void>();
 
   readonly sections = PROFESSOR_SUMMARY_SECTIONS;
@@ -79,10 +83,18 @@ export class ProfessorSummary {
 
       return { idCargaDocente };
     },
-    stream: ({ params }) =>
-      this.coordinationService
-        .getProfessorLoadSummary(params.idCargaDocente)
-        .pipe(catchError(() => of(EMPTY_PROFESSOR_LOAD_SUMMARY))),
+    stream: ({ params }) => {
+      const fetcher = this.summaryFetcher();
+      const request$ = fetcher
+        ? fetcher(params.idCargaDocente)
+        : this.coordinationService.getProfessorLoadSummary(
+            params.idCargaDocente,
+          );
+
+      return request$.pipe(
+        catchError(() => of(EMPTY_PROFESSOR_LOAD_SUMMARY)),
+      );
+    },
     defaultValue: EMPTY_PROFESSOR_LOAD_SUMMARY,
   });
 
