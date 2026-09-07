@@ -33,3 +33,9 @@ export interface ApproveProfessorActivityDistributionRequest {
   detallesActualizados: DetailProfessorPreloadItemApi[];
   detallesNuevos: DetalleCargaDocenteRequest[];
 }
+
+export interface SendProfessorToVerificationRequest {
+  idCargaDocente: number;
+  detallesActualizados: DetailProfessorPreloadItemApi[];
+  detallesNuevos: SaveDetailProfessorPreloadRequest['detalles'];
+}

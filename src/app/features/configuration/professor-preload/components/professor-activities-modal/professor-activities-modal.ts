@@ -114,6 +114,12 @@ export class ProfessorActivitiesModal {
   readonly isDisapproving = signal(false);
   readonly hasSavedDetail = signal(false);
   readonly isPreassignmentApproved = signal(false);
+  readonly isSendingForVerification = signal(false);
+  readonly isSentForVerification = signal(false);
+
+  readonly isProfessorInRegistration = computed(
+    () => this.professor()?.estado === '0',
+  );
 
   readonly readOnlyMessage = computed(
     () =>
@@ -122,14 +128,32 @@ export class ProfessorActivitiesModal {
   );
 
   readonly activityCardsReadOnly = computed(
-    () => this.readOnly() || this.isPreassignmentApproved(),
+    () =>
+      this.readOnly() ||
+      this.isSendingForVerification() ||
+      this.isSentForVerification() ||
+      !this.isProfessorInRegistration(),
   );
 
-  readonly activityCardsReadOnlyReason = computed(() =>
-    this.isPreassignmentApproved()
-      ? 'La preasignación del docente ya fue aprobada.'
-      : this.readOnlyMessage(),
-  );
+  readonly activityCardsReadOnlyReason = computed(() => {
+    if (this.isSendingForVerification()) {
+      return 'Se está enviando la distribución para verificación.';
+    }
+
+    if (this.isSentForVerification()) {
+      return 'La distribución del docente ya fue enviada para verificación.';
+    }
+
+    if (this.isPreassignmentApproved()) {
+      return 'La distribución del docente ya fue aprobada.';
+    }
+
+    if (!this.isProfessorInRegistration()) {
+      return 'La distribución no está habilitada para edición en este estado.';
+    }
+
+    return this.readOnlyMessage();
+  });
 
   readonly directByCodigo = signal<
     Record<string, DirectLearningActivity[]>
@@ -506,15 +530,60 @@ export class ProfessorActivitiesModal {
       : 'La preasignación del docente ya fue aprobada.';
   });
 
+  readonly showSendForVerificationButton = computed(
+    () =>
+      !this.readOnly() &&
+      this.permissions.canSendForVerification() &&
+      (
+        this.isProfessorInRegistration() ||
+        this.isSentForVerification()
+      ),
+  );
+
+  readonly sendForVerificationButtonDisabled = computed(
+    () =>
+      this.isActionBlocked() ||
+      !this.permissions.canSendForVerification() ||
+      !this.isProfessorInRegistration() ||
+      this.isSentForVerification() ||
+      !this.hasCompletedWeeklyGoal(),
+  );
+
+  readonly sendForVerificationButtonText = computed(() => {
+    if (this.isSendingForVerification()) {
+      return 'Enviando...';
+    }
+
+    if (this.isSentForVerification()) {
+      return 'Enviado para verificar';
+    }
+
+    return 'Para verificar';
+  });
+
+  readonly sendForVerificationButtonTooltip = computed(() => {
+    if (this.isSentForVerification()) {
+      return 'La distribución del docente ya fue enviada para verificación.';
+    }
+
+    if (!this.hasCompletedWeeklyGoal()) {
+      return 'Debe completar las horas semanales requeridas para enviar a verificación.';
+    }
+
+    return '';
+  });
+
   readonly isActionBlocked = computed(
     () =>
       this.readOnly() ||
       this.isSaving() ||
       this.isApproving() ||
       this.isDisapproving() ||
+      this.isSendingForVerification() ||
+      this.isSentForVerification() ||
+      !this.isProfessorInRegistration() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
-      (this.isPreassignmentApproved() && this.coordination()?.estadoCarga !== 'REGISTRADO') ||
       this.exceedsWeeklyLimit(),
   );
 
@@ -540,7 +609,13 @@ export class ProfessorActivitiesModal {
       const estado = this.professor()?.estado;
 
       untracked(() => {
-        this.isPreassignmentApproved.set(isOpen && estado === '1');
+        this.isSentForVerification.set(
+          isOpen && estado === '1',
+        );
+
+        this.isPreassignmentApproved.set(
+          isOpen && estado === '4',
+        );
       });
     });
 
@@ -676,7 +751,7 @@ export class ProfessorActivitiesModal {
     codigo: string,
     activities: DirectLearningActivity[],
   ): void {
-    if (this.readOnly() || this.isPreassignmentApproved()) {
+    if (this.activityCardsReadOnly()) {
       return;
     }
 
@@ -694,7 +769,7 @@ export class ProfessorActivitiesModal {
     codigo: string,
     activities: SimpleActivity[],
   ): void {
-    if (this.readOnly() || this.isPreassignmentApproved()) {
+    if (this.activityCardsReadOnly()) {
       return;
     }
 
@@ -716,7 +791,7 @@ export class ProfessorActivitiesModal {
     codigo: string,
     rows: ProfessorProjectRow[],
   ): void {
-    if (this.readOnly() || this.isPreassignmentApproved()) {
+    if (this.activityCardsReadOnly()) {
 
       return;
     }
@@ -767,6 +842,51 @@ export class ProfessorActivitiesModal {
       .subscribe({
         next: () => this.completeMutation(false),
         error: () => this.failMutation(),
+      });
+  }
+
+  onSendForVerification(): void {
+    if (this.sendForVerificationButtonDisabled()) {
+      return;
+    }
+
+    const distribution = this.resolveDistributionPayload();
+
+    if (distribution == null) {
+      return;
+    }
+
+    const {
+      idCargaDocente,
+      saveRequest,
+      updateRequests,
+    } = distribution;
+
+    this.isSendingForVerification.set(true);
+
+    this.coordinationService
+      .sendProfessorToVerification({
+        idCargaDocente,
+        detallesActualizados: updateRequests,
+        detallesNuevos: saveRequest.detalles,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isSentForVerification.set(true);
+          this.isSendingForVerification.set(false);
+
+          this.notificationService.success(
+            'La distribución del docente fue enviada para verificación correctamente.',
+            'Enviado para verificar',
+          );
+
+          this.saved.emit();
+          this.close.emit();
+        },
+        error: () => {
+          this.isSendingForVerification.set(false);
+        },
       });
   }
 
@@ -981,6 +1101,8 @@ export class ProfessorActivitiesModal {
     this.isApproving.set(false);
     this.isDisapproving.set(false);
     this.hasSavedDetail.set(false);
+    this.isSendingForVerification.set(false);
+    this.isSentForVerification.set(false);
   }
 
   private clearActivitySignals(): void {

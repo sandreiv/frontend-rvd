@@ -30,7 +30,7 @@ import {
 } from '../model/professor-activities.model';
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
-import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPreloadRequest } from '../model/save-detail-professor-preload.model';
+import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPreloadRequest,  SendProfessorToVerificationRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
@@ -618,6 +618,16 @@ export class CoordinationService {
     return this.webRequestService.get<ActivitiesHours>(
       `${this.endpoint}/activities-hours`,
       { idCarga },
+    );
+  }
+
+
+  sendProfessorToVerification(
+    request: SendProfessorToVerificationRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/to-verify-professor`,
+      request,
     );
   }
 

@@ -60,6 +60,10 @@ export class PermissionService {
     return this.can(PRELOAD_FUNC.APPROVE_LOAD_DEAN);
   }
 
+  canSendForVerification(): boolean {
+    return this.can(PRELOAD_FUNC.SEND_FOR_VERIFICATION);
+  }
+
   canDeclineLoadDevelopment(): boolean {
     return this.can(PRELOAD_FUNC.DECLINE_LOAD_DEVELOPMENT);
   }

@@ -213,7 +213,7 @@
       >
         <app-button
           type="button"
-          [variant]="showApproveButton() ? 'outline' : 'primary'"
+          [variant]="showSendForVerificationButton() ? 'outline' : 'primary'"
           [disabled]="saveButtonDisabled()"
           (btnClick)="onSave()"
         >
@@ -221,17 +221,17 @@
         </app-button>
       </span>
 
-      @if (showApproveButton()) {
+      @if (showSendForVerificationButton()) {
         <span
-          [appTooltip]="approveButtonTooltip()"
+          [appTooltip]="sendForVerificationButtonTooltip()"
           tooltipPlacement="top"
         >
           <app-button
             type="button"
-            [disabled]="approveButtonDisabled()"
-            (btnClick)="isPreassignmentApproved() ? onDisapprove() : onApprove()"
+            [disabled]="sendForVerificationButtonDisabled()"
+            (btnClick)="onSendForVerification()"
           >
-            {{ approveButtonText() }}
+            {{ sendForVerificationButtonText() }}
           </app-button>
         </span>
       }
