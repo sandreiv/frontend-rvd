@@ -75,7 +75,7 @@ export class CoordinationDetail {
   readonly isSearchingObservations = signal(false);
   readonly isApprovingPreloadDean = signal(false);
   readonly isApprovingPreloadDevelopment = signal(false);
-  readonly allProfessorsPreloadApproved = signal(false);
+  readonly allProfessorsPreloadVerified = signal(false);
 
   readonly searchObservations = signal<ObservacionesCargaItem[]>([]);
 
@@ -169,8 +169,8 @@ export class CoordinationDetail {
     this.hasLoadedProfessors.set(hasProfessors);
   }
 
-  onAllProfessorsApproved(approved: boolean): void {
-    this.allProfessorsPreloadApproved.set(approved);
+  onAllProfessorsVerified(verified: boolean): void {
+    this.allProfessorsPreloadVerified.set(verified);
   }
 
   onPreloadChanged(): void {
@@ -200,6 +200,7 @@ export class CoordinationDetail {
   }
 
 
+  // Actualizar carga docente segun su cargaID y ponerle su estado en Aprobado (4) llamando a un repository que recibe idCarga y idEstado (SON EL MISMO)
   endorsePreloadDean() {
     if (!this.permissions.canEndorseLoadDean()) return;
 
@@ -221,6 +222,7 @@ export class CoordinationDetail {
     });
   }
 
+  // Actualizar carga docente segun su cargaID y ponerle su estado en En registro (0) llamando a un repository que recibe idCarga y idEstado (SON EL MISMO)
   onDeclinePreloadDean(observacion: string) {
     if (!this.permissions.canDeclineLoadDean()) return;
 
