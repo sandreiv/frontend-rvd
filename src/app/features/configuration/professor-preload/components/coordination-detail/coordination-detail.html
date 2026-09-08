@@ -187,8 +187,10 @@
       [coordinationsCatalog]="coordinationsCatalog()"
       [canEditPreassignment]="canEditPreassignment()"
       [editBlockReason]="editBlockReason()"
+      [refreshKey]="professorRefreshKey()"
       (hasProfessorsChange)="onHasProfessorsChange($event)"
-      (allProfessorsVerified)="onAllProfessorsVerified($event)"
+      (anyProfessorsVerified)="onAnyProfessorsVerified($event)"
+      (allProfessorsApproved)="onAllProfessorsApproved($event)"
       (preloadChanged)="onPreloadChanged()"
     />
 
@@ -204,12 +206,26 @@
       />
     }
 
-    @if (canShowEndorseButton() && permissions.canEndorseLoadDean()) {
+    @if (canShowApproveProfessorsButton() && permissions.canApprove() && anyProfessorsPreloadVerified()) {
       <div class="mt-5 flex justify-end gap-3">
         <app-button
           type="button"
           size="sm"
-          [disabled]="!allProfessorsPreloadVerified()"
+          [disabled]="!anyProfessorsPreloadVerified()"
+          (btnClick)="approveProfessors()"
+        >
+          <app-icon name="handRaised" size="sm" />
+          Aprobar docentes
+        </app-button>
+      </div>
+    }
+
+    @if (canShowEndorseButton() && permissions.canEndorseLoadDean() && allProfessorsPreloadApproved()) {
+      <div class="mt-5 flex justify-end gap-3">
+        <app-button
+          type="button"
+          size="sm"
+          [disabled]="!allProfessorsPreloadApproved()"
           (btnClick)="endorsePreloadDean()"
         >
           <app-icon name="paperAirplane" size="sm" />

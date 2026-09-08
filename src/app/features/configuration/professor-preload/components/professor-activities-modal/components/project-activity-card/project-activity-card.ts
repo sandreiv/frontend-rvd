@@ -31,7 +31,7 @@ export class ProjectActivityCard {
   readOnly = input(false);
   readOnlyReason = input<string | null>(null);
 
-  isApproved = input(false);
+  isRegistrationProcessed = input(false);
 
   associationExpired = input(false);
   associationExpiredReason = input<string | null>(null);
@@ -86,7 +86,7 @@ export class ProjectActivityCard {
   isCheckboxDisabled(row: ProfessorProjectRow): boolean {
     return (
       this.readOnly() ||
-      this.isApproved() ||
+      this.isRegistrationProcessed() ||
       this.associationExpired() ||
       !row.esSeleccionable ||
       this.isAssociated(row.idPersonaProyecto)
@@ -100,7 +100,7 @@ export class ProjectActivityCard {
     
     if (
       this.readOnly() ||
-      this.isApproved() ||
+      this.isRegistrationProcessed() ||
       this.associationExpired()
     ) {
       return;
@@ -125,7 +125,7 @@ export class ProjectActivityCard {
 
     if (
       this.readOnly() ||
-      this.isApproved() ||
+      this.isRegistrationProcessed() ||
       this.associationExpired()
     ) {
       return;
@@ -157,7 +157,7 @@ export class ProjectActivityCard {
   }
 
   onDisassociate(row: ProfessorProjectRow): void {
-    if (this.readOnly() || this.isApproved()) {
+    if (this.readOnly() || this.isRegistrationProcessed()) {
       return;
     }
 

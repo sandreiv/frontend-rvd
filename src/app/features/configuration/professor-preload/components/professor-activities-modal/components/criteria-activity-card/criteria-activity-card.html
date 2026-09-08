@@ -105,7 +105,7 @@
             >
               Horas dedicación
             </th>
-            @if (!isApproved()) {
+            @if (!isRegistrationProcessed()) {
               <th class="px-4 py-3"></th>
             }
           </tr>
@@ -121,7 +121,7 @@
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
                 {{ activity.horasDedicacion }}
               </td>
-              @if (!isApproved()) {
+              @if (!isRegistrationProcessed()) {
                 <td class="px-4 py-3 text-right">
                   <span
                     [appTooltip]="readOnly() ? readOnlyMessage() : ''"

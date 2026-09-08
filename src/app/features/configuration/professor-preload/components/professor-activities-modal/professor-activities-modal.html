@@ -131,7 +131,7 @@
                 [activities]="directActivitiesForCodigo(item.codigo)"
                 [readOnly]="activityCardsReadOnly()"
                 [readOnlyReason]="activityCardsReadOnlyReason()"
-                [isApproved]="isPreassignmentApproved()"
+                [isRegistrationProcessed]="isProfessorRegistrationProcessed()"
                 (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
                 (activitiesChange)="setDirectActivitiesForCodigo(item.codigo, $event)"
                 (activityDeleted)="onLastPersistedActivityDelete()"
@@ -145,7 +145,7 @@
               [activities]="criteriaActivitiesForCodigo(item.codigo)"
               [readOnly]="activityCardsReadOnly()"
               [readOnlyReason]="activityCardsReadOnlyReason()"
-              [isApproved]="isPreassignmentApproved()"
+              [isRegistrationProcessed]="isProfessorRegistrationProcessed()"
               (addFormOpenChange)="onAddFormOpenChange(item.codigo, $event)"
               (activitiesChange)="setCriteriaActivitiesForCodigo(item.codigo, $event)"
               (activityDeleted)="onLastPersistedActivityDelete()"
@@ -159,7 +159,7 @@
               [isLoading]="professorProjectsResource.isLoading()"
               [readOnly]="activityCardsReadOnly()"
               [readOnlyReason]="activityCardsReadOnlyReason()"
-              [isApproved]="isPreassignmentApproved()"
+              [isRegistrationProcessed]="isProfessorRegistrationProcessed()"
               [associationExpired]="isProjectAssociationExpired(item.codigo)"
               [associationExpiredReason]="projectAssociationExpiredReason(item.codigo)"
               (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
@@ -214,7 +214,7 @@
         <app-button
           type="button"
           [variant]="
-            showSendForVerificationButton() || showApproveButton()
+            showWorkflowButton()
               ? 'outline'
               : 'primary'
           "
@@ -225,31 +225,17 @@
         </app-button>
       </span>
 
-      @if (showSendForVerificationButton()) {
+      @if (showWorkflowButton()) {
         <span
-          [appTooltip]="sendForVerificationButtonTooltip()"
+          [appTooltip]="workflowButtonTooltip()"
           tooltipPlacement="top"
         >
           <app-button
             type="button"
-            [disabled]="sendForVerificationButtonDisabled()"
-            (btnClick)="onSendForVerification()"
+            [disabled]="workflowButtonDisabled()"
+            (btnClick)="isProfessorRegistrationProcessed() ? onDisapprove() : onSendForVerification()"
           >
-            {{ sendForVerificationButtonText() }}
-          </app-button>
-        </span>
-      }
-      @if (showApproveButton()) {
-        <span
-          [appTooltip]="approveButtonTooltip()"
-          tooltipPlacement="top"
-        >
-          <app-button
-            type="button"
-            [disabled]="approveButtonDisabled()"
-            (btnClick)="onApprove()"
-          >
-            {{ approveButtonText() }}
+            {{ workflowButtonText() }}
           </app-button>
         </span>
       }

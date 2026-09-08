@@ -30,7 +30,7 @@ import {
 } from '../model/professor-activities.model';
 import { ProyectoDocenteDto } from '../model/professor-projects.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../model/detail-professor-preload.model';
-import {   ApproveProfessorActivityDistributionRequest, SaveDetailProfessorPreloadRequest,  SendProfessorToVerificationRequest } from '../model/save-detail-professor-preload.model';
+import { SaveDetailProfessorPreloadRequest, SendProfessorToVerificationRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
@@ -445,19 +445,29 @@ export class CoordinationService {
     );
   }
 
-  approveProfessorPreassignment(idCargaDocente: number): Observable<void> {
+  /**
+   * Actualiza el estado de los docentes Verificados a Aprobado
+   * 
+   * @param idCarga Identificador de la carga.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+  approveProfessorsPreassignment(idCarga: number): Observable<void> {
     return this.webRequestService.put<void>(
-      `${this.endpoint}/approve-professor-preassignment/${idCargaDocente}`,
+      `${this.endpoint}/approve-professors-preassignment/${idCarga}`,
       {},
     );
   }
 
-  approveProfessorActivityDistribution(
-    request: ApproveProfessorActivityDistributionRequest,
-  ): Observable<void> {
-    return this.webRequestService.post<void>(
-      `${this.endpoint}/approve-professor-activity-distribution`,
-      request,
+  /**
+   * Actualiza el estado del docente a En registro
+   * 
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+   */
+  deleteProfessorActivityDistribution(idCargaDocente: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/disapprove-professor-preassignment/${idCargaDocente}`,
+      {},
     );
   }
 

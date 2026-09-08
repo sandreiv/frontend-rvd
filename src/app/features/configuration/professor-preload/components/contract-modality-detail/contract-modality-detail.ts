@@ -170,9 +170,11 @@ export class ContractModalityDetail {
    */
   canEditPreassignment = input(true);
   editBlockReason = input<string | null>(null);
+  refreshKey = input(0);
   hasProfessorsChange = output<boolean>();
   preloadChanged = output<void>();
-  allProfessorsVerified = output<boolean>();
+  anyProfessorsVerified = output<boolean>();
+  allProfessorsApproved = output<boolean>();
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly tcoFilter = signal<TcoFilter>('todos');
@@ -412,14 +414,24 @@ export class ContractModalityDetail {
     return this.selectedModalityForModals();
   });
 
-  readonly allRequiredProfessorsVerified = computed(() => {
+  readonly anyRequiredProfessorsVerified = computed(() => {
     const professors = Object.values(this.modalityProfessorsMap())
       .flat()
       .filter((professor) => professor.tieneCarga === true);
 
     if (professors.length === 0) return false;
 
-    return professors.every((professor) => professor.estado ===  VERIFIED_STATE);
+    return professors.some((professor) => professor.estado ===  VERIFIED_STATE);
+  });
+
+  readonly allRequiredProfessorsApproved = computed(() => {
+    const professors = Object.values(this.modalityProfessorsMap())
+      .flat()
+      .filter((professor) => professor.tieneCarga === true);
+
+    if (professors.length === 0) return false;
+
+    return professors.every((professor) => professor.estado ===  APPROVED_STATE);
   });
 
 
@@ -444,9 +456,20 @@ export class ContractModalityDetail {
     });
 
     effect(() => {
-      this.allProfessorsVerified.emit(
-        this.allRequiredProfessorsVerified()
+      this.anyProfessorsVerified.emit(
+        this.anyRequiredProfessorsVerified()
       );
+    });
+
+    effect(() => {
+      this.allProfessorsApproved.emit(
+        this.allRequiredProfessorsApproved()
+      );
+    });
+
+    effect(() => {
+      this.refreshKey();
+      this.modalityProfessorsResource.reload();
     });
   }
 

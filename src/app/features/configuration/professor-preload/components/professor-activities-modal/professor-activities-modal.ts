@@ -110,14 +110,16 @@ export class ProfessorActivitiesModal {
   saved = output<void>();
 
   readonly isSaving = signal(false);
-  readonly isApproving = signal(false);
+  readonly isDisapproving = signal(false);
   readonly hasSavedDetail = signal(false);
-  readonly isPreassignmentApproved = signal(false);
   readonly isSendingForVerification = signal(false);
-  readonly isSentForVerification = signal(false);
 
   readonly isProfessorInRegistration = computed(
-    () => this.professor()?.estado === '0',
+    () => this.isOpen() && this.professor()?.estado === '0',
+  );
+
+  readonly isProfessorRegistrationProcessed = computed(
+    () => this.isOpen() && this.professor()?.estado !== '0',
   );
 
   readonly readOnlyMessage = computed(
@@ -130,8 +132,7 @@ export class ProfessorActivitiesModal {
     () =>
       this.readOnly() ||
       this.isSendingForVerification() ||
-      this.isSentForVerification() ||
-      !this.isProfessorInRegistration(),
+      this.isProfessorRegistrationProcessed(),
   );
 
   readonly activityCardsReadOnlyReason = computed(() => {
@@ -139,16 +140,8 @@ export class ProfessorActivitiesModal {
       return 'Se está enviando la distribución para verificación.';
     }
 
-    if (this.isSentForVerification()) {
-      return 'La distribución del docente ya fue enviada para verificación.';
-    }
-
-    if (this.isPreassignmentApproved()) {
-      return 'La distribución del docente ya fue aprobada.';
-    }
-
-    if (!this.isProfessorInRegistration()) {
-      return 'La distribución no está habilitada para edición en este estado.';
+    if (this.isProfessorRegistrationProcessed()) {
+      return 'La distribución del docente ya fue registrada.';
     }
 
     return this.readOnlyMessage();
@@ -489,151 +482,20 @@ export class ProfessorActivitiesModal {
     return Math.abs(this.totalAssignedHours() - limit) < 0.0001;
   });
 
-  readonly canApproveNow = computed(
-    () =>
-      this.professor()?.estado === '2' &&
-      !this.isPreassignmentApproved() &&
-      this.hasCompletedWeeklyGoal() &&
-      this.permissions.canApprove(),
-  );
-
-  readonly showApproveButton = computed(
-    () =>
-      !this.readOnly() &&
-      this.permissions.canApprove() &&
-      (
-        this.professor()?.estado === '2' ||
-        this.isPreassignmentApproved()
-      ),
-  );
-
-  readonly saveButtonText = computed(() => {
-    if (this.readOnly()) {
-      return 'Solo lectura';
-    }
-
-    return this.isSaving() ? 'Guardando...' : 'Guardar';
-  });
-
-  readonly approveButtonText = computed(() => {
-    if (this.isPreassignmentApproved()) {
-      return 'Aprobado';
-    }
-
-    return this.isApproving() ? 'Aprobando...' : 'Aprobar';
-  });
-
-  readonly approveButtonTooltip = computed(() => {
-    if (!this.isPreassignmentApproved()) {
-      return '';
-    }
-
-    return this.coordination()?.estadoCarga === 'REGISTRADO'
-      ? ''
-      : 'La preasignación del docente ya fue registrada.';
-  });
-
-  readonly showSendForVerificationButton = computed(
-    () =>
-      !this.readOnly() &&
-      this.permissions.canSendForVerification() &&
-      (
-        this.isProfessorInRegistration() ||
-        this.isSentForVerification()
-      ),
-  );
-
-  readonly sendForVerificationButtonDisabled = computed(
-    () =>
-      this.isActionBlocked() ||
-      !this.permissions.canSendForVerification() ||
-      !this.isProfessorInRegistration() ||
-      this.isSentForVerification() ||
-      !this.hasCompletedWeeklyGoal(),
-  );
-
-  readonly sendForVerificationButtonText = computed(() => {
-    if (this.isSendingForVerification()) {
-      return 'Enviando...';
-    }
-
-    if (this.isSentForVerification()) {
-      return 'Enviado para verificar';
-    }
-
-    return 'Para verificar';
-  });
-
-  readonly sendForVerificationButtonTooltip = computed(() => {
-    if (this.isSentForVerification()) {
-      return 'La distribución del docente ya fue enviada para verificación.';
-    }
-
-    if (!this.hasCompletedWeeklyGoal()) {
-      return 'Debe completar las horas semanales requeridas para enviar a verificación.';
-    }
-
-    return '';
-  });
-
-  readonly showSendForVerificationButton = computed(
-    () =>
-      !this.readOnly() &&
-      this.permissions.canSendForVerification() &&
-      (
-        this.isProfessorInRegistration() ||
-        this.isSentForVerification()
-      ),
-  );
-
-  readonly sendForVerificationButtonDisabled = computed(
-    () =>
-      this.isActionBlocked() ||
-      !this.permissions.canSendForVerification() ||
-      !this.isProfessorInRegistration() ||
-      this.isSentForVerification() ||
-      !this.hasCompletedWeeklyGoal(),
-  );
-
-  readonly sendForVerificationButtonText = computed(() => {
-    if (this.isSendingForVerification()) {
-      return 'Enviando...';
-    }
-
-    if (this.isSentForVerification()) {
-      return 'Enviado para verificar';
-    }
-
-    return 'Para verificar';
-  });
-
-  readonly sendForVerificationButtonTooltip = computed(() => {
-    if (this.isSentForVerification()) {
-      return 'La distribución del docente ya fue enviada para verificación.';
-    }
-
-    if (!this.hasCompletedWeeklyGoal()) {
-      return 'Debe completar las horas semanales requeridas para enviar a verificación.';
-    }
-
-    return '';
-  });
-
-  readonly isActionBlocked = computed(
+  readonly isSaveBlocked = computed(
     () =>
       this.readOnly() ||
       this.isSaving() ||
-      this.isApproving() ||
+      this.isDisapproving() ||
       this.isSendingForVerification() ||
-      this.isSentForVerification() ||
-      !this.isProfessorInRegistration() ||
+      this.isProfessorRegistrationProcessed() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
-      this.exceedsWeeklyLimit(),
+      this.exceedsWeeklyLimit()
   );
 
   readonly saveButtonDisabled = computed(() => {
-    if (this.isActionBlocked() || !this.permissions.canSaveDetail()) {
+    if (this.isSaveBlocked() || !this.permissions.canSaveDetail()) {
       return true;
     }
 
@@ -643,37 +505,76 @@ export class ProfessorActivitiesModal {
     );
   });
 
-  readonly approveButtonDisabled = computed(
-    () =>
+  readonly saveButtonText = computed(() => {
+    if (this.readOnly()) {
+      return 'Solo lectura';
+    }
+
+    return this.isSaving() ? 'Guardando...' : 'Guardar';
+  });
+
+  readonly showWorkflowButton = computed(() => {
+    if (this.readOnly()) {
+      return false;
+    }
+
+    if (this.isProfessorRegistrationProcessed()) {
+      return this.permissions.canApprove();
+    }
+
+    return (
+      this.permissions.canSendForVerification() &&
+      this.hasCompletedWeeklyGoal()
+    );
+  });
+
+  readonly workflowButtonText = computed(() => {
+    if (this.isProfessorRegistrationProcessed()) {
+      return this.isDisapproving() ? 'Desaprobando...' : 'Desaprobar';
+    }
+
+    return this.isSendingForVerification() ? 'Enviando...' : 'Para verificar';
+  });
+
+  readonly workflowButtonTooltip = computed(() => {
+    if (!this.isProfessorRegistrationProcessed()) {
+      return '';
+    }
+
+    return this.coordination()?.estadoCarga === 'REGISTRADO'
+      ? ''
+      : 'La preasignación del docente ya fue registrada.';
+  });
+
+  readonly workflowButtonDisabled = computed(() => {
+    if (
       !this.isOpen() ||
       this.readOnly() ||
-      this.professor()?.idCargaDocente == null ||
       this.isSaving() ||
-      this.isApproving() ||
-      this.isSendingForVerification() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
-      this.isLoadingWorkDates() ||
-      !this.canApproveNow(),
-  );
+      this.isLoadingWorkDates()
+    ) return true;
+
+    if (this.isProfessorRegistrationProcessed()) {
+      return (
+        !this.permissions.canApprove() ||
+        this.isDisapproving() ||
+        this.isSendingForVerification() ||
+        this.coordination()?.estadoCarga !== 'REGISTRADO'
+      );
+    }
+
+    return (
+      !this.permissions.canSendForVerification() ||
+      this.isSendingForVerification() ||
+      this.isDisapproving() ||
+      !this.isProfessorInRegistration() ||
+      !this.hasCompletedWeeklyGoal()
+    );
+  });
 
   constructor() {
-
-    effect(() => {
-      const isOpen = this.isOpen();
-      const estado = this.professor()?.estado;
-
-      untracked(() => {
-        this.isSentForVerification.set(
-          isOpen && estado === '1',
-        );
-
-        this.isPreassignmentApproved.set(
-          isOpen && estado === '4',
-        );
-      });
-    });
-
     effect(() => {
       if (!this.isOpen()) {
         untracked(() => this.resetModalState());
@@ -847,7 +748,6 @@ export class ProfessorActivitiesModal {
     rows: ProfessorProjectRow[],
   ): void {
     if (this.activityCardsReadOnly()) {
-
       return;
     }
 
@@ -895,13 +795,13 @@ export class ProfessorActivitiesModal {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => this.completeMutation(false),
+        next: () => this.completeMutation(),
         error: () => this.failMutation(),
       });
   }
 
   onSendForVerification(): void {
-    if (this.sendForVerificationButtonDisabled()) {
+    if (this.workflowButtonDisabled()) {
       return;
     }
 
@@ -928,7 +828,6 @@ export class ProfessorActivitiesModal {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.isSentForVerification.set(true);
           this.isSendingForVerification.set(false);
 
           this.notificationService.success(
@@ -945,32 +844,24 @@ export class ProfessorActivitiesModal {
       });
   }
 
-  onApprove(): void {
-    if (this.approveButtonDisabled()) {
+  onDisapprove(): void {
+    if (this.workflowButtonDisabled()) {
       return;
     }
 
     const idCargaDocente = this.professor()?.idCargaDocente;
-
-    if (idCargaDocente == null) {
+    if (!idCargaDocente) {
       return;
     }
 
-    this.isApproving.set(true);
+    this.isDisapproving.set(true);
 
-    this.coordinationService
-      .approveProfessorPreassignment(idCargaDocente)
+    this.coordinationService.deleteProfessorActivityDistribution(idCargaDocente)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.isApproving.set(false);
-          this.isPreassignmentApproved.set(true);
-
-          this.saved.emit();
-          this.close.emit();
-        },
-        error: () => this.failMutation(),
-      });
+    .subscribe({
+      next: () => this.completeMutation(),
+      error: () => this.failMutation(),
+    });
   }
 
   onLastPersistedActivityDelete(): void {
@@ -1020,17 +911,10 @@ export class ProfessorActivitiesModal {
     };
   }
 
-  private completeMutation(approved: boolean): void {
+  private completeMutation(): void {
     this.isSaving.set(false);
-    this.isApproving.set(false);
-
-    if (approved) {
-      this.isPreassignmentApproved.set(true);
-      this.notificationService.success(
-        'La preasignación del docente fue registrada correctamente.',
-        'Preasignación registrada',
-      );
-    }
+    this.isDisapproving.set(false);
+    this.isSendingForVerification.set(false);
 
     this.saved.emit();
     this.close.emit();
@@ -1038,7 +922,8 @@ export class ProfessorActivitiesModal {
 
   private failMutation(): void {
     this.isSaving.set(false);
-    this.isApproving.set(false);
+    this.isDisapproving.set(false);
+    this.isSendingForVerification.set(false);
   }
 
   private buildSaveInput() {
@@ -1131,10 +1016,9 @@ export class ProfessorActivitiesModal {
     this.expandedCategories.set(createInitialExpandedCategories());
     this.addFormOpen.set(createInitialAddFormOpen());
     this.isSaving.set(false);
-    this.isApproving.set(false);
-    this.hasSavedDetail.set(false);
+    this.isDisapproving.set(false);
     this.isSendingForVerification.set(false);
-    this.isSentForVerification.set(false);
+    this.hasSavedDetail.set(false);
   }
 
   private clearActivitySignals(): void {

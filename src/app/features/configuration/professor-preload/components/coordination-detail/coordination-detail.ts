@@ -68,14 +68,17 @@ export class CoordinationDetail {
   readonly isObservationModalOpen = signal(false);
   readonly hasLoadedProfessors = signal(false);
   readonly totalRefreshKey = signal(0);
+  readonly professorRefreshKey = signal(0);
   readonly isDownloadingReport = signal(false);
   readonly isDownloadingPdfReport = signal(false);
   readonly isEndorsingPreload = signal(false);
   readonly isDecliningPreload = signal(false);
+  readonly isApprovingProfessors = signal(false);
   readonly isSearchingObservations = signal(false);
   readonly isApprovingPreloadDean = signal(false);
   readonly isApprovingPreloadDevelopment = signal(false);
-  readonly allProfessorsPreloadVerified = signal(false);
+  readonly anyProfessorsPreloadVerified = signal(false);
+  readonly allProfessorsPreloadApproved = signal(false);
 
   readonly searchObservations = signal<ObservacionesCargaItem[]>([]);
 
@@ -110,6 +113,7 @@ export class CoordinationDetail {
 
   readonly canShowObservations = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (this.permissions.canListObservations()) && (this.searchObservations().length > 0))
   readonly canShowEndorseButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isEndorsingPreload()));
+  readonly canShowApproveProfessorsButton = computed(() => (this.coordination().estadoCarga === 'REGISTRADO') && (!this.isApprovingProfessors()));
   readonly canShowDeanApprovalButtons = computed( () => this.coordination().estadoCarga === 'INSCRITO' && (this.permissions.canDeclineLoadDean() || this.permissions.canApproveLoadDean()));
   readonly canShowDevelopmentApprovalButtons = computed(() => this.coordination().estadoCarga === 'APROBADO DECANO' && (this.permissions.canDeclineLoadDevelopment() || this.permissions.canApproveLoadDevelopment()));
   readonly canShowActivitiesGraph = computed(() =>
@@ -121,6 +125,7 @@ export class CoordinationDetail {
       this.coordination().id;
       this.hasLoadedProfessors.set(false);
       this.totalRefreshKey.set(0);
+      this.professorRefreshKey.set(0);
 
       this.triggerLoadObservations(this.coordination().idCarga);
     });
@@ -169,12 +174,20 @@ export class CoordinationDetail {
     this.hasLoadedProfessors.set(hasProfessors);
   }
 
-  onAllProfessorsVerified(verified: boolean): void {
-    this.allProfessorsPreloadVerified.set(verified);
+  onAnyProfessorsVerified(verified: boolean): void {
+    this.anyProfessorsPreloadVerified.set(verified);
+  }
+
+  onAllProfessorsApproved(approved: boolean): void {
+    this.allProfessorsPreloadApproved.set(approved);
   }
 
   onPreloadChanged(): void {
     this.totalRefreshKey.update((value) => value + 1);
+  }
+
+  onProfessorsRefresh(): void {
+    this.professorRefreshKey.update((value) => value + 1);
   }
 
   downloadPreloadReport(): void {
@@ -199,8 +212,27 @@ export class CoordinationDetail {
       });
   }
 
+  approveProfessors() {
+    if (!this.permissions.canApprove()) return;
 
-  // Actualizar carga docente segun su cargaID y ponerle su estado en Aprobado (4) llamando a un repository que recibe idCarga y idEstado (SON EL MISMO)
+    const idCarga = this.coordination().idCarga;
+    if ((idCarga == null) || this.isApprovingProfessors()) return;
+
+    this.isApprovingProfessors.set(true);
+    this.coordinationService
+      .approveProfessorsPreassignment(idCarga)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isApprovingProfessors.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        this.onProfessorsRefresh();
+      }
+    });
+  }
+
+
   endorsePreloadDean() {
     if (!this.permissions.canEndorseLoadDean()) return;
 
@@ -222,7 +254,6 @@ export class CoordinationDetail {
     });
   }
 
-  // Actualizar carga docente segun su cargaID y ponerle su estado en En registro (0) llamando a un repository que recibe idCarga y idEstado (SON EL MISMO)
   onDeclinePreloadDean(observacion: string) {
     if (!this.permissions.canDeclineLoadDean()) return;
 
@@ -358,6 +389,8 @@ export class CoordinationDetail {
         },
       });
   }
+
+
 
   private triggerBrowserDownload(blob: Blob, fileName: string): void {
     const url = URL.createObjectURL(blob);

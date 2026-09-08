@@ -28,12 +28,6 @@ export interface RelacionCargaProyectoRequest {
   idProyecto: number;
 }
 
-export interface ApproveProfessorActivityDistributionRequest {
-  idCargaDocente: number;
-  detallesActualizados: DetailProfessorPreloadItemApi[];
-  detallesNuevos: DetalleCargaDocenteRequest[];
-}
-
 export interface SendProfessorToVerificationRequest {
   idCargaDocente: number;
   detallesActualizados: DetailProfessorPreloadItemApi[];

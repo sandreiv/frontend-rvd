@@ -58,7 +58,7 @@ export class CriteriaActivityCard {
   readOnly = input(false);
   readOnlyReason = input<string | null>(null);
 
-  isApproved = input(false);
+  isRegistrationProcessed = input(false);
   
 
   readonly readOnlyMessage = computed(
@@ -196,7 +196,7 @@ export class CriteriaActivityCard {
   }
 
   removeActivity(activityId: string): void {
-    if (this.readOnly() || this.isApproved()) {
+    if (this.readOnly() || this.isRegistrationProcessed()) {
       return;
     }
 
