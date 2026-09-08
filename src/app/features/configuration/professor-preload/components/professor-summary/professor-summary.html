@@ -388,16 +388,6 @@
 
     <div class="ml-auto flex flex-wrap justify-end gap-3 lg:pb-5">
       @if (showVerificationActions()) {
-        @if (canVerify()) {
-          <app-button
-            type="button"
-            [disabled]="reviewActionsDisabled()"
-            (btnClick)="onVerify()"
-          >
-            Verificar
-          </app-button>
-        }
-
         @if (canDecline()) {
           <app-button
             type="button"
@@ -408,16 +398,18 @@
             Devolver
           </app-button>
         }
+
+        @if (canVerify()) {
+          <app-button
+            type="button"
+            [disabled]="reviewActionsDisabled()"
+            (btnClick)="onVerify()"
+          >
+            Verificar
+          </app-button>
+        }
       }
 
-      <app-button
-        type="button"
-        variant="outline"
-        [disabled]="isProcessing()"
-        (btnClick)="onClose()"
-      >
-        Cerrar
-      </app-button>
     </div>
   </footer>
 </app-modal>
