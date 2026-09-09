@@ -114,12 +114,18 @@ export class ProfessorActivitiesModal {
   readonly hasSavedDetail = signal(false);
   readonly isSendingForVerification = signal(false);
 
-  readonly isProfessorInRegistration = computed(
-    () => this.isOpen() && this.professor()?.estado === '0',
-  );
+  readonly isProfessorInEditableState = computed(() => {
+    if (!this.isOpen()) {
+      return false;
+    }
+
+    const estado = this.professor()?.estado;
+
+    return estado === '0' || estado === '3';
+  });
 
   readonly isProfessorRegistrationProcessed = computed(
-    () => this.isOpen() && this.professor()?.estado !== '0',
+    () => this.isOpen() && !this.isProfessorInEditableState(),
   );
 
   readonly readOnlyMessage = computed(
@@ -569,7 +575,7 @@ export class ProfessorActivitiesModal {
       !this.permissions.canSendForVerification() ||
       this.isSendingForVerification() ||
       this.isDisapproving() ||
-      !this.isProfessorInRegistration() ||
+      !this.isProfessorInEditableState() ||
       !this.hasCompletedWeeklyGoal()
     );
   });

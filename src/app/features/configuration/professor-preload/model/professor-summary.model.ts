@@ -4,7 +4,8 @@ import { formatCurrencyCOP } from './professor-form.config';
 export type ProfessorSummarySectionId =
   | 'detalle-actividades'
   | 'centro-costo'
-  | 'valores-contratacion';
+  | 'valores-contratacion'
+  | 'observaciones';
 
 export interface ProfessorSummarySectionConfig {
   id: ProfessorSummarySectionId;
@@ -20,6 +21,7 @@ export interface ProfessorLoadSummaryApi {
   valorContratacion: ValorContratacionSummaryApi | null;
   horasActividades: HorasActividadSummaryApi[];
   centrosCosto: CentroCostoSummaryApi[];
+  observaciones: HistorialCargaDocenteObservacionApi[];
 }
 
 export interface ValorContratacionSummaryApi {
@@ -104,6 +106,16 @@ export interface ActivitySummaryTable {
   simpleRows: ActivitySimpleSummaryRow[];
 }
 
+export interface HistorialCargaDocenteObservacionApi {
+  idHistorial: number;
+  idPersonaGeneral: number | null;
+  nombrePersonaGeneral: string | null;
+  rolPersonaGeneral: string | null;
+  observacion: string;
+  fecha: string | null;
+  estado: string | null;
+}
+
 export const PROFESSOR_SUMMARY_SECTIONS: ProfessorSummarySectionConfig[] = [
   {
     id: 'valores-contratacion',
@@ -126,6 +138,13 @@ export const PROFESSOR_SUMMARY_SECTIONS: ProfessorSummarySectionConfig[] = [
     iconBgClass: 'bg-warning-50 dark:bg-warning-500/10',
     iconColorClass: 'text-warning-600 dark:text-warning-400',
   },
+  {
+    id: 'observaciones',
+    title: 'Observaciones',
+    icon: 'chatBubbleBottomCenterText',
+    iconBgClass: 'bg-error-50 dark:bg-error-500/10',
+    iconColorClass: 'text-error-500 dark:text-error-400',
+  },
 ];
 
 export function createInitialExpandedSections(): Record<
@@ -136,6 +155,7 @@ export function createInitialExpandedSections(): Record<
     'valores-contratacion': false,
     'detalle-actividades': false,
     'centro-costo': false,
+    observaciones: false,
   };
 }
 
@@ -144,6 +164,7 @@ export const EMPTY_PROFESSOR_LOAD_SUMMARY: ProfessorLoadSummaryApi = {
   valorContratacion: null,
   horasActividades: [],
   centrosCosto: [],
+  observaciones: [],
 };
 
 const CONTRACT_VALUE_LABELS: Array<{
