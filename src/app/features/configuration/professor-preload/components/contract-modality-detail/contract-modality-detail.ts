@@ -82,7 +82,7 @@ interface TcoStateSwitchItem {
 
 const ACTIVATE_LOAD_TOOLTIP = 'Activar carga permite agregar las actividades al docente de tipo planta';
 
-type BadgeTone = 'success' | 'brand' | 'warning' | 'gray';
+type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
 export interface StatusBadge {
   label: string;
@@ -122,6 +122,12 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
       'bg-warning-50 text-warning-700 ' +
       'dark:bg-warning-500/15 dark:text-warning-400',
     dot: 'bg-warning-500 dark:bg-warning-400',
+  },
+  error: {
+    badge:
+      'bg-error-50 text-error-700 ' +
+      'dark:bg-error-500/15 dark:text-error-400',
+    dot: 'bg-error-500 dark:bg-error-400',
   },
   gray: {
     badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
@@ -724,7 +730,7 @@ export class ContractModalityDetail {
       case VERIFIED_STATE:
         return this.buildStatusBadge('Verificado', 'brand');
       case RETURNED_STATE:
-        return this.buildStatusBadge('Devuelto', 'warning');
+        return this.buildStatusBadge('Devuelto', 'error');
       case APPROVED_STATE:
         return this.buildStatusBadge('Aprobada', 'success');
       default:

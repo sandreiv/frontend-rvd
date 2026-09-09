@@ -163,6 +163,8 @@ export class ProfessorSummary {
     mapCostCenterRows(this.summary().centrosCosto),
   );
 
+  readonly observations = computed(() => this.summary().observaciones ?? []);
+
   constructor() {
     effect(() => {
       const isOpen = this.isOpen();
@@ -224,6 +226,22 @@ export class ProfessorSummary {
     }
 
     this.decline.emit(this.observation().trim());
+  }
+
+  observationDateLabel(value: string | null | undefined): string {
+    if (!value) {
+      return '-';
+    }
+
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+
+    if (!match) {
+      return value;
+    }
+
+    const [, year, month, day, hour, minute] = match;
+
+    return `${day}/${month}/${year} ${hour}:${minute}`;
   }
 
 

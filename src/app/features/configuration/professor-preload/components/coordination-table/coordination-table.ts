@@ -105,7 +105,7 @@ export class CoordinationTable {
       {
         id: 'showRequests',
         label: 'Mostrar solicitudes CDP',
-        icon: 'pencil'
+        icon: 'eye'
       }
     ]
   });

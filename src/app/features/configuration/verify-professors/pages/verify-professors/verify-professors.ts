@@ -80,7 +80,7 @@ export class VerifyProfessors implements OnInit, OnDestroy {
   readonly reviewMessage = computed(() =>
     this.pendingReview()?.action === 'verify'
       ? '¿Seguro que deseas verificar este docente? Su estado cambiará a Verificado.'
-      : '¿Seguro que deseas devolver este docente? Volverá a En registro para que el coordinador pueda realizar las correcciones.',
+      : '¿Seguro que deseas devolver este docente? Su estado cambiará a Devuelto para que el coordinador pueda realizar las correcciones.',
   );
 
   readonly reviewButtonText = computed(() => {
