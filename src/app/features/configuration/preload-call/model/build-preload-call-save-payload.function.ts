@@ -1,4 +1,8 @@
-import { FechaFormMeta, ModalityFormItem } from './preload-call.model';
+import {
+  FechaFormMeta,
+  isHiringContratacion,
+  ModalityFormItem,
+} from './preload-call.model';
 import {
   BuildPreloadCallSavePayloadParams,
   PreloadCallFechaCodigo,
@@ -66,6 +70,7 @@ function mapCotcFecha(row: ModalityFormItem): PreloadCallSaveCotcFecha {
 
 function mapConvocatoriaTipoContratacion(
   rows: ModalityFormItem[],
+  skipFechas: boolean,
 ): PreloadCallSaveCotc[] {
   const groups = new Map<string, ModalityFormItem[]>();
 
@@ -78,21 +83,20 @@ function mapConvocatoriaTipoContratacion(
 
   return Array.from(groups.values()).map((group) => {
     const first = group[0];
-    const isPlant = isPlantModality(first);
+    const omitFechas = skipFechas || isPlantModality(first);
 
     return {
       id: first.cotcId ?? null,
       idModalidadContratacion: Number(first.tipoModalidad),
-      fechas: isPlant
-        ? []
-        : group.map((row) => mapCotcFecha(row)),
+      fechas: omitFechas ? [] : group.map((row) => mapCotcFecha(row)),
     };
   });
 }
 
-export function buildPreloadCallSavePayload(
+function buildCallFechas(
   params: BuildPreloadCallSavePayloadParams,
-): PreloadCallSaveRequest {
+  includeCteiIsu: boolean,
+): PreloadCallSaveFecha[] {
   const fechas: PreloadCallSaveFecha[] = [];
   const convocatoriaFecha = buildFechaIfComplete(
     'CNV',
@@ -100,6 +104,15 @@ export function buildPreloadCallSavePayload(
     params.fechaFin,
     resolveFechaId(params.fechasMeta, 'CNV'),
   );
+
+  if (convocatoriaFecha) {
+    fechas.push(convocatoriaFecha);
+  }
+
+  if (!includeCteiIsu) {
+    return fechas;
+  }
+
   const cteiFecha = buildFechaIfComplete(
     'CTEI',
     params.fechaInicioCtei,
@@ -113,15 +126,20 @@ export function buildPreloadCallSavePayload(
     resolveFechaId(params.fechasMeta, 'ISU'),
   );
 
-  if (convocatoriaFecha) {
-    fechas.push(convocatoriaFecha);
-  }
   if (cteiFecha) {
     fechas.push(cteiFecha);
   }
   if (isuFecha) {
     fechas.push(isuFecha);
   }
+
+  return fechas;
+}
+
+export function buildPreloadCallSavePayload(
+  params: BuildPreloadCallSavePayloadParams,
+): PreloadCallSaveRequest {
+  const isHiring = isHiringContratacion(params.contratacion);
 
   const convocatoria: PreloadCallSaveRequest['convocatoria'] = {
     nombre: params.nombre.trim(),
@@ -140,6 +158,7 @@ export function buildPreloadCallSavePayload(
       id: params.nivelEducativo.id,
       descripcion: params.nivelEducativo.descripcion,
     },
+    contratacion: params.contratacion ?? '0',
   };
 
   if (params.convocatoriaId != null) {
@@ -148,9 +167,10 @@ export function buildPreloadCallSavePayload(
 
   return {
     convocatoria,
-    fechas,
+    fechas: buildCallFechas(params, !isHiring),
     convocatoriaTipoContratacion: mapConvocatoriaTipoContratacion(
       params.modalityRows,
+      isHiring,
     ),
   };
 }

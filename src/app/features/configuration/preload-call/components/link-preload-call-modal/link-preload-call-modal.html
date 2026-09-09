@@ -7,22 +7,21 @@
     {{ modalTitle() }}
   </h3>
   <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-    Seleccione una convocatoria del periodo 1 del mismo año para enlazarla
-    con
+    {{ modalDescription() }}
     <span class="font-medium text-gray-700 dark:text-gray-300">
       {{ preloadCall()?.nombre || preloadCall()?.descripcion || 'esta convocatoria' }}.
     </span>
   </p>
 
   <div class="flex flex-col gap-2">
-    <app-label>Convocatoria periodo 1</app-label>
+    <app-label>{{ selectLabel() }}</app-label>
     <app-select
       [formControl]="idRelacionControl"
       [options]="callOptions()"
       [disabled]="isLoadingOptions() || isSaving()"
       placeholder="Seleccione la convocatoria"
       searchPlaceholder="Buscar convocatoria..."
-      emptyText="No hay convocatorias del periodo 1 para este año"
+      [emptyText]="emptyText()"
     />
 
     @if (idRelacionControl.touched && idRelacionControl.invalid) {

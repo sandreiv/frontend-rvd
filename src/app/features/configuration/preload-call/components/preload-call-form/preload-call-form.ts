@@ -16,6 +16,7 @@ import { finalize, forkJoin } from 'rxjs';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { DateRangePicker } from '../../../../../shared/components/form/date-range-picker/date-range-picker';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
+import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
 import { Label } from '../../../../../shared/components/form/label/label';
 import {
   Select,
@@ -30,10 +31,12 @@ import { PreloadCallSaveRequest } from '../../model/preload-call-save.model';
 import {
   EducationalLevelItem,
   FechaFormMeta,
+  isHiringContratacion,
   ModalityFormItem,
   ModalityItem,
   PersonaAutorizaConvocatoriaItem,
   PreloadCallDetailResponse,
+  toContratacionValue,
   UniversityPeriodItem,
 } from '../../model/preload-call.model';
 import { ModalityFormModal } from '../modality-form-modal/modality-form-modal';
@@ -46,6 +49,7 @@ import { PreloadCallPersonSearchModal } from '../preload-call-person-search-moda
     ReactiveFormsModule,
     Label,
     InputField,
+    Checkbox,
     DateRangePicker,
     CollapsibleSection,
     Button,
@@ -96,6 +100,7 @@ export class PreloadCallForm implements OnInit {
   readonly authorizerSectionExpanded = signal(false);
   readonly callInfoSectionExpanded = signal(false);
   readonly modalitySectionExpanded = signal(false);
+  readonly isHiringCall = signal(false);
 
   readonly universityPeriodOptions = computed<SelectOption[]>(() =>
     this.universityPeriods().map((item) => ({
@@ -133,9 +138,14 @@ export class PreloadCallForm implements OnInit {
     fechaFinIsu: [''],
     periodoUniversidad: ['', Validators.required],
     nivelEducativo: ['', Validators.required],
+    esContratacion: [false],
   });
 
   constructor() {
+    this.form.controls.esContratacion.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((checked) => this.onHiringCallChange(checked === true));
+
     effect(() => {
       const isCreateMode = this.mode() === 'create';
       this.authorizerSectionExpanded.set(!isCreateMode);
@@ -170,11 +180,20 @@ export class PreloadCallForm implements OnInit {
   }
 
   private resetFormState(): void {
-    this.form.reset();
+    this.form.reset({ esContratacion: false });
     this.fechasMeta.set([]);
     this.modalities.set([]);
     this.saveError.set(null);
     this.searchError.set(null);
+    this.onHiringCallChange(false);
+  }
+
+  onHiringCallToggle(checked: boolean): void {
+    this.form.controls.esContratacion.setValue(checked);
+  }
+
+  private onHiringCallChange(isHiring: boolean): void {
+    this.isHiringCall.set(isHiring);
   }
 
   private syncFormFromDetail(detail: PreloadCallDetailResponse): void {
@@ -199,6 +218,9 @@ export class PreloadCallForm implements OnInit {
       fechaFinCtei: this.toDateOnly(CTEI?.fechaFin),
       fechaInicioIsu: this.toDateOnly(isu?.fechaInicio),
       fechaFinIsu: this.toDateOnly(isu?.fechaFin),
+      esContratacion: isHiringContratacion(
+        detail.convocatoria.contratacion,
+      ),
     });
 
     this.modalities.set(this.mapDetailModalityRows(detail));
@@ -413,6 +435,7 @@ export class PreloadCallForm implements OnInit {
       fechaFinIsu: value.fechaFinIsu ?? '',
       fechasMeta: this.fechasMeta(),
       modalityRows: this.modalities(),
+      contratacion: toContratacionValue(value.esContratacion === true),
     });
 
     this.saveError.set(null);

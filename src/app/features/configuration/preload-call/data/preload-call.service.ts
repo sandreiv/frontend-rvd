@@ -82,6 +82,45 @@ export class PreloadCallService {
     );
   }
 
+  /**
+   * Lista convocatorias de preasignación (contratacion nulo o 0)
+   * del periodo universitario indicado.
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   */
+  listPreassignmentCalls(
+    idPeriodoUniversidad: number,
+  ): Observable<PreloadCallItem[]> {
+    return this.webRequestService
+      .get<PreloadCallListApiItem[]>(`${this.endpoint}/list-preassignment`, {
+        idPeriodoUniversidad: String(idPeriodoUniversidad),
+      })
+      .pipe(
+        map((items) =>
+          items
+            .map((item) => normalizePreloadCallListItem(item))
+            .filter((item): item is PreloadCallItem => item != null),
+        ),
+      );
+  }
+
+  /**
+   * Relaciona una convocatoria de contratación con una de preasignación
+   * del mismo periodo, o elimina el enlace si idRelacion es null.
+   *
+   * @param idConvocatoria Identificador de la convocatoria de contratación.
+   * @param idRelacion Identificador de la preasignación, o null para quitar el enlace.
+   */
+  updatePreassignmentRelation(
+    idConvocatoria: number,
+    idRelacion: number | null,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/update-preassignment-relation/${idConvocatoria}`,
+      { idRelacion },
+    );
+  }
+
   searchGeneralPerson(params: SearchGeneralPersonParams): Observable<PersonaAutorizaConvocatoriaItem[]> {
     const query: Record<string, string> = {};
     const documento = params.documento?.trim();

@@ -49,6 +49,7 @@
         (deleteAllPreloadCall)="onDeleteAllPreloadCall($event)"
         (restrictCoordination)="openRestrictCoordination($event)"
         (linkPreloadCall)="openLinkPreloadCallModal($event)"
+        (linkPreassignment)="openLinkPreassignmentModal($event)"
       />
     </app-section-frame>
   </div>
@@ -93,8 +94,9 @@
 <app-link-preload-call-modal
   [isOpen]="isLinkModalOpen()"
   [preloadCall]="preloadCallToLink()"
-  [firstPeriodCalls]="firstPeriodCalls()"
-  [isLoadingOptions]="isLoadingFirstPeriodCalls()"
+  [calls]="linkModalCalls()"
+  [linkKind]="linkKind()"
+  [isLoadingOptions]="isLoadingLinkOptions()"
   [isSaving]="isSavingLink()"
   (close)="closeLinkModal()"
   (save)="onSavePreloadCallLink($event)"

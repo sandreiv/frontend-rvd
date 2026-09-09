@@ -51,6 +51,7 @@ export class ModalityFormModal {
   readonly isOpen = input(false);
   readonly modalityOptions = input<Option[]>([]);
   readonly editingItem = input<ModalityFormItem | null>(null);
+  readonly isHiringCall = input(false);
 
   readonly close = output<void>();
   readonly saved = output<ModalityFormItem>();
@@ -139,6 +140,7 @@ export class ModalityFormModal {
     const editing = this.editingItem();
 
     const isPlant = this.isPlantSelected();
+    const skipDateFields = isPlant || this.isHiringCall();
 
     this.saved.emit({
       id: editing?.id ?? '',
@@ -146,17 +148,21 @@ export class ModalityFormModal {
       fechaId: editing?.fechaId,
       tipoModalidad,
       tipoModalidadLabel: label,
-      diasVacaciones,
-      fechaInicio: isPlant ? null : this.form.controls.fechaInicio.value ?? '',
-      fechaFin: isPlant ? null : this.form.controls.fechaFin.value ?? '',
-      semanas: isPlant ? null : semanas,
+      diasVacaciones: this.isHiringCall() ? null : diasVacaciones,
+      fechaInicio: skipDateFields
+        ? null
+        : this.form.controls.fechaInicio.value ?? '',
+      fechaFin: skipDateFields
+        ? null
+        : this.form.controls.fechaFin.value ?? '',
+      semanas: skipDateFields ? null : semanas,
     });
 
     this.close.emit();
   }
 
   private syncSemanasFromDates(): void {
-    if (this.isPlantSelected()) {
+    if (this.isPlantSelected() || this.isHiringCall()) {
       return;
     }
 
@@ -199,6 +205,7 @@ export class ModalityFormModal {
 
   private syncPlantModalityState(): void {
     const isPlant = this.isPlantModality(this.form.controls.tipoModalidad.value);
+    const skipDateFields = isPlant || this.isHiringCall();
 
     this.isPlantSelected.set(isPlant);
 
@@ -206,7 +213,7 @@ export class ModalityFormModal {
     const fechaFin = this.form.controls.fechaFin;
     const semanas = this.form.controls.semanas;
 
-    if (isPlant) {
+    if (skipDateFields) {
       fechaInicio.clearValidators();
       fechaFin.clearValidators();
       semanas.clearValidators();

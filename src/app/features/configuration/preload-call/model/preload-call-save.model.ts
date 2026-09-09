@@ -18,6 +18,7 @@ export interface PreloadCallSaveConvocatoria {
   autoriza: PreloadCallSaveAutoriza;
   periodo: PreloadCallSavePeriodo;
   nivelEducativo: PreloadCallSaveNivelEducativo;
+  contratacion: string | null;
 }
 
 export interface PreloadCallSaveAutoriza {
@@ -77,6 +78,7 @@ export interface BuildPreloadCallSavePayloadParams {
   fechaFinIsu: string;
   fechasMeta: FechaFormMeta[];
   modalityRows: ModalityFormItem[];
+  contratacion: string | null;
 }
 
 export interface PreloadCallDeleteRequest {

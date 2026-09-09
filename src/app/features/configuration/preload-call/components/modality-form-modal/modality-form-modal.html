@@ -7,14 +7,19 @@
     {{ modalTitle() }}
   </h3>
   <p class="mb-8 text-sm text-gray-500 dark:text-gray-400">
-    @if (isEditMode()) {
+    @if (isHiringCall()) {
+      Seleccione el tipo de modalidad.
+    } @else if (isEditMode()) {
       Actualice el tipo de modalidad, los días de vacaciones y el rango de fechas.
     } @else {
       Registre el tipo de modalidad, los días de vacaciones y el rango de fechas.
     }
   </p>
   <form [formGroup]="form" class="flex flex-col gap-6">
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div
+      class="grid grid-cols-1 gap-6"
+      [class.sm:grid-cols-2]="!isHiringCall()"
+    >
       <div>
         <app-label>Tipo de modalidad</app-label>
         <app-select
@@ -25,50 +30,54 @@
           emptyText="No se encontraron modalidades"
         />
       </div>
-      <div>
-        <app-label>Días de vacaciones</app-label>
-        <app-input-field
-          type="number"
-          formControlName="diasVacaciones"
-          placeholder="Ingrese los días de vacaciones"
-          [step]="1"
-          [min]="'0'"
-        />
-      </div>
+      @if (!isHiringCall()) {
+        <div>
+          <app-label>Días de vacaciones</app-label>
+          <app-input-field
+            type="number"
+            formControlName="diasVacaciones"
+            placeholder="Ingrese los días de vacaciones"
+            [step]="1"
+            [min]="'0'"
+          />
+        </div>
+      }
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div
-        class="flex flex-col gap-3"
-        [class.pointer-events-none]="isPlantSelected()"
-      >
-        <app-date-range-picker
-          [formGroup]="form"
-          startControlName="fechaInicio"
-          endControlName="fechaFin"
-          startId="modalityFechaInicio"
-          endId="modalityFechaFin"
-          startPlaceholder="Fecha inicio"
-          endPlaceholder="Fecha fin"
-          [showLabels]="true"
-        />
-      </div>
+    @if (!isHiringCall()) {
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div
+          class="flex flex-col gap-3"
+          [class.pointer-events-none]="isPlantSelected()"
+        >
+          <app-date-range-picker
+            [formGroup]="form"
+            startControlName="fechaInicio"
+            endControlName="fechaFin"
+            startId="modalityFechaInicio"
+            endId="modalityFechaFin"
+            startPlaceholder="Fecha inicio"
+            endPlaceholder="Fecha fin"
+            [showLabels]="true"
+          />
+        </div>
 
-      <div
-        [class.pointer-events-none]="isPlantSelected()"
-      >
-        <app-label>Semanas</app-label>
-        <app-input-field
-          type="number"
-          formControlName="semanas"
-          placeholder="Se calcula automáticamente"
-          [step]="1"
-          [min]="'1'"
-          [disabled]="isPlantSelected()"
-          (valueChange)="onSemanasManualEdit()"
-        />
+        <div
+          [class.pointer-events-none]="isPlantSelected()"
+        >
+          <app-label>Semanas</app-label>
+          <app-input-field
+            type="number"
+            formControlName="semanas"
+            placeholder="Se calcula automáticamente"
+            [step]="1"
+            [min]="'1'"
+            [disabled]="isPlantSelected()"
+            (valueChange)="onSemanasManualEdit()"
+          />
+        </div>
       </div>
-    </div>
+    }
 
     <div class="flex justify-end gap-3 border-t border-gray-200 pt-6 dark:border-white/5">
       <app-button type="button" variant="outline" (btnClick)="close.emit()">

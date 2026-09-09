@@ -5,7 +5,6 @@ import {
   effect,
   input,
   output,
-  signal,
   untracked,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -18,6 +17,8 @@ import { Button } from '../../../../../shared/ui/button/button';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { PreloadCallItem } from '../../model/preload-call.model';
 
+export type PreloadCallLinkKind = 'period1' | 'preassignment';
+
 @Component({
   selector: 'app-link-preload-call-modal',
   imports: [ReactiveFormsModule, Modal, Label, Select, Button],
@@ -27,9 +28,10 @@ import { PreloadCallItem } from '../../model/preload-call.model';
 export class LinkPreloadCallModal {
   readonly isOpen = input(false);
   readonly preloadCall = input<PreloadCallItem | null>(null);
-  readonly firstPeriodCalls = input<PreloadCallItem[]>([]);
+  readonly calls = input<PreloadCallItem[]>([]);
   readonly isLoadingOptions = input(false);
   readonly isSaving = input(false);
+  readonly linkKind = input<PreloadCallLinkKind>('period1');
 
   readonly close = output<void>();
   readonly save = output<number>();
@@ -45,16 +47,44 @@ export class LinkPreloadCallModal {
   );
 
   readonly callOptions = computed<Option[]>(() =>
-    this.firstPeriodCalls().map((item) => ({
+    this.calls().map((item) => ({
       value: String(item.id),
       label: item.nombre || item.descripcion || `Convocatoria ${item.id}`,
     })),
   );
 
-  readonly modalTitle = computed(() =>
-    this.hasExistingLink()
+  readonly isPreassignmentLink = computed(
+    () => this.linkKind() === 'preassignment',
+  );
+
+  readonly modalTitle = computed(() => {
+    if (this.isPreassignmentLink()) {
+      return this.hasExistingLink()
+        ? 'Editar relación de preasignación'
+        : 'Relacionar preasignación';
+    }
+
+    return this.hasExistingLink()
       ? 'Editar enlace de convocatoria'
-      : 'Enlazar convocatoria',
+      : 'Enlazar convocatoria';
+  });
+
+  readonly modalDescription = computed(() =>
+    this.isPreassignmentLink()
+      ? 'Seleccione una convocatoria de preasignación del mismo periodo para enlazarla con'
+      : 'Seleccione una convocatoria del periodo 1 del mismo año para enlazarla con',
+  );
+
+  readonly selectLabel = computed(() =>
+    this.isPreassignmentLink()
+      ? 'Convocatoria de preasignación'
+      : 'Convocatoria periodo 1',
+  );
+
+  readonly emptyText = computed(() =>
+    this.isPreassignmentLink()
+      ? 'No hay convocatorias de preasignación para este periodo'
+      : 'No hay convocatorias del periodo 1 para este año',
   );
 
   constructor() {

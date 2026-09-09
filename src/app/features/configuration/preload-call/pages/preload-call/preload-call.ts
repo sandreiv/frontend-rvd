@@ -9,13 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { BreadcrumbTitle } from '../../../../../core/service/breadcrumb-title';
 import { NewModal } from '../../../../../shared/ui/new-modal/new-modal';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
 import { PreloadCallForm } from '../../components/preload-call-form/preload-call-form';
 import { PreloadCallTable } from '../../components/preload-call-table/preload-call-table';
-import { LinkPreloadCallModal } from '../../components/link-preload-call-modal/link-preload-call-modal';
+import { LinkPreloadCallModal, type PreloadCallLinkKind } from '../../components/link-preload-call-modal/link-preload-call-modal';
 import { PreloadCallService } from '../../data/preload-call.service';
 import {
   PreloadCallDetailResponse,
@@ -135,10 +135,11 @@ export class PreloadCall implements OnInit, OnDestroy {
   readonly isLinkModalOpen = signal(false);
   readonly preloadCallToLink = signal<PreloadCallItem | null>(null);
   readonly isSavingLink = signal(false);
+  readonly linkKind = signal<PreloadCallLinkKind>('period1');
 
   readonly firstPeriodCallsResource = rxResource({
     params: () => {
-      if (!this.isLinkModalOpen()) {
+      if (!this.isLinkModalOpen() || this.linkKind() !== 'period1') {
         return undefined;
       }
       const year = this.appliedPeriod()?.anio;
@@ -152,11 +153,34 @@ export class PreloadCall implements OnInit, OnDestroy {
     defaultValue: [] as PreloadCallItem[],
   });
 
-  readonly firstPeriodCalls = computed(
-    () => this.firstPeriodCallsResource.value(),
+  readonly preassignmentCallsResource = rxResource({
+    params: () => {
+      if (!this.isLinkModalOpen() || this.linkKind() !== 'preassignment') {
+        return undefined;
+      }
+      const idPeriodoUniversidad = this.appliedPeriodId();
+      if (idPeriodoUniversidad == null) {
+        return undefined;
+      }
+      return { idPeriodoUniversidad };
+    },
+    stream: ({ params }) =>
+      this.preloadCallService.listPreassignmentCalls(
+        params.idPeriodoUniversidad,
+      ),
+    defaultValue: [] as PreloadCallItem[],
+  });
+
+  readonly linkModalCalls = computed(() =>
+    this.linkKind() === 'preassignment'
+      ? this.preassignmentCallsResource.value()
+      : this.firstPeriodCallsResource.value(),
   );
-  readonly isLoadingFirstPeriodCalls = computed(() =>
-    this.firstPeriodCallsResource.isLoading(),
+
+  readonly isLoadingLinkOptions = computed(() =>
+    this.linkKind() === 'preassignment'
+      ? this.preassignmentCallsResource.isLoading()
+      : this.firstPeriodCallsResource.isLoading(),
   );
 
   readonly deleteModalTitle = computed(() =>
@@ -444,12 +468,28 @@ export class PreloadCall implements OnInit, OnDestroy {
   }
 
   openLinkPreloadCallModal(preloadCall: PreloadCallItem): void {
-    if (!preloadCall?.id || !this.isSecondPeriodFilter()) {
+    this.openCallLinkModal(preloadCall, 'period1');
+  }
+
+  openLinkPreassignmentModal(preloadCall: PreloadCallItem): void {
+    this.openCallLinkModal(preloadCall, 'preassignment');
+  }
+
+  private openCallLinkModal(
+    preloadCall: PreloadCallItem,
+    kind: PreloadCallLinkKind,
+  ): void {
+    if (!preloadCall?.id) {
+      return;
+    }
+
+    if (kind === 'period1' && !this.isSecondPeriodFilter()) {
       return;
     }
 
     this.closePreloadCallForm();
     this.closeRestrictCoordination();
+    this.linkKind.set(kind);
     this.preloadCallToLink.set(preloadCall);
     this.isLinkModalOpen.set(true);
   }
@@ -461,28 +501,11 @@ export class PreloadCall implements OnInit, OnDestroy {
 
     this.isLinkModalOpen.set(false);
     this.preloadCallToLink.set(null);
+    this.linkKind.set('period1');
   }
 
   async onSavePreloadCallLink(idRelacion: number): Promise<void> {
-    const call = this.preloadCallToLink();
-    if (!call?.id || this.isSavingLink()) {
-      return;
-    }
-
-    this.isSavingLink.set(true);
-
-    try {
-      await firstValueFrom(
-        this.preloadCallService.updatePreloadCallRelation(call.id, idRelacion),
-      );
-      this.preloadCallsResource.reload();
-      this.isLinkModalOpen.set(false);
-      this.preloadCallToLink.set(null);
-    } catch (error) {
-      console.error('Error al enlazar convocatoria:', error);
-    } finally {
-      this.isSavingLink.set(false);
-    }
+    await this.persistCallRelation(idRelacion);
   }
 
   async onUnlinkPreloadCall(): Promise<void> {
@@ -491,20 +514,47 @@ export class PreloadCall implements OnInit, OnDestroy {
       return;
     }
 
+    await this.persistCallRelation(null);
+  }
+
+  private async persistCallRelation(
+    idRelacion: number | null,
+  ): Promise<void> {
+    const call = this.preloadCallToLink();
+    if (!call?.id || this.isSavingLink()) {
+      return;
+    }
+
     this.isSavingLink.set(true);
 
     try {
-      await firstValueFrom(
-        this.preloadCallService.updatePreloadCallRelation(call.id, null),
-      );
+      await firstValueFrom(this.relationRequest(call.id, idRelacion));
       this.preloadCallsResource.reload();
       this.isLinkModalOpen.set(false);
       this.preloadCallToLink.set(null);
+      this.linkKind.set('period1');
     } catch (error) {
-      console.error('Error al eliminar enlace de convocatoria:', error);
+      console.error('Error al relacionar convocatoria:', error);
     } finally {
       this.isSavingLink.set(false);
     }
+  }
+
+  private relationRequest(
+    callId: number,
+    idRelacion: number | null,
+  ): Observable<void> {
+    if (this.linkKind() === 'preassignment') {
+      return this.preloadCallService.updatePreassignmentRelation(
+        callId,
+        idRelacion,
+      );
+    }
+
+    return this.preloadCallService.updatePreloadCallRelation(
+      callId,
+      idRelacion,
+    );
   }
 
   async openRestrictCoordination(preloadCall: PreloadCallItem): Promise<void> {

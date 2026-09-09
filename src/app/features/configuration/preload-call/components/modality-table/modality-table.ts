@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
 } from '@angular/core';
@@ -22,6 +23,7 @@ import { ModalityFormItem } from '../../model/preload-call.model';
 export class ModalityTable {
   rows = input<ModalityFormItem[]>([]);
   readonly = input(false);
+  isHiringCall = input(false);
 
   addModality = output<void>();
   deleteModality = output<ModalityFormItem>();
@@ -29,37 +31,45 @@ export class ModalityTable {
 
   readonly rowIdentity = (row: ModalityFormItem): string => row.id;
 
-  readonly columns: DataTableColumn<ModalityFormItem>[] = [
-    {
+  readonly columns = computed((): DataTableColumn<ModalityFormItem>[] => {
+    const tipoColumn: DataTableColumn<ModalityFormItem> = {
       id: 'tipoModalidadLabel',
       header: 'Tipo modalidad',
       cell: (row) => row.tipoModalidadLabel || '-',
       formatAsSentence: true,
-    },
-    {
-      id: 'diasVacaciones',
-      header: 'Días vacaciones',
-      cell: (row) =>
-        row.diasVacaciones != null ? String(row.diasVacaciones) : '-',
-    },
-    {
-      id: 'semanas',
-      header: 'Semanas',
-      cell: (row) => row.semanas != null ? String(row.semanas) : '-',
-    },
-    {
-      id: 'fechaInicio',
-      header: 'Fecha inicio',
-      cell: (row) => row.fechaInicio || '-',
-      formatAsDate: true,
-    },
-    {
-      id: 'fechaFin',
-      header: 'Fecha fin',
-      cell: (row) => row.fechaFin || '-',
-      formatAsDate: true,
-    },
-  ];
+    };
+
+    if (this.isHiringCall()) {
+      return [tipoColumn];
+    }
+
+    return [
+      tipoColumn,
+      {
+        id: 'diasVacaciones',
+        header: 'Días vacaciones',
+        cell: (row) =>
+          row.diasVacaciones != null ? String(row.diasVacaciones) : '-',
+      },
+      {
+        id: 'semanas',
+        header: 'Semanas',
+        cell: (row) => (row.semanas != null ? String(row.semanas) : '-'),
+      },
+      {
+        id: 'fechaInicio',
+        header: 'Fecha inicio',
+        cell: (row) => row.fechaInicio || '-',
+        formatAsDate: true,
+      },
+      {
+        id: 'fechaFin',
+        header: 'Fecha fin',
+        cell: (row) => row.fechaFin || '-',
+        formatAsDate: true,
+      },
+    ];
+  });
 
   readonly rowActions: DataTableRowAction<ModalityFormItem>[] = [
     {

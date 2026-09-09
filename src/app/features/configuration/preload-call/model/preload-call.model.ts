@@ -1,3 +1,5 @@
+export type PreloadCallContratacion = '1' | '0' | null;
+
 export interface PreloadCallItem {
   id: number;
   nombre: string;
@@ -9,6 +11,7 @@ export interface PreloadCallItem {
   periodoUniversidad: string;
   nivelEducativo: string;
   idRelacion: number | null;
+  contratacion: PreloadCallContratacion;
 }
 
 /** Item crudo del listado */
@@ -24,6 +27,7 @@ export interface PreloadCallListApiItem {
   periodoUniversidad: string;
   nivelEducativo: string;
   idRelacion?: number | string | null;
+  contratacion?: string | null;
 }
 
 export function resolvePreloadCallListId(
@@ -60,6 +64,31 @@ function resolveIdRelacion(
   return parsed;
 }
 
+export function resolveContratacion(
+  value: string | null | undefined,
+): PreloadCallContratacion {
+  if (value === '1' || value === '0') {
+    return value;
+  }
+  return null;
+}
+
+export function isHiringContratacion(
+  value: string | null | undefined,
+): boolean {
+  return value === '1';
+}
+
+export function toContratacionValue(isHiring: boolean): '1' | '0' {
+  return isHiring ? '1' : '0';
+}
+
+export function labelContratacion(
+  value: string | null | undefined,
+): string {
+  return isHiringContratacion(value) ? 'Contratación' : 'Precarga';
+}
+
 export function normalizePreloadCallListItem(item: PreloadCallListApiItem): PreloadCallItem | null {
   const id = resolvePreloadCallListId(item);
   if (id == null) {
@@ -77,6 +106,7 @@ export function normalizePreloadCallListItem(item: PreloadCallListApiItem): Prel
     periodoUniversidad: item.periodoUniversidad ?? '',
     nivelEducativo: item.nivelEducativo ?? '',
     idRelacion: resolveIdRelacion(item.idRelacion),
+    contratacion: resolveContratacion(item.contratacion),
   };
 }
 
@@ -94,6 +124,7 @@ export interface PreloadCallDetailConvocatoria {
   autoriza: PersonaAutorizaConvocatoriaItem;
   periodo: UniversityPeriodItem;
   nivelEducativo: EducationalLevelItem;
+  contratacion?: string | null;
 }
 
 export interface PreloadCallDetailFecha {

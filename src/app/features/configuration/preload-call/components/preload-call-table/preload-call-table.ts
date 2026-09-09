@@ -13,7 +13,11 @@ import {
   DataTableSearchEvent,
   DataTableToolbarActionEvent,
 } from '../../../../../shared/ui/data-table/table.types';
-import { PreloadCallItem } from '../../model/preload-call.model';
+import {
+  isHiringContratacion,
+  labelContratacion,
+  PreloadCallItem,
+} from '../../model/preload-call.model';
 
 @Component({
   selector: 'app-preload-call-table',
@@ -35,6 +39,7 @@ export class PreloadCallTable {
   readonly selectedPreloadCallIdsChange = output<string[]>();
   readonly restrictCoordination = output<PreloadCallItem>();
   readonly linkPreloadCall = output<PreloadCallItem>();
+  readonly linkPreassignment = output<PreloadCallItem>();
 
   readonly rowIdentity = (row: PreloadCallItem): string => String(row.id);
 
@@ -44,6 +49,11 @@ export class PreloadCallTable {
       header: 'Descripción',
       cell: (row) => row.descripcion || '-',
       formatAsSentence: true,
+    },
+    {
+      id: 'contratacion',
+      header: 'Tipo',
+      cell: (row) => labelContratacion(row.contratacion),
     },
     {
       id: 'periodoUniversidad',
@@ -90,8 +100,16 @@ export class PreloadCallTable {
         id: 'linkCall',
         label: 'Enlazar convocatoria',
         icon: 'paperClip',
+        visible: (row) => !isHiringContratacion(row.contratacion),
       });
     }
+
+    actions.push({
+      id: 'linkPreassignment',
+      label: 'Relacionar preasignación',
+      icon: 'paperClip',
+      visible: (row) => isHiringContratacion(row.contratacion),
+    });
 
     actions.push(
       {
@@ -120,6 +138,11 @@ export class PreloadCallTable {
 
     if (event.actionId === 'linkCall') {
       this.linkPreloadCall.emit(event.row);
+      return;
+    }
+
+    if (event.actionId === 'linkPreassignment') {
+      this.linkPreassignment.emit(event.row);
       return;
     }
 
