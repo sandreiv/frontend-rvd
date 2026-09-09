@@ -101,7 +101,8 @@ export class CdpRequests implements OnInit {
     () => this.currentCdpRequest() != null,
   );
 
-  readonly isCdpOnAcademicDevelopment = computed(() => this.selectedFaculty()?.solicitud.estado === 'DESARROLLO ACADEMICO')
+  readonly isCdpOnAcademicDevelopment = computed(() => this.selectedFaculty()?.solicitud.estado === 'DESARROLLO ACADEMICO');
+  readonly isCdpOnViceAcademic = computed(() => this.selectedFaculty()?.solicitud.estado === 'VICERRECTORIA ACADEMICA');
 
   readonly showRequestCdpModal = signal(false);
 
@@ -135,6 +136,12 @@ export class CdpRequests implements OnInit {
     const rolesUsuario = this.authService.getRoles();
 
     return rolesUsuario.includes('Desarrollo academico');
+  });
+
+  readonly isViceAcademic = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Vicerrectoria academica');
   });
 
   readonly cdpContextResource = rxResource<CdpContext, unknown>({
@@ -220,7 +227,7 @@ export class CdpRequests implements OnInit {
     defaultValue: [] as CoordinationItem[],
   });
 
-  readonly cdpRequestsForAcademicDevelopmentResource = rxResource({
+  readonly cdpRequestsForAcademicsResource = rxResource({
     params: () => {
       const idPeriodoUniversidad = this.appliedPeriodId();
 
@@ -235,7 +242,7 @@ export class CdpRequests implements OnInit {
     },
 
     stream: ({ params }) =>
-      this.coordinationService.getCdpRequestsForAcademicDevelopment(
+      this.coordinationService.getCdpRequestsForAcademics(
         params.idPeriodoUniversidad,
       ),
 
@@ -261,7 +268,7 @@ export class CdpRequests implements OnInit {
     );
 
   readonly tableItems = computed(() => {
-    return this.isDean() ? this.cdpRequestsForDeanResource.value() : this.cdpRequestsForAcademicDevelopmentResource.value();
+    return this.isDean() ? this.cdpRequestsForDeanResource.value() : this.cdpRequestsForAcademicsResource.value();
   })
 
   readonly selectedFacultyAttachments = computed(() => this.selectedFaculty()?.solicitud.adjuntos ?? []);
@@ -276,7 +283,7 @@ export class CdpRequests implements OnInit {
       this.cdpRequestsForDeanResource.isLoading(),
   );
 
-  readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.isLoading())
+  readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicsResource.isLoading())
 
   readonly hasAppliedFilter = computed(() => {
     if (this.isDean()) {
@@ -410,7 +417,10 @@ export class CdpRequests implements OnInit {
       return;
     }
 
-    this.cdpRequestsForAcademicDevelopmentResource.reload();
+    this.selectedFaculty.set(null);
+    this.cdpObservation.set('');
+    this.cdpAttachments.set([]);
+    this.cdpRequestsForAcademicsResource.reload();
   }
 
   onCdpObservationChange(event: Event): void {
@@ -779,9 +789,13 @@ export class CdpRequests implements OnInit {
         this.cdpObservation.set('');
         this.cdpAttachments.set([]);
 
-        this.cdpRequestsForAcademicDevelopmentResource.reload();
+        this.cdpRequestsForAcademicsResource.reload();
       }
     });
+  }
+
+  generateCdpCode(): void {
+
   }
 
   openAttachmentPreview(
