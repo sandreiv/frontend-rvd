@@ -21,7 +21,7 @@ import { DocumentPreview } from '../../../../../shared/components/form/document-
 import { DocumentRequest } from '../../../../../shared/model/document.model';
 
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, Observable } from 'rxjs';
+import { finalize, firstValueFrom, Observable } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -89,6 +89,7 @@ export class CdpRequests implements OnInit {
   readonly cdpObservation = signal('');
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
+  readonly isSendingCdp = signal(false);
 
   readonly currentCdpRequest = signal<CdpRequest | null>(null);
   readonly isLoadingCurrentCdpRequest = signal(false);
@@ -99,6 +100,8 @@ export class CdpRequests implements OnInit {
   readonly hasCdpRequest = computed(
     () => this.currentCdpRequest() != null,
   );
+
+  readonly isCdpOnAcademicDevelopment = computed(() => this.selectedFaculty()?.solicitud.estado === 'DESARROLLO ACADEMICO')
 
   readonly showRequestCdpModal = signal(false);
 
@@ -126,6 +129,12 @@ export class CdpRequests implements OnInit {
     const rolesUsuario = this.authService.getRoles();
 
     return rolesUsuario.includes('Decano');
+  });
+
+  readonly isAcademicDev = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Desarrollo academico');
   });
 
   readonly cdpContextResource = rxResource<CdpContext, unknown>({
@@ -748,6 +757,31 @@ export class CdpRequests implements OnInit {
     }
 
     this.showRequestCdpModal.set(false);
+  }
+
+  sendCdpToViceAcademic(): void {
+    const idSolicitud = this.selectedFaculty()?.solicitud.id
+    if (!idSolicitud) return;
+
+    if (this.isSendingCdp() || this.canRequestCdp()) {
+      return;
+    }
+    
+    this.isSendingCdp.set(true);
+    this.cdpService
+      .sendCdpToVice(idSolicitud)
+      .pipe(
+        finalize(() => this.isSendingCdp.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        this.selectedFaculty.set(null);
+        this.cdpObservation.set('');
+        this.cdpAttachments.set([]);
+
+        this.cdpRequestsForAcademicDevelopmentResource.reload();
+      }
+    });
   }
 
   openAttachmentPreview(

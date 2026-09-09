@@ -524,6 +524,19 @@
                   }}
                 </app-button>
               </div>
+            } @else {
+              @if (isAcademicDev()) {
+                <div class="mt-4 flex justify-end">
+                  <app-button
+                    type="button"
+                    size="sm"
+                    [disabled]="!isCdpOnAcademicDevelopment()"
+                    (btnClick)="sendCdpToViceAcademic()"
+                  >
+                    Enviar CDP
+                  </app-button>
+                </div>
+              }
             }
           </div>
         </div>
