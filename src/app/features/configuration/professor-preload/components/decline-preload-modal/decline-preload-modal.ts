@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from "@angu
 import { Modal } from "../../../../../shared/ui/modal/modal";
 import { Button } from "../../../../../shared/ui/button/button";
 import { Label } from "../../../../../shared/components/form/label/label";
-import { InputField } from "../../../../../shared/components/form/input/input-field";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 
 @Component({
@@ -11,7 +10,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
     Modal,
     Button,
     Label,
-    InputField,
     ReactiveFormsModule
   ],
   templateUrl: './decline-preload-modal.html',
