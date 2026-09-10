@@ -10,6 +10,7 @@ import { SessionRequired } from './features/auth/session-required/session-requir
 import { authGuard } from './core/guards/auth.guard';
 import { homeRedirectGuard, menuGuard } from './core/guards/menu.guard';
 import { VerifyProfessors } from './features/configuration/verify-professors/pages/verify-professors/verify-professors';
+import { HiringCall } from './features/configuration/hiring-call/pages/hiring-call/hiring-call';
 
 export const routes: Routes = [
   {
@@ -38,13 +39,18 @@ export const routes: Routes = [
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
       { path: 'administracion', children: administrationRoutes },
-      { path: 'solicitudes-cdp', component: CdpRequests },
+      { path: 'solicitudes-cdp', component: CdpRequests, title: 'Solicitudes CDP' },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
       {
         path: 'verificar-docentes',
         component: VerifyProfessors,
         title: 'Verificar docentes - RVD',
+      },
+      { 
+        path: 'convocatoria-contratacion', 
+        component: HiringCall, 
+        title: 'Convocatoria contratación' 
       },
     ],
   },

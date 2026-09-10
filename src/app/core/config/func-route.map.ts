@@ -29,6 +29,10 @@ export const FUNC_ROUTE_MAP: Record<string, FuncRouteItem> = {
   '05':{
     path: '/rvd/verificar-docentes',
     icon: 'check'
+  },
+  '06':{
+    path: '/rvd/convocatoria-contratacion',
+    icon: 'hiringCall'
   }
 };
 
