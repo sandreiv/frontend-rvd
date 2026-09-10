@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   signal,
@@ -20,8 +21,8 @@ import {
 import { DocumentPreview } from '../../../../../shared/components/form/document-preview/document-preview';
 import { DocumentRequest } from '../../../../../shared/model/document.model';
 
-import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, Observable } from 'rxjs';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, firstValueFrom, Observable } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -68,6 +69,7 @@ export class CdpRequests implements OnInit {
   private readonly cdpService = inject(CdpService);
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly permissions = inject(PermissionService);
 
@@ -89,9 +91,14 @@ export class CdpRequests implements OnInit {
   readonly cdpObservation = signal('');
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
+  readonly isSendingCdp = signal(false);
+  readonly isGeneratingCdpCode = signal(false);
 
   readonly showDocumentPreview = signal(false);
   readonly selectedDocument = signal<DocumentRequest | null>(null);
+
+  readonly isCdpOnAcademicDevelopment = computed(() => this.selectedFaculty()?.solicitud.estado === 'DESARROLLO ACADEMICO');
+  readonly isCdpOnViceAcademic = computed(() => this.selectedFaculty()?.solicitud.estado === 'VICERRECTORIA ACADEMICA');
 
   readonly showRequestCdpModal = signal(false);
 
@@ -122,6 +129,18 @@ export class CdpRequests implements OnInit {
     const rolesUsuario = this.authService.getRoles();
 
     return rolesUsuario.includes('Decano');
+  });
+
+  readonly isAcademicDev = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Desarrollo academico');
+  });
+
+  readonly isViceAcademic = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Vicerrectoria academica');
   });
 
   readonly selectedCdpContextId = signal('');
@@ -316,7 +335,7 @@ export class CdpRequests implements OnInit {
     defaultValue: [] as CoordinationItem[],
   });
 
-  readonly cdpRequestsForAcademicDevelopmentResource = rxResource({
+  readonly cdpRequestsForAcademicsResource = rxResource({
     params: () => {
       const idPeriodoUniversidad = this.appliedPeriodId();
 
@@ -331,7 +350,7 @@ export class CdpRequests implements OnInit {
     },
 
     stream: ({ params }) =>
-      this.coordinationService.getCdpRequestsForAcademicDevelopment(
+      this.coordinationService.getCdpRequestsForAcademics(
         params.idPeriodoUniversidad,
       ),
 
@@ -357,7 +376,7 @@ export class CdpRequests implements OnInit {
     );
 
   readonly tableItems = computed(() => {
-    return this.isDean() ? this.cdpRequestsForDeanResource.value() : this.cdpRequestsForAcademicDevelopmentResource.value();
+    return this.isDean() ? this.cdpRequestsForDeanResource.value() : this.cdpRequestsForAcademicsResource.value();
   })
 
   readonly selectedFacultyAttachments = computed(() => this.selectedFaculty()?.solicitud.adjuntos ?? []);
@@ -372,7 +391,7 @@ export class CdpRequests implements OnInit {
       this.cdpRequestsForDeanResource.isLoading(),
   );
 
-  readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicDevelopmentResource.isLoading())
+  readonly isLoadingFaculties = computed(() => this.cdpRequestsForAcademicsResource.isLoading())
 
   readonly hasAppliedFilter = computed(() => {
     if (this.isDean()) {
@@ -424,6 +443,8 @@ export class CdpRequests implements OnInit {
 
   readonly canShowCdpReportButtons = computed(() => this.permissions.canDownloadCdpReport());
   readonly canCreateCdpRequest = computed(() => this.permissions.canAddCdpRequest());
+  readonly canSendCdpToVice = computed(() => this.permissions.canSendCdpToVice());
+  readonly canApproveCdpRequest = computed(() => this.permissions.canApproveCdpRequest());
 
   readonly canDownloadCdpReport = computed(() => {
     if (!this.canShowCdpReportButtons()) {
@@ -560,7 +581,10 @@ export class CdpRequests implements OnInit {
       return;
     }
 
-    this.cdpRequestsForAcademicDevelopmentResource.reload();
+    this.selectedFaculty.set(null);
+    this.cdpObservation.set('');
+    this.cdpAttachments.set([]);
+    this.cdpRequestsForAcademicsResource.reload();
   }
 
   onCdpObservationChange(event: Event): void {
@@ -899,6 +923,52 @@ export class CdpRequests implements OnInit {
     this.showRequestCdpModal.set(false);
   }
 
+  sendCdpToViceAcademic(): void {
+    const idSolicitud = this.selectedFaculty()?.solicitud.id
+    if (!idSolicitud) return;
+
+    if (this.isSendingCdp() || !this.isCdpOnAcademicDevelopment()) {
+      return;
+    }
+    
+    this.isSendingCdp.set(true);
+    this.cdpService
+      .sendCdpToVice(idSolicitud)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSendingCdp.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        this.resetSelectedFaculty();
+        this.cdpRequestsForAcademicsResource.reload();
+      }
+    });
+  }
+
+  generateCdpCode(): void {
+    const idSolicitud = this.selectedFaculty()?.solicitud.id
+    if (!idSolicitud) return;
+
+    if (this.isGeneratingCdpCode() || !this.isCdpOnViceAcademic()) {
+      return;
+    }
+
+    this.isGeneratingCdpCode.set(true);
+    this.cdpService
+      .approveCdpRequest(idSolicitud)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isGeneratingCdpCode.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        this.resetSelectedFaculty();
+        this.cdpRequestsForAcademicsResource.reload();
+      }
+    })
+  }
+
   openAttachmentPreview(
     adjunto: CdpAttachment,
   ): void {
@@ -1019,6 +1089,13 @@ export class CdpRequests implements OnInit {
       return;
     }
 
+    this.resetSelectedFaculty();
     this.appliedPeriodId.set(parsedPeriodId);
+  }
+
+  private resetSelectedFaculty(): void {
+    this.selectedFaculty.set(null);
+    this.cdpObservation.set('');
+    this.cdpAttachments.set([]);
   }
 }

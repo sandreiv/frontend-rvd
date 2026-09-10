@@ -97,6 +97,14 @@ export class PermissionService {
     return this.can(CDP_FUNC.ADD_CDP_REQUEST);
   }
 
+  canSendCdpToVice(): boolean {
+    return this.can(CDP_FUNC.SEND_CDP_REQUEST_TO_VICE);
+  }
+
+  canApproveCdpRequest(): boolean {
+    return this.can(CDP_FUNC.APROVE_CDP_REQUEST);
+  }
+
   canVerifyProfessor(): boolean {
     return this.can(VERIFY_PROFESSORS_FUNC.VERIFY);
   }

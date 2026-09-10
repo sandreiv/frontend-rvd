@@ -147,8 +147,32 @@ export class CdpService {
         `${this.endpoint}/requests`,
         formData,
     );
-    }    
+  }
+  
+  /**
+   * Actualiza el estado de la solictud CDP, pasando de Desarrollo academico a Vice academica
+   * 
+   * @param idSolicitud Identificador de la solicitud CDP.
+   * @returns Observable sin contenido cuando la operación finaliza correctamente.
+   */
+  sendCdpToVice(idSolicitud: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/send-request-to-vice/${idSolicitud}`, {}
+    );
+  }
 
+  /**
+   * Genera un codigo para el CDP y actualiza el estado de la solicitud, pasando de Vice academica
+   * a CDP aprobado
+   * 
+   * @param idSolicitud Identificador de la solicitud CDP.
+   * @returns Observable sin contenido cuando la operación finaliza correctamente.
+   */
+  approveCdpRequest(idSolicitud: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-cdp-request/${idSolicitud}`, {}
+    );
+  }
 }
 
 function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {
