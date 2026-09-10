@@ -524,31 +524,30 @@
                   }}
                 </app-button>
               </div>
-            } @else {
-              @if (isAcademicDev()) {
-                <div class="mt-4 flex justify-end">
-                  <app-button
-                    type="button"
-                    size="sm"
-                    [disabled]="!isCdpOnAcademicDevelopment()"
-                    (btnClick)="sendCdpToViceAcademic()"
-                  >
-                    Enviar CDP
-                  </app-button>
-                </div>
-              }
-              @if (isViceAcademic()) {
-                <div class="mt-4 flex justify-end">
-                  <app-button
-                    type="button"
-                    size="sm"
-                    [disabled]="!isCdpOnViceAcademic()"
-                    (btnClick)="generateCdpCode()"
-                  >
-                    Generar código CDP
-                  </app-button>
-                </div>
-              }
+            }
+            @if (canSendCdpToVice()) {
+              <div class="mt-4 flex justify-end">
+                <app-button
+                  type="button"
+                  size="sm"
+                  [disabled]="!isCdpOnAcademicDevelopment()"
+                  (btnClick)="sendCdpToViceAcademic()"
+                >
+                  Enviar CDP
+                </app-button>
+              </div>
+            }
+            @if (canApproveCdpRequest()) {
+              <div class="mt-4 flex justify-end">
+                <app-button
+                  type="button"
+                  size="sm"
+                  [disabled]="!isCdpOnViceAcademic()"
+                  (btnClick)="generateCdpCode()"
+                >
+                  Generar código CDP
+                </app-button>
+              </div>
             }
           </div>
         </div>

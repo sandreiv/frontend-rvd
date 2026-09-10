@@ -337,6 +337,8 @@ export class CdpRequests implements OnInit {
 
   readonly canShowCdpReportButtons = computed(() => this.permissions.canDownloadCdpReport());
   readonly canCreateCdpRequest = computed(() => this.permissions.canAddCdpRequest());
+  readonly canSendCdpToVice = computed(() => this.permissions.canSendCdpToVice());
+  readonly canApproveCdpRequest = computed(() => this.permissions.canApproveCdpRequest());
 
   readonly canDownloadCdpReport = computed(() => {
     if (!this.canShowCdpReportButtons()) {
@@ -776,7 +778,7 @@ export class CdpRequests implements OnInit {
     const idSolicitud = this.selectedFaculty()?.solicitud.id
     if (!idSolicitud) return;
 
-    if (this.isSendingCdp() || this.canRequestCdp() || !this.isAcademicDev()) {
+    if (this.isSendingCdp() || !this.isCdpOnAcademicDevelopment()) {
       return;
     }
     
@@ -799,7 +801,7 @@ export class CdpRequests implements OnInit {
     const idSolicitud = this.selectedFaculty()?.solicitud.id
     if (!idSolicitud) return;
 
-    if (this.isGeneratingCdpCode() || this.canRequestCdp() || !this.isViceAcademic()) {
+    if (this.isGeneratingCdpCode() || !this.isCdpOnViceAcademic()) {
       return;
     }
 
