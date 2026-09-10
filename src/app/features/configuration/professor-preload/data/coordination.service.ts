@@ -104,6 +104,7 @@ export class CoordinationService {
   getCdpRequests(
     idPeriodoUniversidad: number,
     idConvocatoria: number,
+    idCoordinacionFacultad: number,
   ): Observable<CoordinationItem[]> {
     return this.webRequestService
       .get<CoordinationApiItem[]>(
@@ -111,6 +112,7 @@ export class CoordinationService {
         {
           idPeriodoUniversidad,
           idConvocatoria,
+          idCoordinacionFacultad,
         },
       )
       .pipe(
@@ -121,13 +123,14 @@ export class CoordinationService {
   }
 
   /**
-   * Lista las facultades disponibles para revisión de CDP con estado DESARROLLO ACADEMICO.
+   * Lista las facultades disponibles para revisión de CDP con estado DESARROLLO ACADEMICO o
+   * VICERRECTORIA ACADEMICA dependiendo del rol del usuario.
    * @param idPeriodoUniversidad Identificador del periodo.
    * @returns Observable con las facultades que tienen solicitudes de CDPs y sus detalles.
    */
-  getCdpRequestsForAcademicDevelopment(idPeriodoUniversidad: number): Observable<FacultyCoordinationItem[]> {
+  getCdpRequestsForAcademics(idPeriodoUniversidad: number): Observable<FacultyCoordinationItem[]> {
     return this.webRequestService.get<FacultyRequestCdpApiItem[]>(
-      `${this.cdpEndpoint}/requests-for-academic-development`,
+      `${this.cdpEndpoint}/requests-for-academics`,
         { idPeriodoUniversidad },
     )
     .pipe(

@@ -23,7 +23,8 @@
 
     @if (isOpen()) {
       <div
-        class="fixed z-100000 flex flex-col rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900"
+        class="fixed z-100000 flex flex-col rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-900"
+        [ngClass]="panelClassName()"
         [ngStyle]="panelStyles()"
       >
         @if (enableSearch()) {

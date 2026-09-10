@@ -53,6 +53,7 @@ export class Select implements ControlValueAccessor {
   options = input<Option[]>([]);
   placeholder = input('Select an option');
   className = input('');
+  panelClassName = input('');
   defaultValue = input('');
   disabled = input(false);
   labelFormat = input<'sentence' | 'uppercase'>('sentence');
