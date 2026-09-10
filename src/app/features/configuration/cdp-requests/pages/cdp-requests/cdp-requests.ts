@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   signal,
@@ -20,7 +21,7 @@ import {
 import { DocumentPreview } from '../../../../../shared/components/form/document-preview/document-preview';
 import { DocumentRequest } from '../../../../../shared/model/document.model';
 
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, firstValueFrom, Observable } from 'rxjs';
 
 import { Button } from '../../../../../shared/ui/button/button';
@@ -68,6 +69,7 @@ export class CdpRequests implements OnInit {
   private readonly cdpService = inject(CdpService);
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly permissions = inject(PermissionService);
 
@@ -90,6 +92,7 @@ export class CdpRequests implements OnInit {
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
   readonly isSendingCdp = signal(false);
+  readonly isGeneratingCdpCode = signal(false);
 
   readonly currentCdpRequest = signal<CdpRequest | null>(null);
   readonly isLoadingCurrentCdpRequest = signal(false);
@@ -773,7 +776,7 @@ export class CdpRequests implements OnInit {
     const idSolicitud = this.selectedFaculty()?.solicitud.id
     if (!idSolicitud) return;
 
-    if (this.isSendingCdp() || this.canRequestCdp()) {
+    if (this.isSendingCdp() || this.canRequestCdp() || !this.isAcademicDev()) {
       return;
     }
     
@@ -781,21 +784,38 @@ export class CdpRequests implements OnInit {
     this.cdpService
       .sendCdpToVice(idSolicitud)
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSendingCdp.set(false)),
       )
     .subscribe({
       next: () => {
-        this.selectedFaculty.set(null);
-        this.cdpObservation.set('');
-        this.cdpAttachments.set([]);
-
+        this.resetSelectedFaculty();
         this.cdpRequestsForAcademicsResource.reload();
       }
     });
   }
 
   generateCdpCode(): void {
+    const idSolicitud = this.selectedFaculty()?.solicitud.id
+    if (!idSolicitud) return;
 
+    if (this.isGeneratingCdpCode() || this.canRequestCdp() || !this.isViceAcademic()) {
+      return;
+    }
+
+    this.isGeneratingCdpCode.set(true);
+    this.cdpService
+      .approveCdpRequest(idSolicitud)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isGeneratingCdpCode.set(false)),
+      )
+    .subscribe({
+      next: () => {
+        this.resetSelectedFaculty();
+        this.cdpRequestsForAcademicsResource.reload();
+      }
+    })
   }
 
   openAttachmentPreview(
@@ -894,6 +914,13 @@ export class CdpRequests implements OnInit {
       return;
     }
 
+    this.resetSelectedFaculty();
     this.appliedPeriodId.set(parsedPeriodId);
+  }
+
+  private resetSelectedFaculty(): void {
+    this.selectedFaculty.set(null);
+    this.cdpObservation.set('');
+    this.cdpAttachments.set([]);
   }
 }
