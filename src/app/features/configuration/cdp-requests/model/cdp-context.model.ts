@@ -2,6 +2,7 @@ import { CoordinationItem, CoordinationLookupItem, CoordinationUniversityPeriod 
 import { CdpRequest } from "./cdp-request.model";
 
 export interface CdpContext {
+  idCoordinacionFacultad: number;
   idUnidadAcademica: number;
   unidadAcademica: string;
   idFacultad: number;

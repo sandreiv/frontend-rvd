@@ -14,15 +14,20 @@ export class CdpService {
 
   private readonly endpoint = '/configuration/cdp';
 
-  getContext(): Observable<CdpContext> {
-    return this.webRequestService.get<CdpContext>(
+  getContexts(): Observable<CdpContext[]> {
+    return this.webRequestService.get<CdpContext[]>(
       `${this.endpoint}/context`,
     );
   }
 
-  getCurrentRequest(): Observable<CdpRequest | null> {
+  getCurrentRequest(
+    idCoordinacionFacultad: number,
+  ): Observable<CdpRequest | null> {
     return this.webRequestService.get<CdpRequest | null>(
       `${this.endpoint}/request`,
+      {
+        idCoordinacionFacultad,
+      },
     );
   }
 
@@ -35,8 +40,9 @@ export class CdpService {
    * @returns Observable con el archivo y el nombre sugerido.
    */
   downloadCdpReport(
-    idConvocatoria?: number,
-    idPeriodoUniversidad?: number,
+    idConvocatoria: number,
+    idPeriodoUniversidad: number,
+    idCoordinacionFacultad: number,
   ): Observable<{ blob: Blob; fileName: string }> {
     return this.webRequestService
       .getBlobResponse(
@@ -44,6 +50,7 @@ export class CdpService {
         this.buildReportParams(
           idConvocatoria,
           idPeriodoUniversidad,
+          idCoordinacionFacultad,
         ),
       )
       .pipe(
@@ -66,8 +73,9 @@ export class CdpService {
    * @returns Observable con el archivo y el nombre sugerido.
    */
   downloadCdpPdfReport(
-    idConvocatoria?: number,
-    idPeriodoUniversidad?: number,
+    idConvocatoria: number,
+    idPeriodoUniversidad: number,
+    idCoordinacionFacultad: number,
   ): Observable<{ blob: Blob; fileName: string }> {
     return this.webRequestService
       .getBlobResponse(
@@ -75,6 +83,7 @@ export class CdpService {
         this.buildReportParams(
           idConvocatoria,
           idPeriodoUniversidad,
+          idCoordinacionFacultad,
         ),
       )
       .pipe(
@@ -89,27 +98,23 @@ export class CdpService {
   }
 
   private buildReportParams(
-    idConvocatoria?: number,
-    idPeriodoUniversidad?: number,
+    idConvocatoria: number,
+    idPeriodoUniversidad: number,
+    idCoordinacionFacultad: number,
   ): Record<string, number> {
-    const params: Record<string, number> = {};
-
-    if (idConvocatoria != null) {
-      params['idConvocatoria'] = idConvocatoria;
-    }
-
-    if (idPeriodoUniversidad != null) {
-      params['idPeriodoUniversidad'] = idPeriodoUniversidad;
-    }
-
-    return params;
+    return {
+      idConvocatoria,
+      idPeriodoUniversidad,
+      idCoordinacionFacultad,
+    };
   }
 
   createRequest(
     observacion: string,
     archivos: File[],
-    idPeriodo: string
-    ): Observable<void> {
+    idPeriodo: string,
+    idCoordinacionFacultad: string,
+  ): Observable<void> {
 
     const formData = new FormData();
 
@@ -132,6 +137,11 @@ export class CdpService {
       'idPeriodo',
       idPeriodo.trim()
     )
+
+    formData.append(
+      'idCoordinacionFacultad',
+      idCoordinacionFacultad.trim(),
+    );
 
     return this.webRequestService.postFormData<void>(
         `${this.endpoint}/requests`,

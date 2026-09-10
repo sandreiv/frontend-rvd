@@ -104,6 +104,7 @@ export class CoordinationService {
   getCdpRequests(
     idPeriodoUniversidad: number,
     idConvocatoria: number,
+    idCoordinacionFacultad: number,
   ): Observable<CoordinationItem[]> {
     return this.webRequestService
       .get<CoordinationApiItem[]>(
@@ -111,6 +112,7 @@ export class CoordinationService {
         {
           idPeriodoUniversidad,
           idConvocatoria,
+          idCoordinacionFacultad,
         },
       )
       .pipe(

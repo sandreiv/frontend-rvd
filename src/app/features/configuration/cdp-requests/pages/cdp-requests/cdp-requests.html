@@ -111,28 +111,43 @@
               <p
                 class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
               >
-                {{ cdpContext()?.unidadAcademica || '-' }}
+                {{ activeCdpContext()?.unidadAcademica || '-' }}
               </p>
             </span>
           </div>
 
           <!-- FACULTAD -->
           <div class="min-w-0 flex-1 lg:pl-5">
-            <span
-              class="block rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800"
+            <div
+              class="rounded-xl bg-gray-100 dark:bg-gray-800"
             >
               <p
-                class="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
+                class="px-3 pt-2 text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-gray-500"
               >
                 Facultad
               </p>
 
-              <p
-                class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
-              >
-                {{ cdpContext()?.facultad || '-' }}
-              </p>
-            </span>
+              @if (hasMultipleCdpContexts()) {
+                <app-select
+                  [options]="cdpContextOptions()"
+                  [value]="activeCdpContextId()"
+                  [disabled]="cdpContextResource.isLoading()"
+                  labelFormat="uppercase"
+                  placeholder="Seleccione la facultad"
+                  searchPlaceholder="Buscar facultad..."
+                  emptyText="No hay facultades disponibles"
+                  className="!h-9 !w-full !rounded-xl !border-0 !bg-transparent !px-3 !pb-2 !pt-1 !text-sm !font-semibold !shadow-none focus:!border-0 focus:!ring-0"
+                  panelClassName="!rounded-xl !border-gray-200 !shadow-theme-md"
+                  (valueChange)="onCdpContextChange($event)"
+                />
+              } @else {
+                <p
+                  class="px-3 pb-2 pt-1 text-sm font-semibold text-gray-900 dark:text-white/90"
+                >
+                  {{ activeCdpContext()?.facultad || '-' }}
+                </p>
+              }
+            </div>
           </div>
 
         </div>

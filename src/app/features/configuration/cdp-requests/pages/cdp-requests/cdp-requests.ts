@@ -90,15 +90,8 @@ export class CdpRequests implements OnInit {
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
 
-  readonly currentCdpRequest = signal<CdpRequest | null>(null);
-  readonly isLoadingCurrentCdpRequest = signal(false);
-
   readonly showDocumentPreview = signal(false);
   readonly selectedDocument = signal<DocumentRequest | null>(null);
-
-  readonly hasCdpRequest = computed(
-    () => this.currentCdpRequest() != null,
-  );
 
   readonly showRequestCdpModal = signal(false);
 
@@ -112,6 +105,9 @@ export class CdpRequests implements OnInit {
 
   readonly canRequestCdp = computed(
     () =>
+      this.resolveActiveCdpFacultyId() != null &&
+      this.resolveSelectedPeriodId() != null &&
+      !this.isLoadingCurrentCdpRequest() &&
       !this.hasCdpRequest() &&
       this.cdpObservation().trim().length > 0 &&
       this.cdpAttachments().length > 0 &&
@@ -128,17 +124,120 @@ export class CdpRequests implements OnInit {
     return rolesUsuario.includes('Decano');
   });
 
-  readonly cdpContextResource = rxResource<CdpContext, unknown>({
+  readonly selectedCdpContextId = signal('');
+
+  readonly cdpContextResource = rxResource({
     params: () => {
       return this.isDean() ? {} : undefined;
     },
+
     stream: () =>
-      this.cdpService.getContext(),
+      this.cdpService.getContexts(),
+
+    defaultValue: [] as CdpContext[],
   });
 
-  readonly cdpContext = computed(
+  readonly cdpContexts = computed(
     () => this.cdpContextResource.value(),
   );
+
+  readonly activeCdpContextId = computed(() => {
+    const contexts = this.cdpContexts();
+
+    if (!contexts.length) {
+      return '';
+    }
+
+    const selectedId =
+      this.selectedCdpContextId();
+
+    if (
+      selectedId &&
+      contexts.some(
+        (context) =>
+          String(context.idCoordinacionFacultad) ===
+          selectedId,
+      )
+    ) {
+      return selectedId;
+    }
+
+    return String(
+      contexts[0].idCoordinacionFacultad,
+    );
+  });
+
+  readonly activeCdpContext = computed<CdpContext | null>(
+    () => {
+      const activeId =
+        this.activeCdpContextId();
+
+      if (!activeId) {
+        return null;
+      }
+
+      return (
+        this.cdpContexts().find(
+          (context) =>
+            String(
+              context.idCoordinacionFacultad,
+            ) === activeId,
+        ) ?? null
+      );
+    },
+  );
+
+  readonly hasMultipleCdpContexts = computed(
+    () => this.cdpContexts().length > 1,
+  );
+
+  readonly cdpContextOptions =
+    computed<SelectOption[]>(() =>
+      this.cdpContexts().map((context) => ({
+        value: String(
+          context.idCoordinacionFacultad,
+        ),
+        label: context.facultad,
+      })),
+    );
+  
+  readonly currentCdpRequestResource = rxResource({
+    params: () => {
+      if (!this.isDean()) {
+        return undefined;
+      }
+
+      const idCoordinacionFacultad =
+        this.resolveActiveCdpFacultyId();
+
+      if (idCoordinacionFacultad == null) {
+        return undefined;
+      }
+
+      return {
+        idCoordinacionFacultad,
+      };
+    },
+
+    stream: ({ params }) =>
+      this.cdpService.getCurrentRequest(
+        params.idCoordinacionFacultad,
+      ),
+
+    defaultValue: null as CdpRequest | null,
+  });
+
+  readonly currentCdpRequest = computed(
+    () => this.currentCdpRequestResource.value(),
+  );
+
+  readonly isLoadingCurrentCdpRequest = computed(
+    () => this.currentCdpRequestResource.isLoading(),
+  );
+
+  readonly hasCdpRequest = computed(
+    () => this.currentCdpRequest() != null,
+  );  
 
 
   readonly cdpObservationRemaining = computed(
@@ -177,10 +276,14 @@ export class CdpRequests implements OnInit {
       const preloadCallId =
         this.appliedPreloadCallId();
 
+      const idCoordinacionFacultad =
+        this.resolveActiveCdpFacultyId();  
+
       if (
         idPeriodoUniversidad == null ||
         preloadCallId == null ||
-        !preloadCallId
+        !preloadCallId ||
+        idCoordinacionFacultad == null
       ) {
         return undefined;
       }
@@ -199,6 +302,7 @@ export class CdpRequests implements OnInit {
       return {
         idPeriodoUniversidad,
         idConvocatoria,
+        idCoordinacionFacultad,
       };
     },
 
@@ -206,6 +310,7 @@ export class CdpRequests implements OnInit {
       this.coordinationService.getCdpRequests(
         params.idPeriodoUniversidad,
         params.idConvocatoria,
+        params.idCoordinacionFacultad,
       ),
 
     defaultValue: [] as CoordinationItem[],
@@ -279,7 +384,7 @@ export class CdpRequests implements OnInit {
 
   readonly tableEmptyMessage = computed(() => {
     if (this.hasAppliedFilter()) {
-      return 'No hay solicitudes CDP para mostrar.';
+      return 'No hay coordinaciones con carga avalada para el período y la convocatoria seleccionados.';
     }
 
     if (!this.selectedPeriodId()) {
@@ -296,8 +401,9 @@ export class CdpRequests implements OnInit {
   readonly titleSection = computed(() => {
     return this.isDean() ? 'Coordinaciones' : 'Facultades';
   })
+  
   readonly descriptionSection = computed(() => {
-    return this.isDean() ? 'Selecciona las coordinaciones para solicitar el CDP.' : 'Selecciona las facultades para revisar el CDP.';
+    return this.isDean() ? 'Consulta las coordinaciones de la facultad con carga avalada para la solicitud del CDP.' : 'Selecciona las facultades para revisar el CDP.';
   })
 
   readonly titleCdpSection = computed(() => {
@@ -321,13 +427,23 @@ export class CdpRequests implements OnInit {
 
   readonly canDownloadCdpReport = computed(() => {
     if (!this.canShowCdpReportButtons()) {
-      return;
+      return false;
     }
 
-    const periodId = this.resolveSelectedPeriodId();
-    const convocatoriaId = this.resolveSelectedConvocatoriaId();
+    const periodId =
+      this.resolveSelectedPeriodId();
 
-    return periodId != null && convocatoriaId != null;
+    const convocatoriaId =
+      this.resolveSelectedConvocatoriaId();
+
+    const idCoordinacionFacultad =
+      this.resolveActiveCdpFacultyId();
+
+    return (
+      periodId != null &&
+      convocatoriaId != null &&
+      idCoordinacionFacultad != null
+    );
   });
 
   readonly downloadReportTooltip = computed(() => {
@@ -346,7 +462,13 @@ export class CdpRequests implements OnInit {
     if (!this.selectedPeriodId()) return true;
 
     if (this.isDean()) {
-      return !this.selectedPreloadCallId() || this.isLoadingPreloadCalls() || this.isLoadingCoordinations();
+      return (
+        this.cdpContextResource.isLoading() ||
+        this.resolveActiveCdpFacultyId() == null ||
+        !this.selectedPreloadCallId() ||
+        this.isLoadingPreloadCalls() ||
+        this.isLoadingCoordinations()
+      );
     }
 
     return this.isLoadingFaculties();
@@ -360,12 +482,49 @@ export class CdpRequests implements OnInit {
 
   ngOnInit(): void {
     void this.loadUniversityPeriods();
-    void this.loadCurrentCdpRequest();
   }
 
   onPeriodChange(periodId: string): void {
+    const changed =
+      this.selectedPeriodId() !== periodId;
+
     this.selectedPeriodId.set(periodId);
     this.selectedPreloadCallId.set('');
+
+    if (changed && this.isDean()) {
+      this.resetCdpDraft();
+    }
+  }
+
+  onCdpContextChange(
+    idCoordinacionFacultad: string,
+  ): void {
+
+    if (
+      !idCoordinacionFacultad ||
+      idCoordinacionFacultad ===
+        this.activeCdpContextId()
+    ) {
+      return;
+    }
+
+    const exists =
+      this.cdpContexts().some(
+        (context) =>
+          String(
+            context.idCoordinacionFacultad,
+          ) === idCoordinacionFacultad,
+      );
+
+    if (!exists) {
+      return;
+    }
+
+    this.resetDeanContextState();
+
+    this.selectedCdpContextId.set(
+      idCoordinacionFacultad,
+    );
   }
 
   onPreloadCallChange(
@@ -503,12 +662,22 @@ export class CdpRequests implements OnInit {
   }
 
   async onRequestCdp(): Promise<void> {
-    const periodId = this.selectedPeriodId()
-    if (!periodId) return;
-
     if (
       this.isRequestingCdp() ||
       !this.canRequestCdp()
+    ) {
+      return;
+    }
+
+    const periodId =
+      this.selectedPeriodId();
+
+    const idCoordinacionFacultad =
+      this.resolveActiveCdpFacultyId();
+
+    if (
+      !periodId ||
+      idCoordinacionFacultad == null
     ) {
       return;
     }
@@ -521,7 +690,8 @@ export class CdpRequests implements OnInit {
         this.cdpService.createRequest(
           this.cdpObservation(),
           this.cdpAttachments(),
-          periodId
+          periodId,
+          String(idCoordinacionFacultad),
         ),
       );
 
@@ -530,14 +700,8 @@ export class CdpRequests implements OnInit {
         'Solicitud CDP',
       );
 
-      this.showRequestCdpModal.set(false);
-
-      await this.loadCurrentCdpRequest();
-
-      this.cdpObservation.set('');
-      this.cdpAttachments.set([]);
-
-      this.showRequestCdpModal.set(false);
+      this.currentCdpRequestResource.reload();
+      this.resetCdpDraft();
 
     } catch (error) {
 
@@ -634,10 +798,15 @@ export class CdpRequests implements OnInit {
   async downloadCdpReport(): Promise<void> {
     await this.runCdpDownload(
       this.isDownloadingReport,
-      (idConvocatoria, idPeriodoUniversidad) =>
+      (
+        idConvocatoria,
+        idPeriodoUniversidad,
+        idCoordinacionFacultad,
+      ) =>
         this.cdpService.downloadCdpReport(
           idConvocatoria,
           idPeriodoUniversidad,
+          idCoordinacionFacultad,
         ),
       'Error al descargar el reporte CDP:',
     );
@@ -646,10 +815,15 @@ export class CdpRequests implements OnInit {
   async downloadCdpPdfReport(): Promise<void> {
     await this.runCdpDownload(
       this.isDownloadingPdfReport,
-      (idConvocatoria, idPeriodoUniversidad) =>
+      (
+        idConvocatoria,
+        idPeriodoUniversidad,
+        idCoordinacionFacultad,
+      ) =>
         this.cdpService.downloadCdpPdfReport(
           idConvocatoria,
           idPeriodoUniversidad,
+          idCoordinacionFacultad,
         ),
       'Error al descargar el reporte PDF CDP:',
     );
@@ -660,6 +834,7 @@ export class CdpRequests implements OnInit {
     request: (
       idConvocatoria: number,
       idPeriodoUniversidad: number,
+      idCoordinacionFacultad: number,
     ) => Observable<{ blob: Blob; fileName: string }>,
     errorMessage: string,
   ): Promise<void> {
@@ -675,10 +850,13 @@ export class CdpRequests implements OnInit {
       this.resolveSelectedPeriodId();
     const idConvocatoria =
       this.resolveSelectedConvocatoriaId();
+    const idCoordinacionFacultad =
+      this.resolveActiveCdpFacultyId();  
 
     if (
       idPeriodoUniversidad == null ||
-      idConvocatoria == null
+      idConvocatoria == null ||
+      idCoordinacionFacultad == null
     ) {
       return;
     }
@@ -687,7 +865,11 @@ export class CdpRequests implements OnInit {
 
     try {
       const file = await firstValueFrom(
-        request(idConvocatoria, idPeriodoUniversidad),
+        request(
+          idConvocatoria,
+          idPeriodoUniversidad,
+          idCoordinacionFacultad,
+        ),
       );
 
       this.triggerBrowserDownload(
@@ -698,39 +880,6 @@ export class CdpRequests implements OnInit {
       console.error(errorMessage, error);
     } finally {
       isDownloading.set(false);
-    }
-  }
-
-  private async loadCurrentCdpRequest():
-    Promise<void> {
-    if (!this.isDean()) return;
-
-    this.isLoadingCurrentCdpRequest.set(true);
-
-    try {
-
-      const request =
-        await firstValueFrom(
-          this.cdpService.getCurrentRequest(),
-        );
-
-      this.currentCdpRequest.set(
-        request ?? null,
-      );
-
-    } catch (error) {
-
-      console.error(
-        'Error al cargar la solicitud CDP:',
-        error,
-      );
-
-      this.currentCdpRequest.set(null);
-
-    } finally {
-
-      this.isLoadingCurrentCdpRequest.set(false);
-
     }
   }
 
@@ -798,6 +947,30 @@ export class CdpRequests implements OnInit {
   closeDocumentPreview(): void {
     this.showDocumentPreview.set(false);
     this.selectedDocument.set(null);
+  }
+
+  private resolveActiveCdpFacultyId():
+    number | null {
+
+    const context =
+      this.activeCdpContext();
+
+    return context?.idCoordinacionFacultad ?? null;
+  }
+
+  private resetCdpDraft(): void {
+    this.cdpObservation.set('');
+    this.cdpAttachments.set([]);
+    this.showRequestCdpModal.set(false);
+  }
+
+  private resetDeanContextState(): void {
+    this.selectedCoordinationIds.set([]);
+    this.selectedFaculty.set(null);
+
+    this.resetCdpDraft();
+
+    this.closeDocumentPreview();
   }
 
   private applyDeanFilters(): void {
