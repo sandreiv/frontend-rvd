@@ -17,6 +17,8 @@ import {
   catchError,
   debounceTime,
   distinctUntilChanged,
+  forkJoin,
+  map,
   of,
   switchMap,
   tap,
@@ -181,6 +183,14 @@ export class ProfessorAddModal {
     } else if (!this.isProfessorActive()) {
       fields = fields.map((field) => {
         if (field.key === 'categoriaCatedratico') {
+          if (kind === 'catedra') {
+            return {
+              ...field,
+              control: 'text' as const,
+              readonly: true
+            };
+          }
+
           return {
             ...field,
             control: 'select' as const,
@@ -284,6 +294,99 @@ export class ProfessorAddModal {
       label: formatWorkDateRange(workDate.fechaInicio, workDate.fechaFin),
     })),
   );
+
+  readonly categoriaMayorValorHora = computed<CategoriaCatedratico | null>(() => {
+    const categorias = this.categoriasResource.value();
+    const valoresHora = this.categoriaValoresHoraResource.value();
+
+    let mayorCategoria: CategoriaCatedratico | null = null;
+    let mayorValorHora = -Infinity;
+
+    for (const categoria of categorias) {
+      const valorHora = valoresHora[categoria.id];
+
+      if (valorHora == null) {
+        continue;
+      }
+
+      if (valorHora > mayorValorHora) {
+        mayorValorHora = valorHora;
+        mayorCategoria = categoria;
+      }
+    }
+
+    return mayorCategoria;
+  });
+
+  private readonly categoriaValoresHoraResource = rxResource<
+    Record<number, number>,
+    {
+      anio: number;
+      idModalidadContratacion: number;
+      categoriasCatedraticoIds: number[];
+    } | undefined
+  >({
+    params: () => {
+      const anio = this.anioUniversidad();
+      const idModalidadContratacion = this.contractModality()?.id;
+      const categoriasCatedraticoIds = this.categoriasResource.value();
+
+      // Modalidad catedra y profesor NN
+      if (
+        this.isEditMode() ||
+        this.isProfessorActive() ||
+        this.modalityKind() !== 'catedra' ||
+        anio == null ||
+        idModalidadContratacion == null ||
+        categoriasCatedraticoIds.length === 0
+      ) {
+        return undefined;
+      }
+
+      return {
+        anio,
+        idModalidadContratacion,
+        categoriasCatedraticoIds: categoriasCatedraticoIds.map((categoria) => categoria.id),
+      };
+    },
+
+    stream: ({ params }) => {
+      // Consulta sin ID persona porque es NN catedratico
+      const requests = params.categoriasCatedraticoIds.map((idCategoria) =>
+        this.coordinationService
+          .getValuePointsPreload(
+            params.anio,
+            idCategoria,
+            null,
+            params.idModalidadContratacion,
+          )
+          .pipe(
+            catchError(() => of(null)),
+          ),
+      );
+
+      return forkJoin(requests).pipe(
+        map((results) => {
+          const valoresHora: Record<number, number> = {};
+
+          params.categoriasCatedraticoIds.forEach((categoriaId, index) => {
+            const result = results[index];
+
+            if (
+              result?.valorHora != null &&
+              Number.isFinite(result.valorHora)
+            ) {
+              valoresHora[categoriaId] = result.valorHora;
+            }
+          });
+
+          return valoresHora;
+        }),
+      );
+    },
+
+    defaultValue: {},
+  });
 
   private readonly valuePointsResource = rxResource<
     ValuePointsPreload,
@@ -541,6 +644,28 @@ export class ProfessorAddModal {
         valorContrato: formatCurrencyCOP(result.valorContrato),
         valorPrestaciones: formatCurrencyCOP(result.valorPrestaciones),
         totalContrato: formatCurrencyCOP(result.totalContrato),
+      });
+    });
+
+    effect(() => {
+      const categoria = this.categoriaMayorValorHora();
+
+      if (
+        this.isEditMode() ||
+        this.isProfessorActive() ||
+        this.modalityKind() !== 'catedra' ||
+        !categoria
+      ) {
+        return;
+      }
+
+      untracked(() => {
+        this.selectedCategoriaId.set(categoria.id);
+
+        this.professorForm().patchValue(
+          { categoriaCatedratico: categoria.descripcion },
+          { emitEvent: false },
+        );
       });
     });
 
