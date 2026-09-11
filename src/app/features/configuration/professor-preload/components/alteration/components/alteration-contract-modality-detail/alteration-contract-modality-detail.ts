@@ -1,15 +1,28 @@
 
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { CoordinationContractModality, CoordinationItem, isPlantaModality, ModalityProfessor } from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, map, forkJoin } from 'rxjs';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
 import { formatSentenceValue } from '../../../../../../../shared/utils/normalized-text.util';
 import { resolveModalityKind } from '../../../../model/professor-form.config';
 import { TabBar } from '../../../../../../../shared/ui/tab-bar/tab-bar';
+import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { Button } from "../../../../../../../shared/ui/button/button";
+import { Icon } from "../../../../../../../shared/ui/icon/icon";
+import { AppIconName } from '../../../../../../../shared/ui/icon/icons';
+import { Dropdown } from "../../../../../../../shared/ui/dropdown/dropdown/dropdown";
+import { Item } from "../../../../../../../shared/ui/dropdown/item/item";
+import { AuthService } from '../../../../../../../core/service/auth-service';
+import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
+
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
+
+type TcoFilter = 'todos' | 'duracion' | 'estado';
+type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';
+type TcoStateFilter = 'todos' | 'enRegistro' | 'porVerificar' | 'verificado' | 'devuelto' | 'aprobado';
 
 interface StatusBadge {
   label: string;
@@ -19,6 +32,7 @@ interface StatusBadge {
 
 interface ModalityProfessorRow {
   rowKey: string;
+  menuKey: string;
   displayName: string;
   professor: ModalityProfessor;
 }
@@ -26,6 +40,32 @@ interface ModalityProfessorRow {
 interface ModalityProfessorsEntry {
   id: number;
   professors: ModalityProfessor[];
+}
+
+interface ProfessorMenuAction {
+  id: string;
+  label: string;
+  icon: AppIconName;
+  className?: string;
+  tooltip?: string;
+}
+
+interface TcoFilterSwitchItem {
+  id: TcoFilter;
+  label: string;
+  icon: AppIconName;
+}
+
+interface TcoDurationSwitchItem {
+  id: TcoDurationFilter;
+  label: string;
+  icon: AppIconName;
+}
+
+interface TcoStateSwitchItem {
+  id: TcoStateFilter;
+  label: string;
+  icon: AppIconName;
 }
 
 const NN_LABEL = 'NN';
@@ -68,18 +108,81 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlterationContractModalityDetail {
-
+  private readonly authService = inject(AuthService);
   private readonly coordinationService = inject(CoordinationService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly permissions = inject(PermissionService);
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
+  readonly openMenuKey = signal<string | null>(null);
+  readonly tcoFilter = signal<TcoFilter>('todos');
+  readonly openTcoFilterMenu = signal<TcoFilter | null>(null);
+  readonly tcoFilterItems: TcoFilterSwitchItem[] = [
+    {
+      id: 'todos',
+      label: 'Todos',
+      icon: 'adjustmentsHorizontal',
+    },
+    {
+      id: 'duracion',
+      label: 'Duración',
+      icon: 'calendar',
+    },
+    {
+      id: 'estado',
+      label: 'Estado',
+      icon: 'orbit',
+    },
+  ];
+  readonly tcoDurationFilter = signal<TcoDurationFilter>('todos');
+  readonly tcoDurationSwitchItems: TcoDurationSwitchItem[] = [
+    {
+      id: 'cuatroMeses',
+      label: '4 meses',
+      icon: 'calendar',
+    },
+    {
+      id: 'onceMeses',
+      label: '11 meses',
+      icon: 'calendar',
+    },
+  ];
+  readonly tcoStateFilter = signal<TcoStateFilter>('todos');
+  readonly tcoStateSwitchItems: TcoStateSwitchItem[] = [
+    {
+      id: 'enRegistro',
+      label: 'En registro',
+      icon: 'orbit',
+    },
+    {
+      id: 'porVerificar',
+      label: 'Por verificar',
+      icon: 'orbit',
+    },
+    {
+      id: 'verificado',
+      label: 'Verificado',
+      icon: 'orbit',
+    },
+    {
+      id: 'devuelto',
+      label: 'Devuelto',
+      icon: 'orbit',
+    },
+    {
+      id: 'aprobado',
+      label: 'Aprobado',
+      icon: 'orbit',
+    },
+  ];
 
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
@@ -107,8 +210,23 @@ export class AlterationContractModalityDetail {
     return this.modalityProfessorsMap()[Number(selectedId)] ?? [];
   });
 
+  readonly filteredModalityProfessors = computed(() => {
+    const professors = this.modalityProfessors();
+
+    switch (this.tcoFilter()) {
+      case 'duracion' :
+        return this.filterProfessorsByTcoDuration(professors);
+
+      case 'estado' :
+        return this.filterProfessorsByTcoState(professors);
+      
+      default :
+        return professors;
+    }
+ });
+
   readonly currentProfessorRows = computed<ModalityProfessorRow[]>(() =>
-    this.buildProfessorRows(this.modalityProfessors()),
+    this.buildProfessorRows(this.filteredModalityProfessors()),
   );
 
   readonly modalityTabs = computed<TabBarItem[]>(() => {
@@ -121,6 +239,34 @@ export class AlterationContractModalityDetail {
   });
 
   readonly hasAnyModality = computed(() => this.modalityTabs().length > 0);
+
+  readonly isPlantaModalitySelected = computed(() => {
+    const selectedId = this.selectedContractModalityId();
+    const modality = this.sortedContractModalities().find(
+      (item) => item.id === selectedId,
+    );
+    return modality != null && isPlantaModality(modality);
+  });
+
+  readonly isCargaEnAvalDesarrollo = computed(() => (this.coordination().estadoCarga === 'AVAL DESARROLLO'));
+  readonly isCoordinator = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Coordinador');
+  })
+
+  readonly isTiempoCompletoOcasionalSelected = computed(() => {
+    const selectedId = this.selectedContractModalityId();
+
+    const modality = this.sortedContractModalities().find(
+      (item) => item.id === selectedId,
+    );
+
+    return (
+      modality != null &&
+      resolveModalityKind(modality.nombre) === 'tiempoCompletoOcasional'
+    );
+  });
 
   readonly isLoadingProfessors = computed(() =>
     this.modalityProfessorsResource.isLoading(),
@@ -149,11 +295,123 @@ export class AlterationContractModalityDetail {
         this.selectedContractModalityId.set(tabs[0].id);
       }
     });
+
+    effect(() => {
+      this.refreshKey();
+      this.modalityProfessorsResource.reload();
+    });
+  }
+
+  toggleTcoFilterMenu(filter: TcoFilter): void {
+    if (filter === 'todos') {
+      this.tcoFilter.set('todos');
+      this.openTcoFilterMenu.set(null);
+      this.tcoDurationFilter.set('todos');
+      this.tcoStateFilter.set('todos');
+      return;
+    }
+
+    this.openTcoFilterMenu.update((current) =>
+      current === filter ? null : filter,
+    );
+  }
+
+  closeTcoFilterMenu(): void {
+    this.openTcoFilterMenu.set(null);
   }
 
   onContractModalityChange(id: TabBarId | null): void {
     this.selectedContractModalityId.set(id);
+    this.tcoFilter.set('todos');
+    this.tcoDurationFilter.set('todos');
+    this.tcoStateFilter.set('todos');
   }
+
+  setTcoDurationFilter(filter: TcoDurationFilter): void {
+    this.tcoFilter.set('duracion');
+    this.tcoDurationFilter.set(filter);
+    this.openTcoFilterMenu.set(null);
+    this.tcoStateFilter.set('todos');
+  }
+
+  setTcoStateFilter(filter: TcoStateFilter): void {
+    this.tcoFilter.set('estado');
+    this.tcoStateFilter.set(filter);
+    this.openTcoFilterMenu.set(null);
+    this.tcoDurationFilter.set('todos');
+  }
+
+  onProfessorAddModalOpen(): void {
+
+  }
+
+  canOpenProfessorMenu(professor: ModalityProfessor): boolean {
+    if (professor.tieneCarga) return true
+
+    return this.isCoordinator() && this.isCargaEnAvalDesarrollo();
+  }
+
+  toggleProfessorMenu(menuKey: string, professor?: ModalityProfessor): void {
+    if (professor && !this.canOpenProfessorMenu(professor)) return;
+
+    this.openMenuKey.update((current) =>
+      current === menuKey ? null : menuKey,
+    );
+  }
+
+  closeProfessorMenu(): void {
+    this.openMenuKey.set(null);
+  }
+
+  resolveProfessorActions(professor: {
+    tieneDetalleActividades?: boolean;
+    tieneCarga?: boolean;
+  }): ProfessorMenuAction[] {
+    const hasLoad = professor.tieneCarga === true;
+    const hasDetail = professor.tieneDetalleActividades === true;
+
+    if (!hasLoad) return [];
+
+    const actions: ProfessorMenuAction[] = [];
+
+    if (this.permissions.canDeleteProfessor() && this.isCargaEnAvalDesarrollo()) {
+      actions.push({
+        id: 'eliminar',
+        label: 'Eliminar',
+        icon: 'delete',
+        className: 'text-error-600 dark:text-error-400',
+      });
+    }
+
+    // Agregar las acciones
+    return actions;
+  }
+
+  onProfessorMenuAction(actionId: string, professor: ModalityProfessor): void {
+    this.closeProfessorMenu();
+
+    // Agregar las acciones
+    if (actionId === 'eliminar') {
+      this.deleteModalityProfessor(professor.idCargaDocente);
+    }
+  }
+
+  private deleteModalityProfessor(idCargaDocente: number | null): void {
+    if (idCargaDocente == null) {
+      return;
+    }
+
+    // Llamar a este o a otro servicio?
+    /*
+    this.coordinationService
+      .deleteProfessor(idCargaDocente)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.modalityProfessorsResource.reload();
+    });
+    */
+  }
+  
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
     if (!professor.estado) {
@@ -174,6 +432,60 @@ export class AlterationContractModalityDetail {
       default:
         return this.buildStatusBadge('Estado desconocido', 'gray');
     }
+  }
+
+  private filterProfessorsByTcoDuration(
+    professors: ModalityProfessor[],
+  ): ModalityProfessor[] {
+    if (!this.isTiempoCompletoOcasionalSelected()) {
+      return professors;
+    }
+
+    const filter = this.tcoDurationFilter();
+
+    if (filter === 'todos') {
+      return professors;
+    }
+
+    return professors.filter((professor) => {
+      const onceMeses = String(professor.onceMeses ?? '').trim();
+
+      if (filter === 'onceMeses') {
+        return onceMeses === '1';
+      }
+
+      return onceMeses !== '1';
+    });
+  }
+
+  private filterProfessorsByTcoState(
+    professors: ModalityProfessor[],
+  ): ModalityProfessor[] {
+    if (!this.isTiempoCompletoOcasionalSelected()) {
+      return professors;
+    }
+
+    const filter = this.tcoStateFilter();
+
+    if (filter === 'todos') {
+      return professors;
+    }
+
+    return professors.filter((professor) => {
+      const estado = professor.estado.trim();
+
+      if (filter === 'enRegistro') {
+        return estado === ON_REGISTER_STATE;
+      } else if (filter === 'porVerificar') {
+        return estado === PENDING_VERIFY_STATE;
+      } else if (filter === 'verificado') {
+        return estado === VERIFIED_STATE;
+      } else if (filter === 'devuelto') {
+        return estado === RETURNED_STATE;
+      } else {
+        return estado === APPROVED_STATE;
+      }
+    });
   }
 
   private resolveProfessorsParams(): {
@@ -221,15 +533,18 @@ export class AlterationContractModalityDetail {
     professors: ModalityProfessor[],
   ): ModalityProfessorRow[] {
     const rows: ModalityProfessorRow[] = [];
+
     forNext(professors, (professor, index) => {
       const rowId =
         professor.idCargaDocente || professor.idPersonaGeneral || index;
       rows.push({
         rowKey: `professor-${rowId}`,
+        menuKey: `professor-${rowId}`,
         displayName: this.resolveProfessorName(professor),
         professor,
       });
     });
+
     return rows;
   }
 

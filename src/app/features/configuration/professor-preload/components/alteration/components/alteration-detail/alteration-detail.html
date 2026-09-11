@@ -15,6 +15,17 @@
           <app-button
             type="button"
             size="sm"
+            (btnClick)="openNewsModal()"
+          >
+            <app-icon name="newspaper" size="sm" />
+            Gestionar novedades
+          </app-button>
+
+          <!--Boton novedades dentro de un if para solo coordinador y agregar modal debajo-->
+
+          <app-button
+            type="button"
+            size="sm"
             variant="outline"
             (btnClick)="back.emit()"
           >
