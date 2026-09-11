@@ -36,6 +36,7 @@ import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
+import { NoveltiesItem } from '../model/novelties.model';
 
 @Injectable({
   providedIn: 'root',
@@ -634,6 +635,18 @@ export class CoordinationService {
     return this.webRequestService.post<void>(
       `${this.endpoint}/to-verify-professor`,
       request,
+    );
+  }
+
+  /**
+   * Consulta las novedades con acción ACTUALIZAR
+   * 
+   * @returns Observable con las novedades acción ACTUALIZAR que se pueden realizar a un docente
+   */
+  getNoveltiesTypes(): Observable<NoveltiesItem[]> {
+    return this.webRequestService.get<NoveltiesItem[]>(
+      `${this.endpoint}/list-novelties`,
+      {},
     );
   }
 

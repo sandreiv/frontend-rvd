@@ -17,6 +17,7 @@ import { Dropdown } from "../../../../../../../shared/ui/dropdown/dropdown/dropd
 import { Item } from "../../../../../../../shared/ui/dropdown/item/item";
 import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
+import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -108,7 +109,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -123,6 +124,8 @@ export class AlterationContractModalityDetail {
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly openMenuKey = signal<string | null>(null);
+  readonly isNoveltiesModalOpen = signal(false);
+  readonly noveltiesProfessor = signal<ModalityProfessor | null>(null);
   readonly tcoFilter = signal<TcoFilter>('todos');
   readonly openTcoFilterMenu = signal<TcoFilter | null>(null);
   readonly tcoFilterItems: TcoFilterSwitchItem[] = [
@@ -346,7 +349,7 @@ export class AlterationContractModalityDetail {
   }
 
   canOpenProfessorMenu(professor: ModalityProfessor): boolean {
-    if (professor.tieneCarga) return true
+    if (!professor.tieneCarga) return false;
 
     return this.isCoordinator() && this.isCargaEnAvalDesarrollo();
   }
@@ -370,11 +373,15 @@ export class AlterationContractModalityDetail {
     const hasLoad = professor.tieneCarga === true;
     const hasDetail = professor.tieneDetalleActividades === true;
 
-    if (!hasLoad) return [];
+    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
 
-    const actions: ProfessorMenuAction[] = [];
+    const actions: ProfessorMenuAction[] = [{
+      id: 'novedad',
+      label: 'Gestionar novedad',
+      icon: 'newspaper',
+    }];
 
-    if (this.permissions.canDeleteProfessor() && this.isCargaEnAvalDesarrollo()) {
+    if (this.permissions.canDeleteProfessor()) {
       actions.push({
         id: 'eliminar',
         label: 'Eliminar',
@@ -391,9 +398,23 @@ export class AlterationContractModalityDetail {
     this.closeProfessorMenu();
 
     // Agregar las acciones
+    if (actionId === 'novedad') {
+      this.openNoveltiesModal(professor);
+    }
+
     if (actionId === 'eliminar') {
       this.deleteModalityProfessor(professor.idCargaDocente);
     }
+  }
+
+  openNoveltiesModal(professor: ModalityProfessor): void {
+    this.noveltiesProfessor.set(professor);
+    this.isNoveltiesModalOpen.set(true);
+  }
+
+  closeNoveltiesModal(): void {
+    this.isNoveltiesModalOpen.set(false);
+    this.noveltiesProfessor.set(null);
   }
 
   private deleteModalityProfessor(idCargaDocente: number | null): void {
