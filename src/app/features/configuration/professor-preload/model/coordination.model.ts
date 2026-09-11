@@ -24,6 +24,15 @@ export function isPlantaModality(
   return modality.esPlanta === true;
 }
 
+export const AVAL_DESARROLLO_ESTADO = 'AVAL DESARROLLO';
+
+export function isAvalDesarrolloCarga(
+  estadoCarga: string | null | undefined,
+): boolean {
+  const value = estadoCarga?.trim().toLocaleUpperCase('es-CO') ?? '';
+  return value === AVAL_DESARROLLO_ESTADO;
+}
+
 export function getAssignableModalities(
   modalities: CoordinationContractModality[],
 ): CoordinationContractModality[] {

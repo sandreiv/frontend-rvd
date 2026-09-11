@@ -1,6 +1,11 @@
 <div class="grid gap-4">
   <div class="min-w-0">
-    @if (!showCoordinationDetail()) {
+    @if (showAlterationDetail() && selectedCoordination(); as coordination) {
+      <app-alteration-detail
+        [coordination]="coordination"
+        (back)="onBackToCoordinationList()"
+      />
+    } @else if (!showCoordinationDetail()) {
       <app-section-frame
         title="Coordinaciones"
         description="Administra las coordinaciones de la precarga docente."
@@ -60,8 +65,10 @@
           [(selectedCoordinationIds)]="selectedCoordinationIds"
           [isStartingPreassignment]="isStartingPreassignment()"
           [emptyMessage]="tableEmptyMessage()"
+          [enableAlterationAction]="true"
           (startPreassignment)="onStartPreassignment($event)"
           (refreshCoordination)="onRefreshCoordinations()"
+          (openAlteration)="onOpenAlteration($event)"
         />
       </app-section-frame>
     } @else if (selectedCoordination(); as coordination) {

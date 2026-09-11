@@ -100,6 +100,7 @@ export class Tooltip implements OnDestroy {
     return this.overlay.create({
       positionStrategy,
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      panelClass: 'app-tooltip-panel',
     });
   }
 

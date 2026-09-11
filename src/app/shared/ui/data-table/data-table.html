@@ -258,20 +258,33 @@
     >
       @for (action of rowActions; track action.id) {
         @if (isActionVisible(action, activeRowMenuRow)) {
-          <app-item
-            (itemClick)="emitRowAction(action.id, activeRowMenuRow, activeRowMenuRowIndex); closeRowMenu()"
+          <span
+            class="block w-full"
+            [appTooltip]="resolveActionTooltip(action, activeRowMenuRow)"
+            tooltipPlacement="left"
           >
-            <span class="inline-flex items-center gap-2">
-              @if (action.icon) {
-                <app-icon
-                  [name]="action.icon"
-                  size="xs"
-                  [class]="action.className"
-                />
-              }
-              <span [class]="action.className">{{ action.label }}</span>
-            </span>
-          </app-item>
+            <app-item
+              [disabled]="isActionDisabled(action, activeRowMenuRow)"
+              (itemClick)="
+                onRowActionItemClick(
+                  action,
+                  activeRowMenuRow,
+                  activeRowMenuRowIndex
+                )
+              "
+            >
+              <span class="inline-flex items-center gap-2">
+                @if (action.icon) {
+                  <app-icon
+                    [name]="action.icon"
+                    size="xs"
+                    [class]="action.className"
+                  />
+                }
+                <span [class]="action.className">{{ action.label }}</span>
+              </span>
+            </app-item>
+          </span>
         }
       }
     </div>

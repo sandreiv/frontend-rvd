@@ -30,6 +30,7 @@ import { getFileExtension, getFileTypeIconPath } from '../../utils/file-type-ico
 import { Icon } from '../icon/icon';
 import { Item } from '../dropdown/item/item';
 import { Checkbox } from '../../components/form/input/checkbox';
+import { Tooltip } from '../tooltip/tooltip';
 import { formatSentenceValue } from '../../utils/normalized-text.util';
 import { formatCurrencyValue } from '../../utils/currency.util';
 
@@ -37,7 +38,7 @@ import { formatCurrencyValue } from '../../utils/currency.util';
   selector: 'app-data-table',
   standalone: true,
   templateUrl: './data-table.html',
-  imports: [Icon, Item, Checkbox],
+  imports: [Icon, Item, Checkbox, Tooltip],
 })
 export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('sentinelElement') sentinelElement?: ElementRef<HTMLDivElement>;
@@ -137,6 +138,33 @@ export class DataTable<T = unknown> implements AfterViewInit, OnDestroy, OnChang
 
   isActionVisible(action: DataTableRowAction<T>, row: T): boolean {
     return action.visible ? action.visible(row) : true;
+  }
+
+  isActionDisabled(action: DataTableRowAction<T>, row: T): boolean {
+    return action.disabled ? action.disabled(row) : false;
+  }
+
+  resolveActionTooltip(action: DataTableRowAction<T>, row: T): string {
+    if (!action.tooltip) {
+      return '';
+    }
+
+    return typeof action.tooltip === 'function'
+      ? action.tooltip(row)
+      : action.tooltip;
+  }
+
+  onRowActionItemClick(
+    action: DataTableRowAction<T>,
+    row: T,
+    rowIndex: number,
+  ): void {
+    if (this.isActionDisabled(action, row)) {
+      return;
+    }
+
+    this.emitRowAction(action.id, row, rowIndex);
+    this.closeRowMenu();
   }
 
   isInlineIconVisible(icon: DataTableInlineIcon<T>, row: T): boolean {

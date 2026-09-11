@@ -7,6 +7,10 @@ layer(base);
 
 @import "@angular/cdk/overlay-prebuilt.css";
 
+.cdk-overlay-container:has(.app-tooltip-panel) {
+  z-index: 100000;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {

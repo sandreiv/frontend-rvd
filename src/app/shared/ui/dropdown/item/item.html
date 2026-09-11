@@ -1,3 +1,8 @@
-<button type="button" [ngClass]="combinedClasses" (click)="handleClick($event)">
+<button
+  type="button"
+  [ngClass]="combinedClasses"
+  [attr.aria-disabled]="disabled || null"
+  (click)="handleClick($event)"
+>
   <ng-content></ng-content>
 </button>

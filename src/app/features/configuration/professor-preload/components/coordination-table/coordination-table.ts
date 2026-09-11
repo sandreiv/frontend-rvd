@@ -16,7 +16,7 @@ import {
   DataTableSearchEvent,
   DataTableToolbarActionEvent,
 } from '../../../../../shared/ui/data-table/table.types';
-import { CoordinationItem } from '../../model/coordination.model';
+import { CoordinationItem, isAvalDesarrolloCarga } from '../../model/coordination.model';
 
 @Component({
   selector: 'app-coordination-table',
@@ -36,10 +36,12 @@ export class CoordinationTable {
   enableSelection = input(true);
   showActionButton = input(true);
   enableRowActions = input(false);
+  enableAlterationAction = input(false);
 
   @Output() refreshCoordination = new EventEmitter<void>();
   @Output() startPreassignment = new EventEmitter<CoordinationItem>();
   @Output() openObservations = new EventEmitter<CoordinationItem>();
+  @Output() openAlteration = new EventEmitter<CoordinationItem>();
 
   readonly rowIdentity = (row: CoordinationItem): string => String(row.id);
 
@@ -99,21 +101,40 @@ export class CoordinationTable {
   ];
 
   readonly rowActions = computed((): DataTableRowAction<CoordinationItem>[] => {
-    if (!this.enableRowActions()) return []
+    const actions: DataTableRowAction<CoordinationItem>[] = [];
 
-    return [
-      {
+    if (this.enableAlterationAction()) {
+      actions.push({
+        id: 'fillAlterations',
+        label: 'Diligenciar novedades',
+        icon: 'documentPlus',
+        disabled: (row) => !isAvalDesarrolloCarga(row.estadoCarga),
+        tooltip: (row) =>
+          isAvalDesarrolloCarga(row.estadoCarga)
+            ? ''
+            : 'Solo disponible cuando el estado de carga es Aval desarrollo.',
+      });
+    }
+
+    if (this.enableRowActions()) {
+      actions.push({
         id: 'showRequests',
         label: 'Mostrar solicitudes CDP',
-        icon: 'eye'
-      }
-    ]
+        icon: 'eye',
+      });
+    }
+
+    return actions;
   });
 
   onTableAction(event: DataTableActionEvent<CoordinationItem>): void {
     if (event.actionId === 'showRequests') {
       this.openObservations.emit(event.row);
       return;
+    }
+
+    if (event.actionId === 'fillAlterations') {
+      this.openAlteration.emit(event.row);
     }
   }
 

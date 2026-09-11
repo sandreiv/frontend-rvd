@@ -36,6 +36,8 @@ export interface DataTableRowAction<T> {
   icon: AppIconName;
   className?: string;
   visible?: (row: T) => boolean;
+  disabled?: (row: T) => boolean;
+  tooltip?: string | ((row: T) => string);
 }
 
 export interface DataTableInlineIcon<T> {

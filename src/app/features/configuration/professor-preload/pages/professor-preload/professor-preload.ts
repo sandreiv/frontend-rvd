@@ -18,11 +18,13 @@ import { SectionFrame } from '../../../../../shared/ui/section-frame/section-fra
 import { UniversityPeriodItem } from '../../../preload-call/model/preload-call.model';
 import { CoordinationDetail } from '../../components/coordination-detail/coordination-detail';
 import { CoordinationTable } from '../../components/coordination-table/coordination-table';
+import { AlterationDetail } from '../../components/alteration/components/alteration-detail/alteration-detail';
 import { CoordinationService } from '../../data/coordination.service';
 import {
   CoordinationItem,
   CoordinationPreloadCallApi,
   UNASSIGNED_PRELOAD_CALL_FILTER,
+  isAvalDesarrolloCarga,
 } from '../../model/coordination.model';
 
 @Component({
@@ -33,6 +35,7 @@ import {
     SectionFrame,
     CoordinationTable,
     CoordinationDetail,
+    AlterationDetail,
   ],
   templateUrl: './professor-preload.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +55,7 @@ export class ProfessorPreload implements OnInit {
   readonly selectedCoordinationIds = signal<string[]>([]);
   readonly selectedCoordination = signal<CoordinationItem | null>(null);
   readonly showCoordinationDetail = signal(false);
+  readonly showAlterationDetail = signal(false);
   readonly isStartingPreassignment = signal(false);
 
   readonly activePreloadCallsResource = rxResource({
@@ -193,8 +197,7 @@ export class ProfessorPreload implements OnInit {
       this.appliedPeriodId.set(null);
       this.appliedFilterPreloadCallId.set(null);
       this.selectedCoordinationIds.set([]);
-      this.showCoordinationDetail.set(false);
-      this.selectedCoordination.set(null);
+      this.closeCoordinationViews();
       return;
     }
 
@@ -207,8 +210,7 @@ export class ProfessorPreload implements OnInit {
     this.appliedPeriodId.set(nextPeriodId);
     this.appliedFilterPreloadCallId.set(this.selectedPreloadCallId());
     this.selectedCoordinationIds.set([]);
-    this.showCoordinationDetail.set(false);
-    this.selectedCoordination.set(null);
+    this.closeCoordinationViews();
   }
 
   onRefreshCoordinations(): void {
@@ -265,6 +267,7 @@ export class ProfessorPreload implements OnInit {
 
       this.selectedCoordination.set(updatedCoordination);
       this.showCoordinationDetail.set(true);
+      this.showAlterationDetail.set(false);
 
       this.coordinationsResource.reload();
     } catch (error) {
@@ -275,9 +278,20 @@ export class ProfessorPreload implements OnInit {
     }
   }
 
+  onOpenAlteration(coordination: CoordinationItem): void {
+    if (!coordination?.id || !isAvalDesarrolloCarga(coordination.estadoCarga)) {
+      return;
+    }
+
+    this.selectedCoordination.set(coordination);
+    this.showAlterationDetail.set(true);
+    this.showCoordinationDetail.set(false);
+  }
+
   private openCoordinationDetail(coordination: CoordinationItem): void {
     this.selectedCoordination.set(coordination);
     this.showCoordinationDetail.set(true);
+    this.showAlterationDetail.set(false);
   }
 
   private buildCoordinationWithDefaultPreloadCall(
@@ -313,11 +327,17 @@ export class ProfessorPreload implements OnInit {
 
   onBackToCoordinationList(): void {
     this.syncListFilterWithSelectedCoordination();
-    this.showCoordinationDetail.set(false);
+    this.closeCoordinationViews();
   }
 
   onCoordinationUpdated(updated: CoordinationItem): void {
     this.selectedCoordination.set(updated);
+  }
+
+  private closeCoordinationViews(): void {
+    this.showCoordinationDetail.set(false);
+    this.showAlterationDetail.set(false);
+    this.selectedCoordination.set(null);
   }
 
   private syncListFilterWithSelectedCoordination(): void {
