@@ -31,6 +31,11 @@ export class AdministrationView {
       path: 'tipo-actividades',
     },
     {
+      label: 'Novedades',
+      icon: 'bell',
+      path: 'novedades',
+    },
+    {
       label: 'Restricción de carga',
       icon: 'lock',
       path: 'restriccion-carga',
