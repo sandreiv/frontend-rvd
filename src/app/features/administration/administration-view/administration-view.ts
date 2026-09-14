@@ -36,6 +36,11 @@ export class AdministrationView {
       path: 'novedades',
     },
     {
+      label: 'Puntos por vigencia',
+      icon: 'calendar',
+      path: 'puntos-vigencia',
+    },
+    {
       label: 'Restricción de carga',
       icon: 'lock',
       path: 'restriccion-carga',
