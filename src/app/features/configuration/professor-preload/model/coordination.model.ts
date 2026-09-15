@@ -88,6 +88,8 @@ export interface CoordinationItem {
   anioUniversidad: number | null;
   estadoCarga: string;
   idCarga: number | null;
+  valor: number | null;
+  valorAutorizado: number | null;
   idConvocatoria: number | null;
   idNivelEducativo: number | null;
   convocatoriaNombre: string;
@@ -204,6 +206,8 @@ export function normalizeCoordinationItem(item: CoordinationApiItem): Coordinati
     anioUniversidad: item.convocatoria?.periodoUniversidad?.anio ?? null,
     estadoCarga: resolveEstadoCarga(item.carga),
     idCarga: item.carga?.id ?? null,
+    valor: item.carga?.valor ?? null,
+    valorAutorizado: item.carga?.valorAutorizado ?? null,
     idConvocatoria: item.convocatoria?.id ?? null,
     idNivelEducativo: item.convocatoria?.nivelEducativo?.id ?? null,
     convocatoriaNombre: resolveConvocatoriaNombre(item.convocatoria),

@@ -110,6 +110,8 @@ const EMPTY_COORDINATION: Omit<
   anioUniversidad: null,
   estadoCarga: '',
   idCarga: null,
+  valor: null,
+  valorAutorizado: null,
   idConvocatoria: null,
   idNivelEducativo: null,
   convocatoriaNombre: '',

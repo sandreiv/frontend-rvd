@@ -48,6 +48,8 @@ export function normalizeFacultyRequestCdpItem(item: FacultyRequestCdpApiItem): 
     nivelEducativo: '',
     estadoCarga: '',
     idCarga: null,
+    valor: null,
+    valorAutorizado: null,
     idConvocatoria: null,
     idNivelEducativo: null,
     convocatoriaNombre: '',
