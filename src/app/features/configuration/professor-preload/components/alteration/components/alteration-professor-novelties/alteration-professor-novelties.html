@@ -41,6 +41,12 @@
         </p>
       }
     </div>
+
+    @if (selectedNoveltyComponent(); as component) {
+      <div class="mt-6">
+        <ng-container [ngComponentOutlet]="component" />
+      </div>
+    }
   </div>
 
   <div
