@@ -540,7 +540,7 @@ export class AlterationContractModalityDetail {
     forNext(params.modalityIds, (id) => {
       requests.push(
         this.coordinationService
-          .listProfessorsByModality(params.idCarga, id)
+          .listAlterationProfessorsByModality(params.idCarga, id)
           .pipe(map((professors) => ({ id, professors }))),
       );
     });

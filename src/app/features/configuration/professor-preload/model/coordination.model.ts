@@ -231,6 +231,8 @@ export interface ModalityProfessor {
   idModalidadContratacion: number;
   idCategoriaCatedratico: number;
   idCarga: number;
+  idNovedadCatalogo?: number | null;
+  estadoNovedad?: string | null;
   idFechasConvocatoria: number;
   fechaConvocatoriaCodigo: string | null;
   fechaInicio: string;
