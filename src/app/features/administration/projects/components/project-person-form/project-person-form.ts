@@ -46,6 +46,7 @@ import {
   ProjectPersonItem,
 } from '../../model/projects.model';
 import { ActivityTypeItem } from '../../../activity-types/model/activity-types.model';
+import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
 
 type ProjectPersonFormGroup = FormGroup<{
   idPersonaGeneral: FormControl<string>;
@@ -53,6 +54,7 @@ type ProjectPersonFormGroup = FormGroup<{
   tipo: FormControl<string>;
   horas: FormControl<number | null>;
   observacion: FormControl<string>;
+  esActivo: FormControl<boolean>;
 }>;
 
 @Component({
@@ -64,7 +66,8 @@ type ProjectPersonFormGroup = FormGroup<{
     Select,
     Button,
     TypeaheadSelect,
-  ],
+    Checkbox
+],
   templateUrl: './project-person-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -119,6 +122,9 @@ export class ProjectPersonForm implements OnInit, OnChanges {
     observacion: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(255)],
+    }),
+    esActivo: new FormControl(false, {
+      nonNullable: true,
     }),
   });
 
@@ -239,6 +245,7 @@ export class ProjectPersonForm implements OnInit, OnChanges {
       tipo: raw.tipo.trim(),
       horas: String(raw.horas ?? 0),
       observacion: raw.observacion.trim() || null,
+      esActivo: raw.esActivo ? '1' : '0',
     });
   }
 
@@ -294,6 +301,13 @@ export class ProjectPersonForm implements OnInit, OnChanges {
       horas:
         item?.horas != null && item.horas !== '' ? Number(item.horas) : null,
       observacion: item?.observacion ?? '',
+      esActivo: this.isChecked(item?.esActivo),
     });
+  }
+
+  private isChecked(value: string | null | undefined): boolean {
+    const normalized = String(value ?? '').trim().toUpperCase();
+
+    return normalized === '1' || normalized === 'S' || normalized === 'SI' || normalized === 'TRUE';
   }
 }

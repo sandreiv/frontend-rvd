@@ -87,6 +87,23 @@
     </div>
   </div>
 
+  <div class="mt-4 rounded-lg border border-gray-100 p-3 dark:border-white/10">
+    <div class="mb-2">
+      <h5 class="text-sm font-semibold text-gray-900 dark:text-white">
+        Es activo
+      </h5>
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+        Define si el proyecto esta activo para el docente.
+      </p>
+    </div>
+
+    <app-checkbox
+      label="Activo"
+      [checked]="form.controls.esActivo.value"
+      (checkedChange)="form.controls.esActivo.setValue($event)"
+    />
+  </div>
+
   <div class="mt-5 flex justify-end gap-3">
     <app-button
       type="button"
