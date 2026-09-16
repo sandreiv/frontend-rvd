@@ -196,6 +196,24 @@ export class CoordinationService {
   }
 
   /**
+   * Lista docentes de una carga según modalidad de contratación para la sección de novedades.
+   * Planta: docentes de la coordinación de la carga, con datos de esa carga.
+   * Otras modalidades: solo docentes con CARGADOCENTE en esa carga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @param idModalidadContratacion Identificador de la modalidad.
+   */
+  listAlterationProfessorsByModality(
+    idCarga: number,
+    idModalidadContratacion: number,
+  ): Observable<ModalityProfessor[]> {
+    return this.webRequestService.get<ModalityProfessor[]>(
+      `${this.endpoint}/list-alteration-professors-modality`,
+      { idCarga, idModalidadContratacion },
+    );
+  }
+
+  /**
    * Obtiene fechas de convocatoria por carga y modalidad.
    *
    * @param idCarga Identificador de la carga.
