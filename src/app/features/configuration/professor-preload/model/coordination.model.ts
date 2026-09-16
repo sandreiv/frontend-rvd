@@ -330,3 +330,9 @@ export interface ActivitiesHours {
   totalHorasPreasignacion: ActivitiesHoursItem[];
   totalHoras: number;
 }
+
+export interface AssignNameNnRequest {
+  idCargaDocente: number;
+  idNovedad: number;
+  idPersonaGeneral: number;
+}

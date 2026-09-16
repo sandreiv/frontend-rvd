@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
 import {
+  AssignNameNnRequest,
   CategoriaCatedratico,
   CoordinationApiItem,
   CoordinationItem,
@@ -173,6 +174,34 @@ export class CoordinationService {
 
     return this.webRequestService.get<ProfessorSearchResult[]>(
       `${this.endpoint}/search-professor`,
+      query,
+    );
+  }
+
+  searchFreeProfessor(
+    params: SearchGeneralPersonParams,
+  ): Observable<ProfessorSearchResult[]> {
+
+    const query: Record<string, string | number> = {};
+
+    const documento = params.documento?.trim();
+    const nombre = params.nombre?.trim();
+
+    if (documento) {
+      query['documento'] = documento;
+    }
+
+    if (nombre) {
+      query['nombre'] = nombre;
+    }
+
+    if (params.idModalidadContratacion != null) {
+      query['idModalidadContratacion'] =
+        params.idModalidadContratacion;
+    }
+
+    return this.webRequestService.get<ProfessorSearchResult[]>(
+      `${this.endpoint}/search-free-professor`,
       query,
     );
   }
@@ -667,6 +696,19 @@ export class CoordinationService {
       {},
     );
   }
+
+
+  assignNameToNn(
+    request: AssignNameNnRequest,
+  ): Observable<void> {
+
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/novelties/assign-name-nn`,
+      request,
+    );
+  }
+
+
 
 }
 

@@ -648,4 +648,12 @@ export class AlterationContractModalityDetail {
     };
   }
 
+  onNoveltySaved(): void {
+
+    this.closeNoveltiesModal();
+
+    this.modalityProfessorsResource
+      .reload();
+  }
+
 }

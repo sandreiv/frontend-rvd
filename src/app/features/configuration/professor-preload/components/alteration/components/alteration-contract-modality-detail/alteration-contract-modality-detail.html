@@ -218,9 +218,9 @@
   }
 </section>
 
-<!--Pendiente pasar mas parametros al modal si es necesario-->
 <app-alteration-professor-novelties
   [isOpen]="isNoveltiesModalOpen()"
   [professor]="noveltiesProfessor()"
   (close)="closeNoveltiesModal()"
+  (saved)="onNoveltySaved()"
 />

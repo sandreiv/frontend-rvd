@@ -44,7 +44,10 @@
 
     @if (selectedNoveltyComponent(); as component) {
       <div class="mt-6">
-        <ng-container [ngComponentOutlet]="component" />
+        <ng-container
+          [ngComponentOutlet]="component"
+          [ngComponentOutletInputs]="selectedNoveltyInputs()"
+        />
       </div>
     }
   </div>
@@ -54,7 +57,12 @@
   >
     <app-button
       type="button"
-      [disabled]="idNovedadControl.invalid || noveltiesResource.isLoading()"
+      [disabled]="
+        idNovedadControl.invalid ||
+        noveltiesResource.isLoading() ||
+        !noveltyState.isValid() ||
+        isBusy()
+      "
       (btnClick)="onSave()"
     >
       {{ isSaving() ? 'Guardando...' : 'Guardar' }}
