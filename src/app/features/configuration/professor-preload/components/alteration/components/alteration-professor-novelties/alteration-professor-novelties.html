@@ -44,20 +44,12 @@
 
     @if (selectedNoveltyComponent(); as component) {
       <div class="mt-6">
-        <ng-container [ngComponentOutlet]="component" />
+        <ng-container
+          [ngComponentOutlet]="component"
+          [ngComponentOutletInputs]="noveltyInputs()"
+        />
+        
       </div>
     }
-  </div>
-
-  <div
-    class="flex justify-end gap-3 border-t border-gray-200 px-6 py-5 dark:border-gray-700 sm:px-8"
-  >
-    <app-button
-      type="button"
-      [disabled]="idNovedadControl.invalid || noveltiesResource.isLoading()"
-      (btnClick)="onSave()"
-    >
-      {{ isSaving() ? 'Guardando...' : 'Guardar' }}
-    </app-button>
   </div>
 </app-modal>

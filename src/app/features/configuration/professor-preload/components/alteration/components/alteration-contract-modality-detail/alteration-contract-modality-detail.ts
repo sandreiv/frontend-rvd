@@ -195,6 +195,21 @@ export class AlterationContractModalityDetail {
     this.sortContractModalities(this.contractModalities()),
   );
 
+  readonly noveltiesContractModality = computed(() => {
+    const professor = this.noveltiesProfessor();
+
+    if (!professor) {
+      return null;
+    }
+
+    return (
+      this.sortedContractModalities().find(
+        (modality) =>
+          modality.id === professor.idModalidadContratacion,
+      ) ?? null
+    );
+  });
+
   readonly modalityProfessorsResource = rxResource({
     params: () => this.resolveProfessorsParams(),
     stream: ({ params }) => this.loadProfessorsByModality(params),
