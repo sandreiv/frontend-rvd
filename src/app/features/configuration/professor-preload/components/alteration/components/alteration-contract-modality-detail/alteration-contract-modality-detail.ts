@@ -652,13 +652,4 @@ export class AlterationContractModalityDetail {
       dotClass: `${DOT_BASE} ${palette.dot}`,
     };
   }
-
-  onNoveltySaved(): void {
-
-    this.closeNoveltiesModal();
-
-    this.modalityProfessorsResource
-      .reload();
-  }
-
 }

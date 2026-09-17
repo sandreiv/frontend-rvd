@@ -58,18 +58,14 @@
     <app-button
       type="button"
       [disabled]="
-        
         idNovedadControl.invalid ||
-       
         noveltiesResource.isLoading() ||
         !noveltyState.isValid() ||
-        isBusy()
-       ||
-        isSaving()
+        saving()
       "
       (btnClick)="onSave()"
     >
-      {{ isSaving() ? 'Guardando...' : 'Guardar' }}
+      {{ saving() ? 'Guardando...' : 'Guardar' }}
     </app-button>
   </div>
 </app-modal>

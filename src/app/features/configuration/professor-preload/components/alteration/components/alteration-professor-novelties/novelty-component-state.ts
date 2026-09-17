@@ -16,14 +16,21 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { SaveNovedadCargaDocenteRequest } from '../../../../model/novelty-carga-docente.model';
 
 export interface AssignNameNnPayload {
   component: 'asign-name-nn';
   idPersonaGeneral: number;
 }
 
+export interface ChangeContractModalityPayload {
+  component: 'change-contract-modality';
+  request: SaveNovedadCargaDocenteRequest;
+}
+
 export type NoveltyComponentPayload =
-  | AssignNameNnPayload;
+  | AssignNameNnPayload
+  | ChangeContractModalityPayload;
 
 @Injectable()
 export class NoveltyComponentState {
@@ -38,10 +45,18 @@ export class NoveltyComponentState {
   setAssignNameNn(
     idPersonaGeneral: number,
   ): void {
-
     this.payload.set({
       component: 'asign-name-nn',
       idPersonaGeneral,
+    });
+  }
+
+  setChangeContractModality(
+    request: SaveNovedadCargaDocenteRequest,
+  ): void {
+    this.payload.set({
+      component: 'change-contract-modality',
+      request,
     });
   }
 
