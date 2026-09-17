@@ -12,6 +12,7 @@ import {
   ProfessorProjectRow,
   ProyectoDocenteDto,
 } from './professor-projects.model';
+import { forNext } from '../../../../core/utils/for-next.function';
 
 export interface ProfessorActivitiesModalState {
   directByCodigo: Record<string, DirectLearningActivity[]>;
@@ -227,4 +228,35 @@ function resolveProyectoById(
 function parseHoras(horas: string): number {
   const value = Number(horas);
   return Number.isFinite(value) ? value : 0;
+}
+
+export function toNoveltyActivityDraft(
+  state: ProfessorActivitiesModalState,
+  allowedCodigos: string[],
+): ProfessorActivitiesModalState {
+  const allowed = new Set(allowedCodigos);
+  return {
+    hasSavedDetail: state.hasSavedDetail,
+    directByCodigo: omitPersistedMap(state.directByCodigo, allowed),
+    criteriaByCodigo: omitPersistedMap(state.criteriaByCodigo, allowed),
+    projectsByCodigo: omitPersistedMap(state.projectsByCodigo, allowed),
+  };
+}
+
+function omitPersistedMap<T extends { idDetalleCargaDocente?: number }>(
+  map: Record<string, T[]>,
+  allowed: Set<string>,
+): Record<string, T[]> {
+  const result: Record<string, T[]> = {};
+  forNext(Object.keys(map), (codigo) => {
+    if (!allowed.has(codigo)) {
+      return;
+    }
+    const items: T[] = [];
+    forNext(map[codigo], (item) => {
+      items.push({ ...item, idDetalleCargaDocente: undefined });
+    });
+    result[codigo] = items;
+  });
+  return result;
 }

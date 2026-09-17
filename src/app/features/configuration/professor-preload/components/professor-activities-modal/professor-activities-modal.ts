@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
 import { NotificationService } from '../../../../../core/service/notification-service';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Button } from '../../../../../shared/ui/button/button';

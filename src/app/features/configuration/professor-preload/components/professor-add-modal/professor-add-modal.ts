@@ -23,6 +23,7 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Label } from '../../../../../shared/components/form/label/label';
 import {
@@ -74,7 +75,8 @@ import { SearchGeneralPersonParams } from '../../../preload-call/model/preload-c
     Icon,
     Tooltip,
     InputField,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    NgTemplateOutlet,
   ],
   templateUrl: './professor-add-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,6 +87,7 @@ export class ProfessorAddModal {
   private readonly permissions = inject(PermissionService);
 
   isOpen = input(false);
+  embedded = input(false);
   idCarga = input<number | null>(null);
   anioUniversidad = input<number | null>(null);
   periodoUniversidad = input<string | null>(null);

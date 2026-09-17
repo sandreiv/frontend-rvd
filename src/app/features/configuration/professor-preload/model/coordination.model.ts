@@ -18,6 +18,15 @@ export interface CoordinationContractModality {
   esPlanta?: boolean;
 }
 
+export interface ContractModalityItem {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  instructivo: string | null;
+  estado: string;
+  sigla: string | null;
+}
+
 export function isPlantaModality(
   modality: CoordinationContractModality,
 ): boolean {

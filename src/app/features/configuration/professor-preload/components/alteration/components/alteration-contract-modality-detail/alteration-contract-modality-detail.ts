@@ -417,6 +417,11 @@ export class AlterationContractModalityDetail {
     this.noveltiesProfessor.set(null);
   }
 
+  onNoveltySaved(): void {
+    this.modalityProfessorsResource.reload();
+    this.closeNoveltiesModal();
+  }
+
   private deleteModalityProfessor(idCargaDocente: number | null): void {
     if (idCargaDocente == null) {
       return;

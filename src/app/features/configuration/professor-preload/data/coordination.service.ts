@@ -5,6 +5,7 @@ import {
   AssignNameNnRequest,
   CategoriaCatedratico,
   CoordinationApiItem,
+  ContractModalityItem,
   CoordinationItem,
   CoordinationPreloadCallApi,
   LoadRestrictionPreview,
@@ -38,6 +39,7 @@ import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 import { NoveltiesItem } from '../model/novelties.model';
+import { SaveNovedadCargaDocenteRequest } from '../model/novelty-carga-docente.model';
 
 @Injectable({
   providedIn: 'root',
@@ -709,6 +711,33 @@ export class CoordinationService {
   }
 
 
+
+  /**
+   * Lista las modalidades de contratación.
+   *
+   * @returns Observable con las modalidades de CONTRATOS.MODALIDADCONTRATACION
+   */
+  getContractModalities(): Observable<ContractModalityItem[]> {
+    return this.webRequestService.get<ContractModalityItem[]>(
+      `${this.endpoint}/list-modality`,
+    );
+  }
+
+  /**
+   * Guarda la novedad de cambio de modalidad y horas catedrático.
+   * Persiste en NOVEDADCARGADOCENTE y DETALLENOVEDADCARGADOCENTE.
+   *
+   * @param request Asignación y actividades de la novedad.
+   * @returns Observable sin contenido cuando el guardado finaliza.
+   */
+  saveContractModalityProfessor(
+    request: SaveNovedadCargaDocenteRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-contract-modality-professor`,
+      request,
+    );
+  }
 
 }
 

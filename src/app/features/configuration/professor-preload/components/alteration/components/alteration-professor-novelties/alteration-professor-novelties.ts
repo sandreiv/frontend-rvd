@@ -2,19 +2,31 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
   output,
+  signal,
+  viewChild,
 } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import {
+  rxResource,
+  takeUntilDestroyed,
+  toSignal,
+} from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ModalityProfessor } from '../../../../model/coordination.model';
+import {
+  CoordinationItem,
+  ModalityProfessor,
+} from '../../../../model/coordination.model';
 import {
   isNoveltyComponentKey,
   NoveltiesItem,
 } from '../../../../model/novelties.model';
+import { isNoveltySaveHost } from '../../../../model/novelty-carga-docente.model';
 import { CoordinationService } from '../../../../data/coordination.service';
+import { NotificationService } from '../../../../../../../core/service/notification-service';
 import { Modal } from '../../../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../../../shared/ui/icon/icon';
 import { Label } from '../../../../../../../shared/components/form/label/label';
@@ -57,11 +69,17 @@ import {
 })
 export class AlterationProfessorNovelties {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly noveltyOutlet = viewChild(NgComponentOutlet);
 
   readonly isOpen = input(false);
   readonly professor = input<ModalityProfessor | null>(null);
-  readonly isSaving = input(false);
+  readonly coordination = input<CoordinationItem | null>(null);
   readonly close = output<void>();
+  readonly saved = output<void>();
+
+  readonly isSaving = signal(false);
 
   readonly idNovedadControl = new FormControl('', {
     nonNullable: true,
@@ -122,6 +140,12 @@ export class AlterationProfessorNovelties {
         ? null
         : NOVELTY_COMPONENTS[key];
     });
+
+  readonly noveltyInputs = computed(() => ({
+    professor: this.professor(),
+    coordination: this.coordination(),
+    noveltyId: this.parseNoveltyId(this.selectedNoveltyId()), 
+  }));
 
   readonly selectedNoveltyInputs =
     computed<Record<string, unknown>>(() => {
@@ -254,5 +278,34 @@ export class AlterationProfessorNovelties {
     this.noveltyState.clear();
 
     this.close.emit();
+  }
+
+  private onSaveSuccess(): void {
+    this.isSaving.set(false);
+    this.notificationService.success(
+      'La novedad se guardó correctamente.',
+    );
+    this.idNovedadControl.reset('');
+    this.saved.emit();
+    this.close.emit();
+  }
+
+  private onSaveError(error: {
+    incomplete?: boolean;
+    message?: string;
+  }): void {
+    this.isSaving.set(false);
+    if (!error?.incomplete) {
+      return;
+    }
+    this.notificationService.warning(
+      error.message ?? 'Complete los datos de la novedad.',
+      'Novedad incompleta',
+    );
+  }
+
+  private parseNoveltyId(value: string): number | null {
+    const id = Number(value);
+    return Number.isFinite(id) && id > 0 ? id : null;
   }
 }

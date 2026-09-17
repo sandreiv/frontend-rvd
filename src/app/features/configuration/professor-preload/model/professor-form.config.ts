@@ -123,6 +123,95 @@ export function resolveModalityKind(nombre: string | null | undefined,): Contrac
   return null;
 }
 
+export function resolveAssignmentFields(
+  kind: ContractModalityKind | null,
+  hasIdentifiedProfessor: boolean,
+  lockFechaLabor: boolean,
+): ProfessorFieldConfig[] {
+  if (!kind) {
+    return [];
+  }
+
+  return PROFESSOR_FIELDS[kind].map((field) =>
+    resolveAssignmentField(
+      field,
+      kind,
+      hasIdentifiedProfessor,
+      lockFechaLabor,
+    ),
+  );
+}
+
+export function resolveWeeklyHoursLabel(
+  rangoHoras: string | null | undefined,
+  exceptionHours: string | null | undefined,
+): string {
+  const exception = String(exceptionHours ?? '').trim();
+  if (exception) {
+    return exception;
+  }
+
+  return rangoHoras?.trim() ?? '';
+}
+
+export function professorDisplayName(
+  nombreCompleto: string | null | undefined,
+  idPersonaGeneral: number | null | undefined,
+): string {
+  if (idPersonaGeneral == null) {
+    return 'NN';
+  }
+
+  return nombreCompleto?.trim() || 'NN';
+}
+
+function resolveAssignmentField(
+  field: ProfessorFieldConfig,
+  kind: ContractModalityKind,
+  hasIdentifiedProfessor: boolean,
+  lockFechaLabor: boolean,
+): ProfessorFieldConfig {
+  if (field.key === 'categoriaCatedratico') {
+    return resolveCategoriaField(field, kind, hasIdentifiedProfessor);
+  }
+
+  if (field.key === 'numeroPuntos' && !hasIdentifiedProfessor) {
+    return { ...field, readonly: false };
+  }
+
+  if (field.key === 'fechaLabor' && lockFechaLabor) {
+    return { ...field, control: 'text', readonly: true };
+  }
+
+  return field;
+}
+
+function resolveCategoriaField(
+  field: ProfessorFieldConfig,
+  kind: ContractModalityKind,
+  hasIdentifiedProfessor: boolean,
+): ProfessorFieldConfig {
+  if (kind === 'catedra' && hasIdentifiedProfessor) {
+    return {
+      ...field,
+      control: 'select',
+      readonly: false,
+      placeholder: 'Seleccione la categoría',
+    };
+  }
+
+  if (kind === 'tiempoCompletoOcasional' && !hasIdentifiedProfessor) {
+    return {
+      ...field,
+      control: 'select',
+      readonly: false,
+      placeholder: 'Seleccione la categoría',
+    };
+  }
+
+  return field;
+}
+
 export function formatWorkDateRange(fechaInicio: string, fechaFin: string): string {
   return `${formatWorkDate(fechaInicio)} - ${formatWorkDate(fechaFin)}`;
 }
