@@ -169,7 +169,9 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
   ): Promise<boolean> {
+
     const payload = this.noveltyState.payload();
+
     if (payload?.component === 'asign-name-nn') {
       return this.saveAssignNameNn(
         idNovedad,
@@ -177,14 +179,25 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
+
+    if (payload?.component === 'change-professor') {
+      return this.saveChangeProfessor(
+        idNovedad,
+        idCargaDocente,
+        payload.idPersonaGeneral,
+      );
+    }
+
     if (payload?.component === 'change-contract-modality') {
       const request = {
         ...payload.request,
         idNovedad,
         idCargaDocente,
       };
+
       return this.saveChangeContractModality(request);
     }
+
     return Promise.resolve(false);
   }
 
@@ -200,6 +213,23 @@ export class AlterationProfessorNovelties {
         idPersonaGeneral,
       }),
     );
+    return true;
+  }
+
+  private async saveChangeProfessor(
+    idNovedad: number,
+    idCargaDocente: number,
+    idPersonaGeneral: number,
+  ): Promise<boolean> {
+
+    await firstValueFrom(
+      this.coordinationService.changeProfessor({
+        idCargaDocente,
+        idNovedad,
+        idPersonaGeneral,
+      }),
+    );
+
     return true;
   }
 

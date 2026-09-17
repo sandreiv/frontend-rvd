@@ -3,6 +3,7 @@ import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
 import {
   AssignNameNnRequest,
+  ChangeProfessorRequest,
   CategoriaCatedratico,
   CoordinationApiItem,
   ContractModalityItem,
@@ -706,6 +707,16 @@ export class CoordinationService {
 
     return this.webRequestService.post<void>(
       `${this.endpoint}/novelties/assign-name-nn`,
+      request,
+    );
+  }
+
+  changeProfessor(
+    request: ChangeProfessorRequest,
+  ): Observable<void> {
+
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/novelties/change-professor`,
       request,
     );
   }
