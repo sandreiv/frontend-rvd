@@ -36,6 +36,7 @@ import {
 } from '../../../../../data/coordination.service';
 
 import {
+  CoordinationContractModality,
   ModalityProfessor,
   ProfessorSearchResult,
 } from '../../../../../model/coordination.model';
@@ -70,6 +71,9 @@ export class AsignNameNn {
 
   readonly professor =
     input<ModalityProfessor | null>(null);
+
+  readonly contractModality =
+    input<CoordinationContractModality | null>(null);
 
   readonly searchResults =
     signal<ProfessorSearchResult[]>([]);
@@ -196,8 +200,8 @@ export class AsignNameNn {
       term.trim();
 
     const idModalidadContratacion =
-      this.professor()
-        ?.idModalidadContratacion;
+      this.contractModality()?.id ??
+      this.professor()?.idModalidadContratacion;
 
     if (
       !value ||
