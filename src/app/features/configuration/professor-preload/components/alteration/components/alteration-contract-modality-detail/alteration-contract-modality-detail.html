@@ -218,11 +218,11 @@
   }
 </section>
 
-<!--Pendiente pasar mas parametros al modal si es necesario-->
 <app-alteration-professor-novelties
   [isOpen]="isNoveltiesModalOpen()"
   [professor]="noveltiesProfessor()"
   [coordination]="coordination()"
   [contractModality]="noveltiesContractModality()"
   (close)="closeNoveltiesModal()"
+  (saved)="onNoveltySaved()"
 />

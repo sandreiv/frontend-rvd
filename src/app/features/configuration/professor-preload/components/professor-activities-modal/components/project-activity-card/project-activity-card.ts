@@ -30,6 +30,7 @@ export class ProjectActivityCard {
   isLoading = input(false);
   readOnly = input(false);
   readOnlyReason = input<string | null>(null);
+  persistDeletes = input(true);
 
   isRegistrationProcessed = input(false);
 
@@ -161,7 +162,10 @@ export class ProjectActivityCard {
       return;
     }
 
-    if (row.idDetalleCargaDocente == null) {
+    if (
+      !this.persistDeletes() ||
+      row.idDetalleCargaDocente == null
+    ) {
       this.withoutAssociatedProject(row.idPersonaProyecto);
       return;
     }

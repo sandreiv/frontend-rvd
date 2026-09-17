@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 import { ConvocatoriaDates } from './add-professor.model';
 import { DetalleCargaDocenteRequest } from './save-detail-professor-preload.model';
 import { WorkDate } from './coordination.model';
@@ -39,19 +38,4 @@ export interface SaveNovedadCargaDocenteRequest {
   valorHora?: number | null;
   onceMeses?: string | null;
   detalles: DetalleCargaDocenteRequest[];
-}
-
-export interface NoveltySaveHost {
-  save(): Observable<void>;
-}
-
-export function isNoveltySaveHost(
-  value: unknown,
-): value is NoveltySaveHost {
-  return (
-    typeof value === 'object' &&
-    value != null &&
-    'save' in value &&
-    typeof (value as NoveltySaveHost).save === 'function'
-  );
 }

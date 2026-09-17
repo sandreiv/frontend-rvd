@@ -57,6 +57,7 @@ export class CriteriaActivityCard {
 
   readOnly = input(false);
   readOnlyReason = input<string | null>(null);
+  persistDeletes = input(true);
 
   isRegistrationProcessed = input(false);
   
@@ -201,7 +202,10 @@ export class CriteriaActivityCard {
     }
 
     const activity = this.activities().find((item) => item.id === activityId);
-    if(activity?.idDetalleCargaDocente == null){
+    if (
+      !this.persistDeletes() ||
+      activity?.idDetalleCargaDocente == null
+    ) {
       this.withoutActivity(activityId);
       return;
     }
