@@ -155,7 +155,7 @@ export class ChangeProjectActivities {
     },
     stream: ({ params }) =>
       this.coordinationService
-        .listDetailProfessorPreload(params.idCargaDocente)
+        .listNoveltyDetailProfessorPreload(params.idCargaDocente)
         .pipe(catchError(() => of([] as DetailProfessorPreloadApi))),
     defaultValue: [] as DetailProfessorPreloadApi,
   });

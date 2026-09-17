@@ -445,6 +445,20 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Consulta el novedad detalle de la distribución de actividades de un docente.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con el novedad detalle de actividades de la precarga.
+   */
+
+  listNoveltyDetailProfessorPreload(idCargaDocente: number): Observable<DetailProfessorPreloadApi> {
+    return this.webRequestService.get<DetailProfessorPreloadApi>(
+      `${this.endpoint}/list-novelty-detail-professor-preload`,
+      { idCargaDocente },
+    );
+  }
+
   getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
     return this.webRequestService.get<UniversityPeriodItem[]>(
       `${this.endpoint}/list-university-period`,

@@ -18,6 +18,7 @@ export interface DetalleMateriaApi {
 
 export interface DetalleCargaDocenteFormularioApi {
   tipoActividad: TipoActividad;
+  esDeNovedad?: number;
   tipoActividadHija: TipoActividad[];
   unidadRegional: { id: number; nombre: string } | null;
   programa: { id: number; nombre: string } | null;
