@@ -14,6 +14,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import {
+  CoordinationContractModality,
   CoordinationItem,
   ModalityProfessor,
 } from '../../../../model/coordination.model';
@@ -55,6 +56,8 @@ export class AlterationProfessorNovelties {
   readonly isOpen = input(false);
   readonly professor = input<ModalityProfessor | null>(null);
   readonly coordination = input<CoordinationItem | null>(null);
+  readonly contractModality =
+    input<CoordinationContractModality | null>(null);
   readonly close = output<void>();
   readonly saved = output<void>();
 
@@ -105,6 +108,7 @@ export class AlterationProfessorNovelties {
   readonly noveltyInputs = computed(() => ({
     professor: this.professor(),
     coordination: this.coordination(),
+    contractModality: this.contractModality(),
     noveltyId: this.parseNoveltyId(this.selectedNoveltyId()),
   }));
 

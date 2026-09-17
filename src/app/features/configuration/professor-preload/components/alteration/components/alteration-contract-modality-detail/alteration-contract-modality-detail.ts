@@ -1,6 +1,11 @@
 
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
-import { CoordinationContractModality, CoordinationItem, isPlantaModality, ModalityProfessor } from '../../../../model/coordination.model';
+import {
+  CoordinationContractModality,
+  CoordinationItem,
+  isPlantaModality,
+  ModalityProfessor,
+} from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, map, forkJoin } from 'rxjs';
@@ -244,10 +249,7 @@ export class AlterationContractModalityDetail {
   readonly hasAnyModality = computed(() => this.modalityTabs().length > 0);
 
   readonly isPlantaModalitySelected = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
-    );
+    const modality = this.selectedContractModality();
     return modality != null && isPlantaModality(modality);
   });
 
@@ -258,13 +260,20 @@ export class AlterationContractModalityDetail {
     return rolesUsuario.includes('Coordinador');
   })
 
-  readonly isTiempoCompletoOcasionalSelected = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
+  readonly selectedContractModality = computed(() => {
+    const selectedId = Number(this.selectedContractModalityId());
+    if (!Number.isFinite(selectedId) || selectedId <= 0) {
+      return null;
+    }
+    return (
+      this.sortedContractModalities().find((item) => {
+        return item.id === selectedId;
+      }) ?? null
     );
+  });
 
+  readonly isTiempoCompletoOcasionalSelected = computed(() => {
+    const modality = this.selectedContractModality();
     return (
       modality != null &&
       resolveModalityKind(modality.nombre) === 'tiempoCompletoOcasional'
@@ -276,11 +285,10 @@ export class AlterationContractModalityDetail {
   );
 
   readonly selectedModalityLabel = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
+    return (
+      formatSentenceValue(this.selectedContractModality()?.nombre) ||
+      'esta modalidad'
     );
-    return formatSentenceValue(modality?.nombre) || 'esta modalidad';
   });
 
   constructor() {
@@ -408,7 +416,12 @@ export class AlterationContractModalityDetail {
   }
 
   openNoveltiesModal(professor: ModalityProfessor): void {
-    this.noveltiesProfessor.set(professor);
+    const modalityId = this.selectedContractModality()?.id;
+    this.noveltiesProfessor.set(
+      modalityId == null
+        ? professor
+        : { ...professor, idModalidadContratacion: modalityId },
+    );
     this.isNoveltiesModalOpen.set(true);
   }
 
@@ -632,7 +645,14 @@ export class AlterationContractModalityDetail {
   ): Record<number, ModalityProfessor[]> {
     const result: Record<number, ModalityProfessor[]> = {};
     forNext(entries, (entry) => {
-      result[entry.id] = entry.professors;
+      const professors: ModalityProfessor[] = [];
+      forNext(entry.professors, (professor) => {
+        professors.push({
+          ...professor,
+          idModalidadContratacion: entry.id,
+        });
+      });
+      result[entry.id] = professors;
     });
     return result;
   }
