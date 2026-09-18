@@ -176,6 +176,8 @@ export class ChangeProjectActivities {
       ),
   );
 
+  readonly canViewProjects = computed(() => this.visibleProjectItems().length > 0)
+
   readonly projectAssociationDates = computed(() => {
     const fechas = this.preloadCallDetailResource.value()?.fechas ?? [];
 
@@ -386,6 +388,11 @@ export class ChangeProjectActivities {
       const tieneProyectosInvalidos = this.invalidAssociatedProjects().length > 0;
 
       if (this.exceedsWeeklyLimit() || !hasChanges || tieneProyectosInvalidos) {
+        untracked(() => this.noveltyState.clear());
+        return;
+      }
+
+      if (this.visibleProjectItems().length === 0) {
         untracked(() => this.noveltyState.clear());
         return;
       }
