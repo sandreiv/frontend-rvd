@@ -1,46 +1,3 @@
-<header class="px-6 pb-5 pt-6 sm:px-8 sm:pt-8">
-    <div class="flex items-start gap-3 pr-10">
-        <span
-            class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"
-        >
-            <app-icon name="academicCap" size="sm" />
-        </span>
-        <div class="min-w-0">
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
-                {{ modalTitle() }}
-            </h3>
-            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                Distribuye la carga de investigación e interacción social.
-            </p>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
-            <span
-                class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-                Docente · {{ professorDisplayName() }}
-            </span>
-            <span
-                class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-                {{ contractModalityLabel() }}
-            </span>
-            <span
-                class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-                Coordinación · {{ coordinationLabel() }}
-            </span>
-            @if (periodLabel()) {
-                <span
-                    class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                >
-                    <app-icon name="calendar" size="xs" />
-                    {{ periodLabel() }}
-                </span>
-            }
-            </div>
-        </div>
-    </div>
-</header>
-
 <div
     class="max-h-[calc(100vh-16rem)] flex flex-col gap-4 overflow-y-auto border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10"
 >
@@ -124,42 +81,29 @@
         }
     }
 </div>
-
-<footer
-    class="flex flex-col gap-4 border-t border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 dark:border-white/10"
->
-    <div class="flex flex-col gap-1">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-            Total de horas asignadas:
-            <span
-                class="font-semibold"
-                [class.text-gray-900]="!exceedsWeeklyLimit()"
-                [class.dark:text-white/90]="!exceedsWeeklyLimit()"
-                [class.text-error-600]="exceedsWeeklyLimit()"
-                [class.dark:text-error-400]="exceedsWeeklyLimit()"
-            >
-            {{ totalAssignedHours() }} h
-            @if (isLoadingWorkDates()) {
-                / ...
-            } @else if (weeklyHoursLimit() != null) {
-                / {{ weeklyHoursLimit() }} h
-            }
-            </span>
-            semanales
-        </p>
-
-        @if (exceedsWeeklyLimit()) {
-            <p class="text-xs text-error-600 dark:text-error-400">
-                Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
-            </p>
-        }
-    </div>
-
-    <div class="flex justify-end gap-3">
-        <app-button
-            type="button"
+<div class="flex flex-col gap-1">
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+        Total de horas asignadas:
+        <span
+            class="font-semibold"
+            [class.text-gray-900]="!exceedsWeeklyLimit()"
+            [class.dark:text-white/90]="!exceedsWeeklyLimit()"
+            [class.text-error-600]="exceedsWeeklyLimit()"
+            [class.dark:text-error-400]="exceedsWeeklyLimit()"
         >
-        Guardar
-        </app-button>
-    </div>
-</footer>
+        {{ totalAssignedHours() }} h
+        @if (isLoadingWorkDates()) {
+            / ...
+        } @else if (weeklyHoursLimit() != null) {
+            / {{ weeklyHoursLimit() }} h
+        }
+        </span>
+        semanales
+    </p>
+
+    @if (exceedsWeeklyLimit()) {
+        <p class="text-xs text-error-600 dark:text-error-400">
+            Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
+        </p>
+    }
+</div>

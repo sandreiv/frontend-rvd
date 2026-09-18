@@ -39,7 +39,7 @@ import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 import { NoveltiesItem } from '../model/novelties.model';
-import { SaveNovedadCargaDocenteRequest } from '../model/novelty-carga-docente.model';
+import { SaveNovedadCargaDocenteRequest, SaveNoveltyProjectActivitiesRequest } from '../model/novelty-carga-docente.model';
 
 @Injectable({
   providedIn: 'root',
@@ -427,6 +427,20 @@ export class CoordinationService {
     console.log('request', request);
     return this.webRequestService.post<void>(
       `${this.endpoint}/save-detail-professor-preload`,
+      request,
+    );
+  }
+
+  /**
+   * Guarda o actualiza las novedades en detalles de actividades
+   *
+   * @param request Distribución de actividades de la precarga docente para guardar dentro de detalles novedades.
+   * @returns Observable sin contenido cuando el guardado finaliza correctamente.
+   */
+  saveNoveltyProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Observable<void> {
+    console.log('request', request);
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-novelty-detail-professor-preload`,
       request,
     );
   }

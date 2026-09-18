@@ -17,6 +17,8 @@ import {
   signal,
 } from '@angular/core';
 import { SaveNovedadCargaDocenteRequest } from '../../../../model/novelty-carga-docente.model';
+import { SaveDetailProfessorPreloadRequest } from '../../../../model/save-detail-professor-preload.model';
+import { DetailProfessorPreloadItemApi } from '../../../../model/detail-professor-preload.model';
 
 export interface AssignNameNnPayload {
   component: 'asign-name-nn';
@@ -28,9 +30,16 @@ export interface ChangeContractModalityPayload {
   request: SaveNovedadCargaDocenteRequest;
 }
 
+export interface ChangeProjectActivitiesPayload {
+  component: 'change-project-activities';
+  saveRequest: SaveDetailProfessorPreloadRequest;
+  updateRequests: DetailProfessorPreloadItemApi[];
+}
+
 export type NoveltyComponentPayload =
   | AssignNameNnPayload
-  | ChangeContractModalityPayload;
+  | ChangeContractModalityPayload
+  | ChangeProjectActivitiesPayload;
 
 @Injectable()
 export class NoveltyComponentState {
@@ -57,6 +66,17 @@ export class NoveltyComponentState {
     this.payload.set({
       component: 'change-contract-modality',
       request,
+    });
+  }
+
+  setChangeProjectActivities(
+    saveRequest: SaveDetailProfessorPreloadRequest,
+    updateRequests: DetailProfessorPreloadItemApi[]
+  ): void {
+    this.payload.set({
+      component: 'change-project-activities',
+      saveRequest,
+      updateRequests,
     });
   }
 

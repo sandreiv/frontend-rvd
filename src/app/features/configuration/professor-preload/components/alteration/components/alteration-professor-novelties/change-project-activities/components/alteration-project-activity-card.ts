@@ -135,6 +135,8 @@ export class AlterationProjectActivityCard {
       this.removeAssociatedProject(row.idPersonaProyecto);
       return;
     }
+
+    this.removeAssociatedProject(row.idPersonaProyecto);
     /*
     this.coordinationService
       .deleteProfessorActivity(row.idDetalleCargaDocente)

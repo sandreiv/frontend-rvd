@@ -1,6 +1,7 @@
 import { ConvocatoriaDates } from './add-professor.model';
 import { DetalleCargaDocenteRequest } from './save-detail-professor-preload.model';
 import { WorkDate } from './coordination.model';
+import { DetailProfessorPreloadItemApi } from './detail-professor-preload.model';
 
 export interface NoveltyAssignmentSnapshot {
   idModalidadContratacion: number;
@@ -38,4 +39,11 @@ export interface SaveNovedadCargaDocenteRequest {
   valorHora?: number | null;
   onceMeses?: string | null;
   detalles: DetalleCargaDocenteRequest[];
+}
+
+export interface SaveNoveltyProjectActivitiesRequest {
+  idNovedad: number;
+  idCargaDocente: number;
+  detallesNuevos: DetalleCargaDocenteRequest[];
+  detallesActualizados: DetailProfessorPreloadItemApi[];
 }

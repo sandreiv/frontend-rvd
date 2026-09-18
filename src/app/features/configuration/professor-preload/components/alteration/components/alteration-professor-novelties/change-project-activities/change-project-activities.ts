@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { Icon } from '../../../../../../../../shared/ui/icon/icon';
 import { CollapsibleSection } from '../../../../../../../../shared/components/form/collapsible-section/collapsible-section';
-import { Button } from '../../../../../../../../shared/ui/button/button';
 import { AlterationProjectActivityCard } from './components/alteration-project-activity-card';
-import { SaveDetailProfessorPreloadRequest } from '../../../../../model/save-detail-professor-preload.model';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../../../../../model/detail-professor-preload.model';
 import { CoordinationService } from '../../../../../data/coordination.service';
 import { PreloadCallService } from '../../../../../../preload-call/data/preload-call.service';
@@ -20,27 +18,22 @@ import { buildProjectHierarchyRows } from '../../../../../model/professor-projec
 import { DirectLearningActivity, SimpleActivity } from '../../../../../model/professor-activities-modal.models';
 import { parseMaxWeeklyHours } from '../../../../../model/professor-form.config';
 import { mapDetailProfessorPreloadToModalState } from '../../../../../model/professor-activities-load.mapper';
+import { SaveDetailProfessorPreloadInput } from '../../../../../model/professor-activities-save.mapper';
+import { buildNoveltyActivityDistributionRequest } from '../../../../../model/professor-activities-novelty-save.mapper';
+import { NoveltyComponentState } from '../novelty-component-state';
 
 const NN_LABEL = 'NN';
 
-interface PendingDistribution {
-  idCargaDocente: number;
-  saveRequest: SaveDetailProfessorPreloadRequest;
-  updateRequests: DetailProfessorPreloadItemApi[];
-}
-
 @Component({
   selector: 'app-change-project-activities',
-  imports: [Icon, CollapsibleSection, Button, AlterationProjectActivityCard],
+  imports: [Icon, CollapsibleSection, AlterationProjectActivityCard],
   templateUrl: './change-project-activities.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeProjectActivities {
   private readonly coordinationService = inject(CoordinationService);
   private readonly preloadCallService = inject(PreloadCallService);
-  private readonly notificationService = inject(NotificationService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly permissions = inject(PermissionService);
+  private readonly noveltyState = inject(NoveltyComponentState);
 
   professor = input<ModalityProfessor | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
@@ -321,6 +314,11 @@ export class ChangeProjectActivities {
     return this.totalAssignedHours() > limit;
   });
 
+  private readonly distribution = computed(() => {
+    const input = this.buildSaveInput();
+    return buildNoveltyActivityDistributionRequest(input, this.loadedDetailsById());
+  })
+
 
   constructor() {
     effect(() => {
@@ -358,6 +356,23 @@ export class ChangeProjectActivities {
         this.expandedCategoriesInitialized.set(true);
       });
     });
+
+    effect(() => {
+      const { saveRequest, updateRequests } = this.distribution();
+      const hasChanges = saveRequest.detalles.length > 0 || updateRequests.length > 0;
+
+      if (this.exceedsWeeklyLimit() || !hasChanges) {
+        untracked(() => this.noveltyState.clear());
+        return;
+      }
+
+      untracked(() =>
+        this.noveltyState.setChangeProjectActivities(
+          saveRequest,
+          updateRequests,
+        ),
+      );
+    })
   }
 
   onCategoryExpandedChange(codigo: string, expanded: boolean): void {
@@ -435,10 +450,18 @@ export class ChangeProjectActivities {
     return `La fecha límite para asociar proyectos ${label} expiró el ${this.formatDate(fechaFin)}.`;
   }
 
-  onSave(): void {
-    if (this.exceedsWeeklyLimit() || this.isSaving()) return;
+  private buildSaveInput(): SaveDetailProfessorPreloadInput {
+    const coordination = this.coordination();
 
-    
+    return {
+      idCargaDocente: this.professor()?.idCargaDocente ?? 0,
+      idCentroCosto: coordination?.centroCosto?.id ?? null,
+      centroCostoDescripcion: coordination?.centroCosto?.descripcion ?? null,
+      activityTypes: this.resolveActivityTypesForSave(),
+      directByCodigo: this.directByCodigo(),
+      criteriaByCodigo: this.criteriaByCodigo(),
+      projectsByCodigo: this.projectsByCodigo(),
+    };
   }
 
   private applyLoadedDetail(
@@ -449,7 +472,14 @@ export class ChangeProjectActivities {
       detail,
       componenteByCodigo,
     );
+
+    const loadedDetails = new Map<number, DetailProfessorPreloadItemApi>();
+    for (let index = 0; index < detail.length; index += 1) {
+      const item = detail[index];
+      loadedDetails.set(item.idDetalleCargaDocente, structuredClone(item));
+    }
     
+    this.loadedDetailsById.set(loadedDetails);
     this.directByCodigo.set(state.directByCodigo);
     this.criteriaByCodigo.set(state.criteriaByCodigo);
     this.projectsByCodigo.set(state.projectsByCodigo);
@@ -532,5 +562,32 @@ export class ChangeProjectActivities {
     this.projectsByCodigo.set({});
   }
 
+  private resolveActivityTypesForSave(): TipoActividad[] {
+    const catalog = this.activityTypesResource.value();
+    const modalityTypes = this.activitiesModalityResource.value().tipoActividades ?? [];
+    const byCodigo = new Map<string, TipoActividad>();
 
+    for (let index = 0; index < catalog.length; index += 1) {
+      const type = catalog[index];
+      byCodigo.set(type.codigo, type);
+    }
+
+    for (let index = 0; index < modalityTypes.length; index += 1) {
+      const item = modalityTypes[index];
+      if (byCodigo.has(item.codigo)) {
+        continue;
+      }
+      byCodigo.set(item.codigo, {
+        id: item.id,
+        idPadre: null,
+        nombre: item.nombre,
+        descripcion: item.nombre,
+        orden: String(index),
+        codigo: item.codigo,
+        componente: item.componente,
+      });
+    }
+
+    return Array.from(byCodigo.values());
+  }
 }

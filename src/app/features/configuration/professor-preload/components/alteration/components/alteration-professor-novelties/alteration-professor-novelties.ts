@@ -28,7 +28,7 @@ import {
   NoveltiesItem,
 } from '../../../../model/novelties.model';
 import { CoordinationService } from '../../../../data/coordination.service';
-import { SaveNovedadCargaDocenteRequest } from '../../../../model/novelty-carga-docente.model';
+import { SaveNovedadCargaDocenteRequest, SaveNoveltyProjectActivitiesRequest } from '../../../../model/novelty-carga-docente.model';
 import { NotificationService } from '../../../../../../../core/service/notification-service';
 import { Modal } from '../../../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../../../shared/ui/icon/icon';
@@ -194,6 +194,16 @@ export class AlterationProfessorNovelties {
       };
       return this.saveChangeContractModality(request);
     }
+    if (payload?.component === 'change-project-activities') {
+      const request: SaveNoveltyProjectActivitiesRequest = {
+        detallesNuevos: payload.saveRequest.detalles,
+        detallesActualizados: payload.updateRequests,
+        idNovedad,
+        idCargaDocente
+      };
+      return this.saveChangeProjectActivities(request);
+    }
+
     return Promise.resolve(false);
   }
 
@@ -216,6 +226,23 @@ export class AlterationProfessorNovelties {
     await firstValueFrom(
       this.coordinationService.saveContractModalityProfessor(request),
     );
+    return true;
+  }
+
+  private async saveChangeProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Promise<boolean> {
+    const { detallesNuevos, detallesActualizados } = request;
+    if (detallesNuevos.length === 0 && detallesActualizados.length === 0) {
+      this.notificationService.warning(
+        'Agrega al menos una actividad o proyecto asociado para guardar.',
+        'Sin actividades',
+      );
+      return false;
+    }
+
+    await firstValueFrom(
+      this.coordinationService.saveNoveltyProjectActivities(request),
+    );
+
     return true;
   }
 

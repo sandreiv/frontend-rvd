@@ -139,7 +139,7 @@ function collectProjectUpdates(
   }
 }
 
-function patchFadDetailItem(
+export function patchFadDetailItem(
   original: DetailProfessorPreloadItemApi,
   activity: DirectLearningActivity,
   input: SaveDetailProfessorPreloadInput,
@@ -173,7 +173,7 @@ function patchFadDetailItem(
   return buildUpdateItem(original, detalle);
 }
 
-function patchCriteriaDetailItem(
+export function patchCriteriaDetailItem(
   original: DetailProfessorPreloadItemApi,
   activity: SimpleActivity,
   parentType: TipoActividad | undefined,
@@ -199,7 +199,7 @@ function patchCriteriaDetailItem(
   return buildUpdateItem(original, detalle);
 }
 
-function patchProjectDetailItem(
+export function patchProjectDetailItem(
   original: DetailProfessorPreloadItemApi,
   project: ProfessorProjectRow,
   input: SaveDetailProfessorPreloadInput,
@@ -251,7 +251,7 @@ function buildTipoActividadHija(
   };
 }
 
-function hasDetailChanges(
+export function hasDetailChanges(
   original: DetailProfessorPreloadItemApi,
   patched: DetailProfessorPreloadItemApi,
 ): boolean {
