@@ -75,6 +75,7 @@
                     [isLoading]="professorProjectsResource.isLoading()"
                     [associationExpired]="isProjectAssociationExpired(item.codigo)"
                     [associationExpiredReason]="projectAssociationExpiredReason(item.codigo)"
+                    [areNoveltyActivities]="areNoveltyActivities()"
                     (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
                 />
             </app-collapsible-section>

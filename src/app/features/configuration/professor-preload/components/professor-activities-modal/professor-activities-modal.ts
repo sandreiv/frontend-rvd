@@ -489,6 +489,31 @@ export class ProfessorActivitiesModal {
     return Math.abs(this.totalAssignedHours() - limit) < 0.0001;
   });
 
+  // Determina si hay proyectos huerfanos por estado no activo o cambio de docente
+  readonly invalidAssociatedProjects = computed(() => {
+    const invalid: ProfessorProjectRow[] = [];
+
+    const hierarchyByCodigo = this.projectHierarchyRowsByCodigo();
+    const associatedByCodigo = this.projectsByCodigo();
+
+    for (const codigo of Object.keys(associatedByCodigo)) {
+      const associatedRows = associatedByCodigo[codigo] ?? [];
+      const hierarchyRows = hierarchyByCodigo[codigo] ?? [];
+
+      const hierarchyIds = new Set(hierarchyRows.map((row) => row.idPersonaProyecto));
+
+      for (const row of associatedRows) {
+        if (!hierarchyIds.has(row.idPersonaProyecto)) {
+          invalid.push(row);
+        }
+      }
+    }
+
+    return invalid;
+  });
+
+  readonly hasInvalidAssociatedProjects = computed(() => this.invalidAssociatedProjects().length > 0);
+
   readonly isSaveBlocked = computed(
     () =>
       this.readOnly() ||
@@ -498,7 +523,8 @@ export class ProfessorActivitiesModal {
       this.isProfessorRegistrationProcessed() ||
       this.isLoadingDetail() ||
       this.isLoadingActivityCategories() ||
-      this.exceedsWeeklyLimit()
+      this.exceedsWeeklyLimit() ||
+      this.hasInvalidAssociatedProjects()
   );
 
   readonly saveButtonDisabled = computed(() => {
@@ -577,7 +603,8 @@ export class ProfessorActivitiesModal {
       this.isSendingForVerification() ||
       this.isDisapproving() ||
       !this.isProfessorInEditableState() ||
-      !this.hasCompletedWeeklyGoal()
+      !this.hasCompletedWeeklyGoal() ||
+      this.hasInvalidAssociatedProjects()
     );
   });
 
@@ -902,6 +929,13 @@ export class ProfessorActivitiesModal {
     if (this.exceedsWeeklyLimit()) {
       this.notificationService.error(
         `El total de horas asignadas (${this.totalAssignedHours()}h) supera el límite semanal de ${this.weeklyHoursLimit()}h.`,
+      );
+      return null;
+    }
+
+    if (this.hasInvalidAssociatedProjects()) {
+      this.notificationService.error(
+        `Existen proyectos asociados que ya no son válidos para este docente y deben ser eliminados.`,
       );
       return null;
     }

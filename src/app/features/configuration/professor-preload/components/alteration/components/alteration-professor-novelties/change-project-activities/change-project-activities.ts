@@ -314,6 +314,29 @@ export class ChangeProjectActivities {
     return this.totalAssignedHours() > limit;
   });
 
+  // Determina si hay proyectos huerfanos por estado no activo o cambio de docente
+  readonly invalidAssociatedProjects = computed(() => {
+    const invalid: ProfessorProjectRow[] = [];
+
+    const hierarchyByCodigo = this.projectHierarchyRowsByCodigo();
+    const associatedByCodigo = this.projectsByCodigo();
+
+    for (const codigo of Object.keys(associatedByCodigo)) {
+      const associatedRows = associatedByCodigo[codigo] ?? [];
+      const hierarchyRows = hierarchyByCodigo[codigo] ?? [];
+
+      const hierarchyIds = new Set(hierarchyRows.map((row) => row.idPersonaProyecto));
+
+      for (const row of associatedRows) {
+        if (!hierarchyIds.has(row.idPersonaProyecto)) {
+          invalid.push(row);
+        }
+      }
+    }
+
+    return invalid;
+  });
+
   private readonly distribution = computed(() => {
     const input = this.buildSaveInput();
     return buildNoveltyActivityDistributionRequest(input, this.loadedDetailsById());
@@ -360,8 +383,9 @@ export class ChangeProjectActivities {
     effect(() => {
       const { saveRequest, updateRequests } = this.distribution();
       const hasChanges = saveRequest.detalles.length > 0 || updateRequests.length > 0;
+      const tieneProyectosInvalidos = this.invalidAssociatedProjects().length > 0;
 
-      if (this.exceedsWeeklyLimit() || !hasChanges) {
+      if (this.exceedsWeeklyLimit() || !hasChanges || tieneProyectosInvalidos) {
         untracked(() => this.noveltyState.clear());
         return;
       }
@@ -407,6 +431,12 @@ export class ChangeProjectActivities {
       ...current,
       [codigo]: rows,
     }));
+  }
+
+  areNoveltyActivities(): boolean {
+    const detail = this.detailResource.value();
+
+    return detail[0]?.esDeNovedad === 1;
   }
 
   isProjectAssociationExpired(codigo: string): boolean {

@@ -22,9 +22,9 @@ export class AlterationProjectActivityCard {
   isRegistrationProcessed = input(false);
   associationExpired = input(false);
   associationExpiredReason = input<string | null>(null);
+  areNoveltyActivities = input(false);
 
   associatedRowsChange = output<ProfessorProjectRow[]>();
-  associatedRowDeleted = output<void>();
 
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -136,16 +136,17 @@ export class AlterationProjectActivityCard {
       return;
     }
 
-    this.removeAssociatedProject(row.idPersonaProyecto);
-    /*
+    if (!this.areNoveltyActivities()) {
+      this.removeAssociatedProject(row.idPersonaProyecto);
+      return;
+    }
+
     this.coordinationService
-      .deleteProfessorActivity(row.idDetalleCargaDocente)
+      .deleteProfessorActivityNovelty(row.idDetalleCargaDocente)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.removeAssociatedProject(row.idPersonaProyecto);
-        this.associatedRowDeleted.emit();
       });
-    */
   }
 
   private removeAssociatedProject(idPersonaProyecto: number): void {

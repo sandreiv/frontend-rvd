@@ -527,6 +527,19 @@ export class CoordinationService {
   }
 
   /**
+   * Elimina una actividad asociada al detalle novedad de carga docente.
+   *
+   * @param idDetalleCargaDocente Identificador del detalle de carga docente novedad.
+   * @returns Observable sin contenido cuando la eliminación finaliza correctamente.
+   */
+
+  deleteProfessorActivityNovelty(idDetalleCargaDocente: number): Observable<void>{
+    return this.webRequestService.delete<void>(
+      `${this.endpoint}/delete-professor-activity-novelty/${idDetalleCargaDocente}`,
+    );
+  }
+
+  /**
    * Actualiza el estado de los docentes Verificados a Aprobado
    * 
    * @param idCarga Identificador de la carga.
