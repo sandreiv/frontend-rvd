@@ -33,8 +33,18 @@
   }
 
   @if (isOpen) {
-    <div class="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-theme-lg dark:border-gray-700 dark:bg-gray-900">
-      <div class="max-h-60 overflow-y-auto py-1">
+      <div
+        class="z-50 mt-1 w-full rounded-lg border border-gray-200
+              bg-white shadow-theme-lg
+              dark:border-gray-700 dark:bg-gray-900"
+        [class.absolute]="!inlineDropdown"
+        [class.relative]="inlineDropdown"
+      >
+        <div
+          class="py-1"
+          [class.max-h-60]="!inlineDropdown"
+          [class.overflow-y-auto]="!inlineDropdown"
+        >
         @if (loading) {
           <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Buscando...</div>
         } @else if (resolvedOptions.length === 0) {
