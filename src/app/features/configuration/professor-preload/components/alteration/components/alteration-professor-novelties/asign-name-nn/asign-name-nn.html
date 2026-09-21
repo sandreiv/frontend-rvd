@@ -25,6 +25,7 @@
       [items]="searchResults()"
       [optionAdapter]="professorOptionAdapter"
       [loading]="isSearching()"
+      [inlineDropdown]="true"
       placeholder="Documento o nombre..."
       emptyText="No hay docentes libres para esta búsqueda"
       (queryChange)="onSearchProfessor($event)"

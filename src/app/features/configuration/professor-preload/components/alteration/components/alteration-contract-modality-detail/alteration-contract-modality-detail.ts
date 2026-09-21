@@ -1,9 +1,16 @@
 
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
-import { CoordinationContractModality, CoordinationItem, isPlantaModality, ModalityProfessor } from '../../../../model/coordination.model';
+import {
+  CoordinationContractModality,
+  CoordinationItem,
+  isPlantaModality,
+  ModalityProfessor,
+} from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, map, forkJoin } from 'rxjs';
+import { firstValueFrom, Observable, map, forkJoin } from 'rxjs';
+import { isProfessorNoveltyPendingReview } from '../../../../model/professor-novelty-state';
+import { NoveltyBudgetStore } from '../alteration-professor-novelties/novelty-budget.store';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
 import { formatSentenceValue } from '../../../../../../../shared/utils/normalized-text.util';
@@ -117,6 +124,9 @@ export class AlterationContractModalityDetail {
   private readonly authService = inject(AuthService);
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly budgetStore = inject(NoveltyBudgetStore, {
+    optional: true,
+  });
   readonly permissions = inject(PermissionService);
 
   readonly coordination = input.required<CoordinationItem>();
@@ -126,6 +136,7 @@ export class AlterationContractModalityDetail {
   readonly openMenuKey = signal<string | null>(null);
   readonly isNoveltiesModalOpen = signal(false);
   readonly noveltiesProfessor = signal<ModalityProfessor | null>(null);
+  readonly approvingNoveltyId = signal<number | null>(null);
   readonly tcoFilter = signal<TcoFilter>('todos');
   readonly openTcoFilterMenu = signal<TcoFilter | null>(null);
   readonly tcoFilterItems: TcoFilterSwitchItem[] = [
@@ -195,21 +206,6 @@ export class AlterationContractModalityDetail {
     this.sortContractModalities(this.contractModalities()),
   );
 
-  readonly noveltiesContractModality = computed(() => {
-    const professor = this.noveltiesProfessor();
-
-    if (!professor) {
-      return null;
-    }
-
-    return (
-      this.sortedContractModalities().find(
-        (modality) =>
-          modality.id === professor.idModalidadContratacion,
-      ) ?? null
-    );
-  });
-
   readonly modalityProfessorsResource = rxResource({
     params: () => this.resolveProfessorsParams(),
     stream: ({ params }) => this.loadProfessorsByModality(params),
@@ -259,10 +255,7 @@ export class AlterationContractModalityDetail {
   readonly hasAnyModality = computed(() => this.modalityTabs().length > 0);
 
   readonly isPlantaModalitySelected = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
-    );
+    const modality = this.selectedContractModality();
     return modality != null && isPlantaModality(modality);
   });
 
@@ -273,13 +266,20 @@ export class AlterationContractModalityDetail {
     return rolesUsuario.includes('Coordinador');
   })
 
-  readonly isTiempoCompletoOcasionalSelected = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
+  readonly selectedContractModality = computed(() => {
+    const selectedId = Number(this.selectedContractModalityId());
+    if (!Number.isFinite(selectedId) || selectedId <= 0) {
+      return null;
+    }
+    return (
+      this.sortedContractModalities().find((item) => {
+        return item.id === selectedId;
+      }) ?? null
     );
+  });
 
+  readonly isTiempoCompletoOcasionalSelected = computed(() => {
+    const modality = this.selectedContractModality();
     return (
       modality != null &&
       resolveModalityKind(modality.nombre) === 'tiempoCompletoOcasional'
@@ -291,11 +291,10 @@ export class AlterationContractModalityDetail {
   );
 
   readonly selectedModalityLabel = computed(() => {
-    const selectedId = this.selectedContractModalityId();
-    const modality = this.sortedContractModalities().find(
-      (item) => item.id === selectedId,
+    return (
+      formatSentenceValue(this.selectedContractModality()?.nombre) ||
+      'esta modalidad'
     );
-    return formatSentenceValue(modality?.nombre) || 'esta modalidad';
   });
 
   constructor() {
@@ -384,17 +383,28 @@ export class AlterationContractModalityDetail {
   resolveProfessorActions(professor: {
     tieneDetalleActividades?: boolean;
     tieneCarga?: boolean;
+    estadoNovedad?: string | number | null;
   }): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
     const hasDetail = professor.tieneDetalleActividades === true;
 
     if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
 
-    const actions: ProfessorMenuAction[] = [{
+    const actions: ProfessorMenuAction[] = [];
+    if (isProfessorNoveltyPendingReview(professor.estadoNovedad)) {
+      actions.push({
+        id: 'aprobar-novedad',
+        label: 'Aprobar novedad',
+        icon: 'check',
+        className: 'text-success-600 dark:text-success-400',
+      });
+    }
+
+    actions.push({
       id: 'novedad',
       label: 'Gestionar novedad',
       icon: 'newspaper',
-    }];
+    });
 
     if (this.permissions.canDeleteProfessor()) {
       actions.push({
@@ -412,7 +422,11 @@ export class AlterationContractModalityDetail {
   onProfessorMenuAction(actionId: string, professor: ModalityProfessor): void {
     this.closeProfessorMenu();
 
-    // Agregar las acciones
+    if (actionId === 'aprobar-novedad') {
+      void this.approveProfessorNovelty(professor);
+      return;
+    }
+
     if (actionId === 'novedad') {
       this.openNoveltiesModal(professor);
     }
@@ -422,8 +436,55 @@ export class AlterationContractModalityDetail {
     }
   }
 
+  canApproveProfessorNovelty(professor: ModalityProfessor): boolean {
+    if (professor.idCargaDocente == null) {
+      return false;
+    }
+    if (!this.canOpenProfessorMenu(professor)) {
+      return false;
+    }
+    return isProfessorNoveltyPendingReview(professor.estadoNovedad);
+  }
+
+  isApprovingNovelty(professor: ModalityProfessor): boolean {
+    return this.approvingNoveltyId() === professor.idCargaDocente;
+  }
+
+  async approveProfessorNovelty(
+    professor: ModalityProfessor,
+  ): Promise<void> {
+    const idCargaDocente = professor.idCargaDocente;
+    if (
+      idCargaDocente == null ||
+      this.approvingNoveltyId() != null ||
+      !this.canApproveProfessorNovelty(professor)
+    ) {
+      return;
+    }
+
+    this.approvingNoveltyId.set(idCargaDocente);
+    try {
+      await firstValueFrom(
+        this.coordinationService.approveProfessorNovelty(
+          idCargaDocente,
+        ),
+      );
+      this.modalityProfessorsResource.reload();
+      await this.refreshBudget();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.approvingNoveltyId.set(null);
+    }
+  }
+
   openNoveltiesModal(professor: ModalityProfessor): void {
-    this.noveltiesProfessor.set(professor);
+    const modalityId = this.selectedContractModality()?.id;
+    this.noveltiesProfessor.set(
+      modalityId == null
+        ? professor
+        : { ...professor, idModalidadContratacion: modalityId },
+    );
     this.isNoveltiesModalOpen.set(true);
   }
 
@@ -435,6 +496,22 @@ export class AlterationContractModalityDetail {
   onNoveltySaved(): void {
     this.modalityProfessorsResource.reload();
     this.closeNoveltiesModal();
+    void this.refreshBudget();
+  }
+
+  private async refreshBudget(): Promise<void> {
+    const idCarga = this.coordination().idCarga;
+    if (idCarga == null || this.budgetStore == null) {
+      return;
+    }
+    try {
+      const budget = await firstValueFrom(
+        this.coordinationService.getCargaBudget(idCarga),
+      );
+      this.budgetStore.setBudget(budget);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   private deleteModalityProfessor(idCargaDocente: number | null): void {
@@ -647,7 +724,14 @@ export class AlterationContractModalityDetail {
   ): Record<number, ModalityProfessor[]> {
     const result: Record<number, ModalityProfessor[]> = {};
     forNext(entries, (entry) => {
-      result[entry.id] = entry.professors;
+      const professors: ModalityProfessor[] = [];
+      forNext(entry.professors, (professor) => {
+        professors.push({
+          ...professor,
+          idModalidadContratacion: entry.id,
+        });
+      });
+      result[entry.id] = professors;
     });
     return result;
   }

@@ -241,7 +241,7 @@ export interface ModalityProfessor {
   idCategoriaCatedratico: number;
   idCarga: number;
   idNovedadCatalogo?: number | null;
-  estadoNovedad?: string | null;
+  estadoNovedad?: string | number | null;
   idFechasConvocatoria: number;
   fechaConvocatoriaCodigo: string | null;
   fechaInicio: string;
@@ -300,7 +300,10 @@ export interface LoadRestrictionPersonExceptionPreview {
 }
 
 export interface LoadRestrictionPreview {
+  formaPago?: string | null;
   personasExcepcion: LoadRestrictionPersonExceptionPreview[];
+  minimo: string | null;
+  maximo: string | null;
 }
 
 export interface GetWorkDatesParams {
@@ -341,6 +344,12 @@ export interface ActivitiesHours {
 }
 
 export interface AssignNameNnRequest {
+  idCargaDocente: number;
+  idNovedad: number;
+  idPersonaGeneral: number;
+}
+
+export interface ChangeProfessorRequest {
   idCargaDocente: number;
   idNovedad: number;
   idPersonaGeneral: number;

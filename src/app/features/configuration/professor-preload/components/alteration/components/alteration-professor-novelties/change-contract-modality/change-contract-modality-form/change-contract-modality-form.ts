@@ -32,7 +32,7 @@ import {
 import {
   ContractValues,
   computeContractValues,
-  diffInDays,
+  countInclusiveDays,
   formatCurrencyCOP,
   formatWorkDateRange,
   professorDisplayName,
@@ -189,6 +189,15 @@ export class ChangeContractModalityForm {
     return String(exception?.maximoHoras ?? '').trim() || null;
   });
 
+  readonly formaPago = computed(
+    () => this.loadRestrictionResource.value()?.formaPago ?? null,
+  );
+
+  readonly restrictionReady = computed(() => {
+    const status = this.loadRestrictionResource.status();
+    return status === 'resolved' || status === 'error';
+  });
+
   readonly fechaLaborOptions = computed<Option[]>(() =>
     this.workDates().map((workDate) => ({
       value: String(workDate.id),
@@ -219,6 +228,14 @@ export class ChangeContractModalityForm {
     return valorPunto * puntos;
   });
 
+  readonly valorHoraNum = computed<number | null>(() => {
+    const values = this.valuePointsResource.value();
+    if (values?.valorHora != null) {
+      return values.valorHora;
+    }
+    return this.professor()?.valorHora ?? null;
+  });
+
   readonly contractValues = computed<ContractValues | null>(() => {
     if (this.modalityKind() !== 'tiempoCompletoOcasional') {
       return null;
@@ -228,7 +245,10 @@ export class ChangeContractModalityForm {
     if (asignacion == null || !workDate) {
       return null;
     }
-    const days = diffInDays(workDate.fechaInicio, workDate.fechaFin);
+    const days = countInclusiveDays(
+      workDate.fechaInicio,
+      workDate.fechaFin,
+    );
     if (days <= 0) {
       return null;
     }

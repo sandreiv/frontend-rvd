@@ -13,16 +13,25 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { Label } from '../../../../../../../../shared/components/form/label/label';
 import { Select } from '../../../../../../../../shared/components/form/select/select';
 import { CoordinationService } from '../../../../../data/coordination.service';
+import { forNext } from '../../../../../../../../core/utils/for-next.function';
 import {
   ContractModalityItem,
   CoordinationItem,
+  isPlantaModality,
   ModalityProfessor,
 } from '../../../../../model/coordination.model';
 import { SaveNovedadCargaDocenteRequest } from '../../../../../model/novelty-carga-docente.model';
 import { buildSaveNovedadCargaDocenteRequest } from '../../../../../model/novelty-carga-docente.mapper';
 import { NoveltyComponentState } from '../novelty-component-state';
+import { NoveltyBudgetStore } from '../novelty-budget.store';
 import { ChangeContractModalityForm } from './change-contract-modality-form/change-contract-modality-form';
 import { ChangeContractModalityActivities } from './change-contract-modality-activities/change-contract-modality-activities';
+import { buildSaveActivityDistributionRequest } from '../../../../../model/professor-activities-save.mapper';
+import {
+  computeProfessorContractTotal,
+  isCatedraFormaPago,
+  sumDetalleHours,
+} from '../../../../../model/professor-contract-value';
 
 @Component({
   selector: 'app-change-contract-modality',
@@ -39,6 +48,7 @@ import { ChangeContractModalityActivities } from './change-contract-modality-act
 export class ChangeContractModality {
   private readonly coordinationService = inject(CoordinationService);
   private readonly noveltyState = inject(NoveltyComponentState);
+  private readonly budgetStore = inject(NoveltyBudgetStore);
   private readonly assignmentForm = viewChild(ChangeContractModalityForm);
   private readonly activitiesPanel = viewChild(
     ChangeContractModalityActivities,
@@ -86,19 +96,27 @@ export class ChangeContractModality {
   private syncNoveltyState(): void {
     this.trackDraftSources();
     const request = this.buildPayload();
-    untracked(() => this.writeNoveltyState(request));
+    untracked(() => {
+      this.writeNoveltyState(request);
+      this.writeBudgetDraft();
+    });
   }
 
   private trackDraftSources(): void {
     this.selectedModality();
     this.professor();
     this.noveltyId();
+    this.coordination();
     const form = this.assignmentForm();
     form?.selectedWorkDate();
     form?.selectedCategoriaId();
     form?.manualNumeroPuntos();
     form?.contractValues();
     form?.asignacionSalarialNum();
+    form?.valorHoraNum();
+    form?.formaPago();
+    form?.restrictionReady();
+    this.budgetStore.budget();
     const activities = this.activitiesPanel();
     activities?.isLoading();
     activities?.directByCodigo();
@@ -139,5 +157,73 @@ export class ChangeContractModality {
       assignment,
       activities,
     });
+  }
+
+  private writeBudgetDraft(): void {
+    const professor = this.professor();
+    const form = this.assignmentForm();
+    const idCargaDocente = professor?.idCargaDocente;
+    if (idCargaDocente == null || form == null) {
+      this.budgetStore.clearDraft();
+      return;
+    }
+    if (!form.restrictionReady()) {
+      return;
+    }
+
+    const esPlanta = this.isSelectedPlanta();
+    const formaPago = form.formaPago();
+    const isCatedra = isCatedraFormaPago(formaPago);
+    const activities = this.activitiesPanel()?.activitySnapshot();
+    if (isCatedra && activities == null) {
+      return;
+    }
+
+    const hours = this.resolveDraftHours(isCatedra, activities ?? null);
+    const workDate = form.selectedWorkDate();
+    const totalNuevo = computeProfessorContractTotal({
+      esPlanta,
+      formaPago,
+      fechaInicio: workDate?.fechaInicio,
+      fechaFin: workDate?.fechaFin,
+      asignacionSalarial: form.asignacionSalarialNum(),
+      valorHora: form.valorHoraNum(),
+      semanas: workDate?.semanas,
+      horasActividades: hours,
+    });
+
+    this.budgetStore.setDraft({
+      idCargaDocente,
+      totalAnterior: this.budgetStore.totalAnteriorOf(idCargaDocente),
+      totalNuevo,
+    });
+  }
+
+  private isSelectedPlanta(): boolean {
+    const selectedId = Number(this.selectedModalityId());
+    let esPlanta = false;
+    forNext(
+      this.coordination()?.modalidadesContratacion,
+      (modality) => {
+        if (modality.id === selectedId) {
+          esPlanta = isPlantaModality(modality);
+        }
+      },
+    );
+    return esPlanta;
+  }
+
+  private resolveDraftHours(
+    isCatedra: boolean,
+    activities: ReturnType<
+      ChangeContractModalityActivities['activitySnapshot']
+    >,
+  ): number {
+    if (!isCatedra || activities == null) {
+      return 0;
+    }
+    return sumDetalleHours(
+      buildSaveActivityDistributionRequest(activities).detalles,
+    );
   }
 }

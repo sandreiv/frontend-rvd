@@ -253,6 +253,24 @@ export function parseMaxWeeklyHours(rangoHoras: string | null | undefined): numb
   return Number.isFinite(max) ? max : null;
 }
 
+export function parseMinWeeklyHours(
+  rangoHoras: string | null | undefined,
+): number | null {
+  if (!rangoHoras?.trim()) {
+    return null;
+  }
+
+  const parts = rangoHoras
+    .split('-')
+    .map((part) => part.trim());
+
+  const min = Number(parts[0]);
+
+  return Number.isFinite(min)
+    ? min
+    : null;
+}
+
 function formatWorkDate(value: string): string {
   const datePart = value.substring(0, 10);
   const [year, month, day] = datePart.split('-');
@@ -273,14 +291,40 @@ export interface ContractValues {
   totalContrato: number;
 }
 
-export function diffInDays(fechaInicio: string, fechaFin: string): number {
-  const inicio = new Date(fechaInicio).getTime();
-  const fin = new Date(fechaFin).getTime();
-  if (Number.isNaN(inicio) || Number.isNaN(fin)) {
+/**
+ * Cuenta dias de labor incluyendo fecha inicio y fecha fin,
+ * igual que ValorContratacionCalculator del backend.
+ */
+export function countInclusiveDays(
+  fechaInicio: string,
+  fechaFin: string,
+): number {
+  const inicio = parseUtcDate(fechaInicio);
+  const fin = parseUtcDate(fechaFin);
+  if (inicio == null || fin == null || fin < inicio) {
     return 0;
   }
 
-  return Math.round((fin - inicio) / MS_PER_DAY);
+  return Math.round((fin - inicio) / MS_PER_DAY) + 1;
+}
+
+export function diffInDays(fechaInicio: string, fechaFin: string): number {
+  return countInclusiveDays(fechaInicio, fechaFin);
+}
+
+function parseUtcDate(value: string): number | null {
+  const datePart = value?.trim().substring(0, 10);
+  if (!datePart) {
+    return null;
+  }
+
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  const utc = Date.UTC(year, month - 1, day);
+  return Number.isNaN(utc) ? null : utc;
 }
 
 export function computeContractValues(asignacionSalarial: number, cantidadDias: number,): ContractValues {

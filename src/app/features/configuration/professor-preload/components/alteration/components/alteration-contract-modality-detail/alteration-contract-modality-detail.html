@@ -160,19 +160,40 @@
                   </div>
                 </div>
 
-                <button
-                  #professorMenuBtn
-                  type="button"
-                  class="dropdown-toggle inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-                  [class.bg-gray-100]="openMenuKey() === row.menuKey"
-                  [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
-                  [attr.aria-label]="'Acciones para ' + row.displayName"
-                  [attr.aria-expanded]="openMenuKey() === row.menuKey"
-                  (click)="toggleProfessorMenu(row.menuKey, row.professor)"
-                  [disabled]="!canOpenProfessorMenu(row.professor)"
-                >
-                  <app-icon name="ellipsisVertical" size="sm" />
-                </button>
+                <div class="flex shrink-0 items-center gap-1">
+                  @if (canApproveProfessorNovelty(professor)) {
+                    <button
+                      type="button"
+                      class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-success-700 transition hover:bg-success-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-success-400 dark:hover:bg-success-500/10"
+                      [attr.aria-label]="
+                        'Aprobar novedad de ' + row.displayName
+                      "
+                      [disabled]="isApprovingNovelty(professor)"
+                      (click)="approveProfessorNovelty(professor)"
+                    >
+                      <app-icon name="check" size="xs" />
+                      {{
+                        isApprovingNovelty(professor)
+                          ? 'Aprobando...'
+                          : 'Aprobar'
+                      }}
+                    </button>
+                  }
+
+                  <button
+                    #professorMenuBtn
+                    type="button"
+                    class="dropdown-toggle inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                    [class.bg-gray-100]="openMenuKey() === row.menuKey"
+                    [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
+                    [attr.aria-label]="'Acciones para ' + row.displayName"
+                    [attr.aria-expanded]="openMenuKey() === row.menuKey"
+                    (click)="toggleProfessorMenu(row.menuKey, row.professor)"
+                    [disabled]="!canOpenProfessorMenu(row.professor)"
+                  >
+                    <app-icon name="ellipsisVertical" size="sm" />
+                  </button>
+                </div>
 
                 <app-dropdown
                   [isOpen]="openMenuKey() === row.menuKey"
@@ -222,7 +243,7 @@
   [isOpen]="isNoveltiesModalOpen()"
   [professor]="noveltiesProfessor()"
   [coordination]="coordination()"
-  [contractModality]="noveltiesContractModality()"
+  [contractModality]="selectedContractModality()"
   (close)="closeNoveltiesModal()"
   (saved)="onNoveltySaved()"
 />

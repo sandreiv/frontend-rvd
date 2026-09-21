@@ -36,6 +36,7 @@ import { Label } from '../../../../../../../shared/components/form/label/label';
 import { Select } from '../../../../../../../shared/components/form/select/select';
 import { NOVELTY_COMPONENTS } from './novelty-components';
 import { NoveltyComponentState } from './novelty-component-state';
+import { NoveltyBudgetStore } from './novelty-budget.store';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { firstValueFrom } from 'rxjs';
 
@@ -58,6 +59,7 @@ export class AlterationProfessorNovelties {
   private readonly coordinationService = inject(CoordinationService);
   private readonly notificationService = inject(NotificationService);
   readonly noveltyState = inject(NoveltyComponentState);
+  readonly budgetStore = inject(NoveltyBudgetStore);
 
   readonly isOpen = input(false);
   readonly professor = input<ModalityProfessor | null>(null);
@@ -114,18 +116,25 @@ export class AlterationProfessorNovelties {
     professor: this.professor(),
     coordination: this.coordination(),
     contractModality: this.contractModality(),
-    noveltyId: this.parseNoveltyId(this.selectedNoveltyId()), 
+    noveltyId: this.parseNoveltyId(this.selectedNoveltyId()),
   }));
 
   constructor() {
     effect(() => {
       this.selectedNoveltyId();
-      untracked(() => this.noveltyState.clear());
+      untracked(() => {
+        this.noveltyState.clear();
+        this.budgetStore.clearDraft();
+      });
     });
   }
 
   async onSave(): Promise<void> {
-    if (this.saving() || this.idNovedadControl.invalid) {
+    if (
+      this.saving() ||
+      this.idNovedadControl.invalid ||
+      this.budgetStore.excede()
+    ) {
       return;
     }
 
@@ -149,6 +158,7 @@ export class AlterationProfessorNovelties {
       if (!saved) {
         return;
       }
+      await this.refreshBudget();
       this.notificationService.success(
         'La novedad fue registrada correctamente.',
         'Novedad registrada',
@@ -171,6 +181,7 @@ export class AlterationProfessorNovelties {
   private resetModal(): void {
     this.idNovedadControl.reset('');
     this.noveltyState.clear();
+    this.budgetStore.clearDraft();
     this.close.emit();
   }
 
@@ -178,7 +189,9 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
   ): Promise<boolean> {
+
     const payload = this.noveltyState.payload();
+
     if (payload?.component === 'asign-name-nn') {
       return this.saveAssignNameNn(
         idNovedad,
@@ -186,12 +199,22 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
+
+    if (payload?.component === 'change-professor') {
+      return this.saveChangeProfessor(
+        idNovedad,
+        idCargaDocente,
+        payload.idPersonaGeneral,
+      );
+    }
+
     if (payload?.component === 'change-contract-modality') {
       const request = {
         ...payload.request,
         idNovedad,
         idCargaDocente,
       };
+
       return this.saveChangeContractModality(request);
     }
     if (payload?.component === 'change-project-activities') {
@@ -222,6 +245,23 @@ export class AlterationProfessorNovelties {
     return true;
   }
 
+  private async saveChangeProfessor(
+    idNovedad: number,
+    idCargaDocente: number,
+    idPersonaGeneral: number,
+  ): Promise<boolean> {
+
+    await firstValueFrom(
+      this.coordinationService.changeProfessor({
+        idCargaDocente,
+        idNovedad,
+        idPersonaGeneral,
+      }),
+    );
+
+    return true;
+  }
+
   private async saveChangeContractModality(request: SaveNovedadCargaDocenteRequest): Promise<boolean> {
     await firstValueFrom(
       this.coordinationService.saveContractModalityProfessor(request),
@@ -249,5 +289,17 @@ export class AlterationProfessorNovelties {
   private parseNoveltyId(value: string): number | null {
     const id = Number(value);
     return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private async refreshBudget(): Promise<void> {
+    const idCarga = this.coordination()?.idCarga;
+    this.budgetStore.clearDraft();
+    if (idCarga == null) {
+      return;
+    }
+    const budget = await firstValueFrom(
+      this.coordinationService.getCargaBudget(idCarga),
+    );
+    this.budgetStore.setBudget(budget);
   }
 }

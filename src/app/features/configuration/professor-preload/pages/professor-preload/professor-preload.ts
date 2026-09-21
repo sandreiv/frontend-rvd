@@ -334,6 +334,14 @@ export class ProfessorPreload implements OnInit {
     this.selectedCoordination.set(updated);
   }
 
+  onCargaValorChange(valor: number | null): void {
+    const current = this.selectedCoordination();
+    if (current == null || current.valor === valor) {
+      return;
+    }
+    this.selectedCoordination.set({ ...current, valor });
+  }
+
   private closeCoordinationViews(): void {
     this.showCoordinationDetail.set(false);
     this.showAlterationDetail.set(false);

@@ -112,7 +112,13 @@
                 >
                   Valor
                 </p>
-                <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white/90">
+                <p
+                  class="mt-1 text-sm font-semibold"
+                  [class.text-gray-900]="!excedePresupuesto()"
+                  [class.dark:text-white/90]="!excedePresupuesto()"
+                  [class.text-red-600]="excedePresupuesto()"
+                  [class.dark:text-red-400]="excedePresupuesto()"
+                >
                   {{ valorCarga() }}
                 </p>
               </span>
