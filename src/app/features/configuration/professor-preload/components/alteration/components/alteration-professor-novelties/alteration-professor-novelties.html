@@ -61,6 +61,7 @@
         idNovedadControl.invalid ||
         noveltiesResource.isLoading() ||
         !noveltyState.isValid() ||
+        budgetStore.excede() ||
         saving()
       "
       (btnClick)="onSave()"
@@ -68,4 +69,11 @@
       {{ saving() ? 'Guardando...' : 'Guardar' }}
     </app-button>
   </div>
+  @if (budgetStore.excede()) {
+    <p
+      class="px-6 pb-5 text-sm font-medium text-red-600 dark:text-red-400 sm:px-8"
+    >
+      El valor proyectado supera el valor autorizado.
+    </p>
+  }
 </app-modal>

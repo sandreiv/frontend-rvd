@@ -32,6 +32,7 @@ import { Select } from '../../../../../../../shared/components/form/select/selec
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { NOVELTY_COMPONENTS } from './novelty-components';
 import { NoveltyComponentState } from './novelty-component-state';
+import { NoveltyBudgetStore } from './novelty-budget.store';
 
 @Component({
   selector: 'app-alteration-professor-novelties',
@@ -52,6 +53,7 @@ export class AlterationProfessorNovelties {
   private readonly coordinationService = inject(CoordinationService);
   private readonly notificationService = inject(NotificationService);
   readonly noveltyState = inject(NoveltyComponentState);
+  readonly budgetStore = inject(NoveltyBudgetStore);
 
   readonly isOpen = input(false);
   readonly professor = input<ModalityProfessor | null>(null);
@@ -115,12 +117,19 @@ export class AlterationProfessorNovelties {
   constructor() {
     effect(() => {
       this.selectedNoveltyId();
-      untracked(() => this.noveltyState.clear());
+      untracked(() => {
+        this.noveltyState.clear();
+        this.budgetStore.clearDraft();
+      });
     });
   }
 
   async onSave(): Promise<void> {
-    if (this.saving() || this.idNovedadControl.invalid) {
+    if (
+      this.saving() ||
+      this.idNovedadControl.invalid ||
+      this.budgetStore.excede()
+    ) {
       return;
     }
 
@@ -144,6 +153,7 @@ export class AlterationProfessorNovelties {
       if (!saved) {
         return;
       }
+      await this.refreshBudget();
       this.notificationService.success(
         'La novedad fue registrada correctamente.',
         'Novedad registrada',
@@ -166,6 +176,7 @@ export class AlterationProfessorNovelties {
   private resetModal(): void {
     this.idNovedadControl.reset('');
     this.noveltyState.clear();
+    this.budgetStore.clearDraft();
     this.close.emit();
   }
 
@@ -217,5 +228,17 @@ export class AlterationProfessorNovelties {
   private parseNoveltyId(value: string): number | null {
     const id = Number(value);
     return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  private async refreshBudget(): Promise<void> {
+    const idCarga = this.coordination()?.idCarga;
+    this.budgetStore.clearDraft();
+    if (idCarga == null) {
+      return;
+    }
+    const budget = await firstValueFrom(
+      this.coordinationService.getCargaBudget(idCarga),
+    );
+    this.budgetStore.setBudget(budget);
   }
 }

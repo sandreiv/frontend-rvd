@@ -4,6 +4,7 @@
       <app-alteration-detail
         [coordination]="coordination"
         (back)="onBackToCoordinationList()"
+        (valorChange)="onCargaValorChange($event)"
       />
     } @else if (!showCoordinationDetail()) {
       <app-section-frame

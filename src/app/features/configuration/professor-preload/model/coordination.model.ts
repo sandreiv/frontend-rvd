@@ -241,7 +241,7 @@ export interface ModalityProfessor {
   idCategoriaCatedratico: number;
   idCarga: number;
   idNovedadCatalogo?: number | null;
-  estadoNovedad?: string | null;
+  estadoNovedad?: string | number | null;
   idFechasConvocatoria: number;
   fechaConvocatoriaCodigo: string | null;
   fechaInicio: string;
@@ -300,6 +300,7 @@ export interface LoadRestrictionPersonExceptionPreview {
 }
 
 export interface LoadRestrictionPreview {
+  formaPago?: string | null;
   personasExcepcion: LoadRestrictionPersonExceptionPreview[];
 }
 

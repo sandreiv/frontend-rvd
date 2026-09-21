@@ -40,6 +40,7 @@ import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 import { NoveltiesItem } from '../model/novelties.model';
 import { SaveNovedadCargaDocenteRequest } from '../model/novelty-carga-docente.model';
+import { CargaBudget } from '../model/carga-budget.model';
 
 @Injectable({
   providedIn: 'root',
@@ -539,6 +540,18 @@ export class CoordinationService {
   }
 
   /**
+   * Obtiene el presupuesto efectivo de la carga, incluyendo novedades.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con valor, autorizado y totales por docente.
+   */
+  getCargaBudget(idCarga: number): Observable<CargaBudget> {
+    return this.webRequestService.get<CargaBudget>(
+      `${this.endpoint}/carga-budget/${idCarga}`,
+    );
+  }
+
+  /**
    * Obtiene el resumen completo de una carga docente:
    * valor de contratación, horas de actividades y centros de costo.
    *
@@ -736,6 +749,22 @@ export class CoordinationService {
     return this.webRequestService.post<void>(
       `${this.endpoint}/save-contract-modality-professor`,
       request,
+    );
+  }
+
+  /**
+   * Aprueba una novedad en revisión de un docente.
+   * Pasa NOCD_ESTADONOVEDAD de 0 a 1 y actualiza CARG_VALOR.
+   * No modifica CARG_VALORAUTORIZADO.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   */
+  approveProfessorNovelty(
+    idCargaDocente: number,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-professor-novelty/${idCargaDocente}`,
+      {},
     );
   }
 

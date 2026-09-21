@@ -54,7 +54,7 @@ import {
   PROFESSOR_FIELDS,
   ProfessorFieldConfig,
   computeContractValues,
-  diffInDays,
+  countInclusiveDays,
   formatCurrencyCOP,
   formatWorkDateRange,
   isOnceMesesProfessor,
@@ -489,7 +489,10 @@ export class ProfessorAddModal {
     if (asignacion == null || !workDate) {
       return null;
     }
-    const cantidadDias = diffInDays(workDate.fechaInicio, workDate.fechaFin);
+    const cantidadDias = countInclusiveDays(
+      workDate.fechaInicio,
+      workDate.fechaFin,
+    );
     if (cantidadDias <= 0) {
       return null;
     }
