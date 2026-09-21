@@ -253,6 +253,24 @@ export function parseMaxWeeklyHours(rangoHoras: string | null | undefined): numb
   return Number.isFinite(max) ? max : null;
 }
 
+export function parseMinWeeklyHours(
+  rangoHoras: string | null | undefined,
+): number | null {
+  if (!rangoHoras?.trim()) {
+    return null;
+  }
+
+  const parts = rangoHoras
+    .split('-')
+    .map((part) => part.trim());
+
+  const min = Number(parts[0]);
+
+  return Number.isFinite(min)
+    ? min
+    : null;
+}
+
 function formatWorkDate(value: string): string {
   const datePart = value.substring(0, 10);
   const [year, month, day] = datePart.split('-');

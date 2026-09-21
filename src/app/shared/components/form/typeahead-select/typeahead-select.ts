@@ -70,6 +70,7 @@ export class TypeaheadSelect implements ControlValueAccessor {
   @Input() disabled = false;
   @Input() emptyText = 'Sin resultados';
   @Input() className = '';
+  @Input() inlineDropdown = false;
 
   @Output() queryChange = new EventEmitter<string>();
   @Output() optionSelected = new EventEmitter<TypeaheadOption>();

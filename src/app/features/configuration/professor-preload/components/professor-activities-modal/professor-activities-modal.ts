@@ -64,7 +64,10 @@ import {
   ProfessorProjectRow,
   ProyectoDocenteDto,
 } from '../../model/professor-projects.model';
-import { parseMaxWeeklyHours } from '../../model/professor-form.config';
+import {
+  parseMaxWeeklyHours,
+  parseMinWeeklyHours,
+} from '../../model/professor-form.config';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 import { PreloadCallService } from '../../../preload-call/data/preload-call.service';
 import { PreloadCallDetailFecha } from '../../../preload-call/model/preload-call.model';
@@ -465,6 +468,12 @@ export class ProfessorActivitiesModal {
     parseMaxWeeklyHours(this.weeklyHoursLabel()),
   );
 
+  readonly weeklyHoursMinimum = computed(() =>
+    parseMinWeeklyHours(
+      this.weeklyHoursLabel(),
+    ),
+  );
+
   readonly isLoadingWorkDates = computed(
     () => this.workDatesResource.isLoading(),
   );
@@ -531,7 +540,7 @@ export class ProfessorActivitiesModal {
 
     return (
       this.permissions.canSendForVerification() &&
-      this.hasCompletedWeeklyGoal()
+      this.hasValidWeeklyRange()
     );
   });
 
@@ -577,7 +586,30 @@ export class ProfessorActivitiesModal {
       this.isSendingForVerification() ||
       this.isDisapproving() ||
       !this.isProfessorInEditableState() ||
-      !this.hasCompletedWeeklyGoal()
+      !this.hasValidWeeklyRange()
+    );
+  });
+
+  readonly hasValidWeeklyRange = computed(() => {
+    const minimum =
+      this.weeklyHoursMinimum();
+
+    const maximum =
+      this.weeklyHoursLimit();
+
+    if (
+      minimum == null ||
+      maximum == null
+    ) {
+      return false;
+    }
+
+    const total =
+      this.totalAssignedHours();
+
+    return (
+      total >= minimum &&
+      total <= maximum
     );
   });
 
