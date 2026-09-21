@@ -226,3 +226,19 @@
   (close)="closeNoveltiesModal()"
   (saved)="onNoveltySaved()"
 />
+
+<app-new-modal
+  [isOpen]="isDeleteProfessorModalOpen()"
+  title="Solicitar eliminación de docente"
+  [message]="deleteProfessorMessage()"
+  iconVariant="danger"
+  [buttonText]="
+    isRequestingDeleteProfessor()
+      ? 'Enviando...'
+      : 'Sí, enviar a aprobación'
+  "
+  [showCancelButton]="true"
+  cancelButtonText="No, cancelar"
+  (confirm)="confirmDeleteProfessor()"
+  (close)="closeDeleteProfessorModal()"
+/>

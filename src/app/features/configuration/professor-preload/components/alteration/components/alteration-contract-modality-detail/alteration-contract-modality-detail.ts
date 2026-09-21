@@ -8,7 +8,7 @@ import {
 } from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, map, forkJoin } from 'rxjs';
+import { Observable, map, forkJoin, switchMap, finalize } from 'rxjs';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
 import { formatSentenceValue } from '../../../../../../../shared/utils/normalized-text.util';
@@ -23,6 +23,7 @@ import { Item } from "../../../../../../../shared/ui/dropdown/item/item";
 import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
+import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -114,7 +115,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -126,6 +127,10 @@ export class AlterationContractModalityDetail {
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
+
+  readonly isDeleteProfessorModalOpen = signal(false);
+  readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
+  readonly isRequestingDeleteProfessor = signal(false);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly openMenuKey = signal<string | null>(null);
@@ -291,6 +296,18 @@ export class AlterationContractModalityDetail {
     );
   });
 
+  readonly deleteProfessorMessage = computed(() => {
+    const professor = this.deleteProfessorTarget();
+
+    if (!professor) {
+      return '¿Desea enviar a aprobación la eliminación del docente?';
+    }
+
+    const professorName = this.resolveProfessorName(professor);
+
+    return `¿Desea enviar a aprobación la eliminación del docente "${professorName}"?`;
+  });
+
   constructor() {
     effect(() => {
       const tabs = this.modalityTabs();
@@ -411,7 +428,7 @@ export class AlterationContractModalityDetail {
     }
 
     if (actionId === 'eliminar') {
-      this.deleteModalityProfessor(professor.idCargaDocente);
+      this.openDeleteProfessorModal(professor);
     }
   }
 
@@ -435,20 +452,22 @@ export class AlterationContractModalityDetail {
     this.closeNoveltiesModal();
   }
 
-  private deleteModalityProfessor(idCargaDocente: number | null): void {
-    if (idCargaDocente == null) {
+  openDeleteProfessorModal(professor: ModalityProfessor): void {
+    if (professor.idCargaDocente == null) {
       return;
     }
 
-    // Llamar a este o a otro servicio?
-    /*
-    this.coordinationService
-      .deleteProfessor(idCargaDocente)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.modalityProfessorsResource.reload();
-    });
-    */
+    this.deleteProfessorTarget.set(professor);
+    this.isDeleteProfessorModalOpen.set(true);
+  }
+
+  closeDeleteProfessorModal(): void {
+    if (this.isRequestingDeleteProfessor()) {
+      return;
+    }
+
+    this.isDeleteProfessorModalOpen.set(false);
+    this.deleteProfessorTarget.set(null);
   }
   
 
@@ -671,5 +690,53 @@ export class AlterationContractModalityDetail {
       badgeClass: `${BADGE_BASE} ${palette.badge}`,
       dotClass: `${DOT_BASE} ${palette.dot}`,
     };
+  }
+
+  confirmDeleteProfessor(): void {
+    if (this.isRequestingDeleteProfessor()) {
+      return;
+    }
+
+    const professor = this.deleteProfessorTarget();
+    const idCargaDocente = professor?.idCargaDocente;
+
+    if (idCargaDocente == null) {
+      return;
+    }
+
+    this.isRequestingDeleteProfessor.set(true);
+
+    this.coordinationService
+      this.coordinationService.getDeleteNovelties()
+      .pipe(
+        map((novelties) =>
+          novelties.find(
+            (novelty) => novelty.componente === 'delete-professor',
+          ),
+        ),
+        switchMap((novelty) => {
+          if (!novelty) {
+            throw new Error(
+              'No se encontró la novedad configurada para eliminar docente.',
+            );
+          }
+
+          return this.coordinationService.requestDeleteProfessor({
+            idCargaDocente,
+            idNovedad: novelty.id,
+          });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() =>
+          this.isRequestingDeleteProfessor.set(false)
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.isDeleteProfessorModalOpen.set(false);
+          this.deleteProfessorTarget.set(null);
+          this.modalityProfessorsResource.reload();
+        },
+      });
   }
 }

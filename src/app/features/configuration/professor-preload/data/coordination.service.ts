@@ -4,6 +4,7 @@ import { WebRequestService } from '../../../../core/service/web-request-service'
 import {
   AssignNameNnRequest,
   ChangeProfessorRequest,
+  DeleteProfessorRequest,
   CategoriaCatedratico,
   CoordinationApiItem,
   ContractModalityItem,
@@ -690,13 +691,25 @@ export class CoordinationService {
 
   /**
    * Consulta las novedades con acción ACTUALIZAR
-   * 
+   *
    * @returns Observable con las novedades acción ACTUALIZAR que se pueden realizar a un docente
    */
   getNoveltiesTypes(): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
       {},
+    );
+  }
+
+  /**
+   * Consulta las novedades con acción ELIMINAR.
+   *
+   * @returns Observable con las novedades de eliminación disponibles.
+   */
+  getDeleteNovelties(): Observable<NoveltiesItem[]> {
+    return this.webRequestService.get<NoveltiesItem[]>(
+      `${this.endpoint}/list-novelties`,
+      { accion: 'ELIMINAR' },
     );
   }
 
@@ -717,6 +730,15 @@ export class CoordinationService {
 
     return this.webRequestService.post<void>(
       `${this.endpoint}/novelties/change-professor`,
+      request,
+    );
+  }
+
+  requestDeleteProfessor(
+    request: DeleteProfessorRequest,
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/novelties/delete-professor`,
       request,
     );
   }
