@@ -354,3 +354,7 @@ export interface ChangeProfessorRequest {
   idNovedad: number;
   idPersonaGeneral: number;
 }
+export interface DeleteProfessorRequest {
+  idCargaDocente: number;
+  idNovedad: number;
+}
