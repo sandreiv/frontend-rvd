@@ -1,12 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { Icon } from '../../../../../../../../shared/ui/icon/icon';
 import { CollapsibleSection } from '../../../../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { AlterationProjectActivityCard } from './components/alteration-project-activity-card';
 import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../../../../../model/detail-professor-preload.model';
 import { CoordinationService } from '../../../../../data/coordination.service';
 import { PreloadCallService } from '../../../../../../preload-call/data/preload-call.service';
-import { NotificationService } from '../../../../../../../../core/service/notification-service';
-import { PermissionService } from '../../../../../../../../core/service/permission-service';
 import { CoordinationContractModality, CoordinationItem, ModalityProfessor, WorkDate } from '../../../../../model/coordination.model';
 import { ProfessorProjectRow, ProyectoDocenteDto } from '../../../../../model/professor-projects.model';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -19,7 +17,7 @@ import { DirectLearningActivity, SimpleActivity } from '../../../../../model/pro
 import { parseMaxWeeklyHours } from '../../../../../model/professor-form.config';
 import { mapDetailProfessorPreloadToModalState } from '../../../../../model/professor-activities-load.mapper';
 import { SaveDetailProfessorPreloadInput } from '../../../../../model/professor-activities-save.mapper';
-import { buildNoveltyActivityDistributionRequest } from '../../../../../model/professor-activities-novelty-save.mapper';
+import { buildNoveltyActivityDistributionRequest, hasNoveltyChanges } from '../../../../../model/professor-activities-novelty-save.mapper';
 import { NoveltyComponentState } from '../novelty-component-state';
 
 const NN_LABEL = 'NN';
@@ -307,13 +305,14 @@ export class ChangeProjectActivities {
     () => this.workDatesResource.isLoading(),
   );
 
-  readonly exceedsWeeklyLimit = computed(() => {
+  // Deben cumplir el limite fijo ya que la funcionalidad es para TCO y Planta
+  readonly inWeeklyLimit = computed(() => {
     const limit = this.weeklyHoursLimit();
     if (limit == null) {
       return false;
     }
 
-    return this.totalAssignedHours() > limit;
+    return this.totalAssignedHours() === limit;
   });
 
   // Determina si hay proyectos huerfanos por estado no activo o cambio de docente
@@ -341,7 +340,14 @@ export class ChangeProjectActivities {
 
   private readonly distribution = computed(() => {
     const input = this.buildSaveInput();
-    return buildNoveltyActivityDistributionRequest(input, this.loadedDetailsById());
+    const loadedDetails = this.loadedDetailsById()
+    const distribution = buildNoveltyActivityDistributionRequest(input, loadedDetails);
+    
+    return {
+      ...distribution,
+      deleteIds: this.getDeletedDetailsIds(),
+      hasChanges: hasNoveltyChanges(input, loadedDetails)
+    };
   })
 
 
@@ -383,11 +389,14 @@ export class ChangeProjectActivities {
     });
 
     effect(() => {
-      const { saveRequest, updateRequests } = this.distribution();
-      const hasChanges = saveRequest.detalles.length > 0 || updateRequests.length > 0;
+      const { saveRequest, updateRequests, deleteIds, hasChanges } = this.distribution();
       const tieneProyectosInvalidos = this.invalidAssociatedProjects().length > 0;
+      // Comprueba si ha hecho un cambio real y no si tiene valores dentro del save o update
+      // Esto evita que la primera vez cuando vienen de los detalles originales, el boton aparezca habilitado sin realizar cambios
+      const noveltyHasChanges = hasChanges || deleteIds.length > 0;
+      
 
-      if (this.exceedsWeeklyLimit() || !hasChanges || tieneProyectosInvalidos) {
+      if (!this.inWeeklyLimit() || !noveltyHasChanges || tieneProyectosInvalidos) {
         untracked(() => this.noveltyState.clear());
         return;
       }
@@ -401,6 +410,7 @@ export class ChangeProjectActivities {
         this.noveltyState.setChangeProjectActivities(
           saveRequest,
           updateRequests,
+          deleteIds
         ),
       );
     })
@@ -626,5 +636,46 @@ export class ChangeProjectActivities {
     }
 
     return Array.from(byCodigo.values());
+  }
+
+  // Comprueba en general (No solo proyectos) que IDs se eliminan, util para las siguientes novedades en las actividades
+  private getDeletedDetailsIds(): number[] {
+    if (!this.areNoveltyActivities()) {
+      return [];
+    }
+
+    const currentDetailIds = new Set<number>();
+
+    for (const activities of Object.values(this.directByCodigo())) {
+      for (const activity of activities) {
+        if (activity.idDetalleCargaDocente != null) {
+          currentDetailIds.add(activity.idDetalleCargaDocente);
+        }
+      }
+    }
+    for (const activities of Object.values(this.criteriaByCodigo())) {
+      for (const activity of activities) {
+        if (activity.idDetalleCargaDocente != null) {
+          currentDetailIds.add(activity.idDetalleCargaDocente);
+        }
+      }
+    }
+    for (const projects of Object.values(this.projectsByCodigo())) {
+      for (const project of projects) {
+        if (project.idDetalleCargaDocente != null) {
+          currentDetailIds.add(project.idDetalleCargaDocente);
+        }
+      }
+    }
+
+    const deletedIds: number[] = [];
+
+    for (const idDetalle of this.loadedDetailsById().keys()) {
+      if (!currentDetailIds.has(idDetalle)) {
+        deletedIds.push(idDetalle);
+      }
+    }
+
+    return deletedIds;
   }
 }

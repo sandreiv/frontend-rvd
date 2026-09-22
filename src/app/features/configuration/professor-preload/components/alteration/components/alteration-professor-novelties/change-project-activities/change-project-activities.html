@@ -66,7 +66,6 @@
                         [isLoading]="professorProjectsResource.isLoading()"
                         [associationExpired]="isProjectAssociationExpired(item.codigo)"
                         [associationExpiredReason]="projectAssociationExpiredReason(item.codigo)"
-                        [areNoveltyActivities]="areNoveltyActivities()"
                         (associatedRowsChange)="setAssociatedProjectsForCodigo(item.codigo, $event)"
                     />
                 </app-collapsible-section>
@@ -79,10 +78,10 @@
             Total de horas asignadas:
             <span
                 class="font-semibold"
-                [class.text-gray-900]="!exceedsWeeklyLimit()"
-                [class.dark:text-white/90]="!exceedsWeeklyLimit()"
-                [class.text-error-600]="exceedsWeeklyLimit()"
-                [class.dark:text-error-400]="exceedsWeeklyLimit()"
+                [class.text-gray-900]="inWeeklyLimit()"
+                [class.dark:text-white/90]="inWeeklyLimit()"
+                [class.text-error-600]="!inWeeklyLimit()"
+                [class.dark:text-error-400]="!inWeeklyLimit()"
             >
             {{ totalAssignedHours() }} h
             @if (isLoadingWorkDates()) {
@@ -94,9 +93,9 @@
             semanales
         </p>
 
-        @if (exceedsWeeklyLimit()) {
+        @if (!inWeeklyLimit()) {
             <p class="text-xs text-error-600 dark:text-error-400">
-                Supera el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
+                La asignación de actividades no cumple el límite de horas semanales permitido. Ajusta la distribución para poder guardar.
             </p>
         }
     </div>

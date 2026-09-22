@@ -39,6 +39,7 @@ export interface ChangeProjectActivitiesPayload {
   component: 'change-project-activities';
   saveRequest: SaveDetailProfessorPreloadRequest;
   updateRequests: DetailProfessorPreloadItemApi[];
+  deleteIds: number[];
 }
 
 export type NoveltyComponentPayload =
@@ -86,12 +87,14 @@ export class NoveltyComponentState {
 
   setChangeProjectActivities(
     saveRequest: SaveDetailProfessorPreloadRequest,
-    updateRequests: DetailProfessorPreloadItemApi[]
+    updateRequests: DetailProfessorPreloadItemApi[],
+    deleteIds: number[]
   ): void {
     this.payload.set({
       component: 'change-project-activities',
       saveRequest,
       updateRequests,
+      deleteIds
     });
   }
 

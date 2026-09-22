@@ -264,7 +264,6 @@ export function hasDetailChanges(
 
   return (
     source.horas !== target.horas ||
-    source.centroCosto?.id !== target.centroCosto?.id ||
     source.unidadRegional?.id !== target.unidadRegional?.id ||
     source.programa?.id !== target.programa?.id ||
     source.grupo?.id !== target.grupo?.id ||

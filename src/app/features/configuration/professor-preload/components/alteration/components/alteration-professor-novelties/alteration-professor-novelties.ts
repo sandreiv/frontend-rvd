@@ -221,9 +221,11 @@ export class AlterationProfessorNovelties {
       const request: SaveNoveltyProjectActivitiesRequest = {
         detallesNuevos: payload.saveRequest.detalles,
         detallesActualizados: payload.updateRequests,
+        detallesEliminados: payload.deleteIds,
         idNovedad,
         idCargaDocente
       };
+    
       return this.saveChangeProjectActivities(request);
     }
 
@@ -270,10 +272,10 @@ export class AlterationProfessorNovelties {
   }
 
   private async saveChangeProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Promise<boolean> {
-    const { detallesNuevos, detallesActualizados } = request;
-    if (detallesNuevos.length === 0 && detallesActualizados.length === 0) {
+    const { detallesNuevos, detallesActualizados, detallesEliminados } = request;
+    if (detallesNuevos.length === 0 && detallesActualizados.length === 0 && detallesEliminados.length === 0) {
       this.notificationService.warning(
-        'Agrega al menos una actividad o proyecto asociado para guardar.',
+        'Agrega, modifica o elimina al menos una actividad o proyecto asociado para guardar.',
         'Sin actividades',
       );
       return false;

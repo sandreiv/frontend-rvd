@@ -46,4 +46,5 @@ export interface SaveNoveltyProjectActivitiesRequest {
   idCargaDocente: number;
   detallesNuevos: DetalleCargaDocenteRequest[];
   detallesActualizados: DetailProfessorPreloadItemApi[];
+  detallesEliminados: number[];
 }

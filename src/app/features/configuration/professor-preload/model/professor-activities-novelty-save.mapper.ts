@@ -90,21 +90,103 @@ export function buildNoveltyActivityDistributionRequest(
   };
 }
 
-export function hasNoveltySaveableActivities(
+export function hasNoveltyChanges(
   input: SaveDetailProfessorPreloadInput,
   loadedDetails: Map<number, DetailProfessorPreloadItemApi>,
 ): boolean {
-  const { saveRequest, updateRequests } = buildNoveltyActivityDistributionRequest(input, loadedDetails);
+  const directCodigos = Object.keys(input.directByCodigo);
 
-  return saveRequest.detalles.length > 0 || updateRequests.length > 0;
+  for (let index = 0; index < directCodigos.length; index += 1) {
+    const codigo = directCodigos[index];
+    const activities = input.directByCodigo[codigo] ?? [];
+
+    for (let itemIndex = 0; itemIndex < activities.length; itemIndex += 1) {
+      const activity = activities[itemIndex];
+
+      // Cuando se agrega una nueva actividad, hubo un cambio real
+      if (activity.idDetalleCargaDocente == null) {
+        return true;
+      }
+
+      const original = loadedDetails.get(activity.idDetalleCargaDocente);
+      if (!original?.detalles[0]) {
+        continue;
+      }
+
+      // Cuando se actualiza una actividad, hubo un cambio real
+      const patched = patchFadDetailItem(original, activity, input);
+      if (hasDetailChanges(original, patched)) {
+        return true;
+      }
+    }
+  }
+
+  const criteriaCodigos = Object.keys(input.criteriaByCodigo);
+
+  for (let index = 0; index < criteriaCodigos.length; index += 1) {
+    const codigo = criteriaCodigos[index];
+    const activities = input.criteriaByCodigo[codigo] ?? [];
+    const categoryType = findActivityType(input.activityTypes, codigo);
+
+    for (let itemIndex = 0; itemIndex < activities.length; itemIndex += 1) {
+      const activity = activities[itemIndex];
+
+      // Cuando se agrega una nueva actividad, hubo un cambio real
+      if (activity.idDetalleCargaDocente == null) {
+        return true;
+      }
+
+      const original = loadedDetails.get(activity.idDetalleCargaDocente);
+      if (!original?.detalles[0]) {
+        continue;
+      }
+
+      // Cuando se actualiza una actividad, hubo un cambio real
+      const patched = patchCriteriaDetailItem(original, activity, categoryType, input);
+      if (hasDetailChanges(original, patched)) {
+        return true;
+      }
+    }
+  }
+
+  const projectCodigos = Object.keys(input.projectsByCodigo);
+
+  for (let index = 0; index < projectCodigos.length; index += 1) {
+    const codigo = projectCodigos[index];
+    const projects = input.projectsByCodigo[codigo] ?? [];
+    
+    for (let itemIndex = 0; itemIndex < projects.length; itemIndex += 1) {
+      const project = projects[itemIndex];
+
+      // Cuando se agrega un nuevo proyecto, hubo un cambio real
+      if (project.idDetalleCargaDocente == null) {
+        return true;
+      }
+
+      const original = loadedDetails.get(project.idDetalleCargaDocente);
+      if (!original?.detalles[0]) {
+        continue;
+      }
+
+      // Cuando se actualiza un proyecto, hubo un cambio real
+      const patched = patchProjectDetailItem(original, project, input);
+      if (hasDetailChanges(original, patched)) {
+        return true;
+      }
+    }
+  }
+
+  // No hubo cambios nuevos o actualizados
+  return false;
 }
 
+
 function isMarkedAsNovelty(
-  original: DetailProfessorPreloadItemApi | undefined,
+  original: DetailProfessorPreloadItemApi,
 ): boolean {
   // esDeNovedad = 1 -> Viene de tabla detalles novedad
   // esDeNovedad = 0 -> Viene de tabla detalles
-  return original == null || original.esDeNovedad !== 0;
+  return original.esDeNovedad === 1;
 }
 
 function collectDirectNovelty(
@@ -125,16 +207,17 @@ function collectDirectNovelty(
     }
 
     const original = loadedDetails.get(activity.idDetalleCargaDocente);
+    if (!original?.detalles[0]) {
+      continue;
+    }
 
+    // Si viene de la original, se debe crear como nuevo detalle y se agrega al save
     if (!isMarkedAsNovelty(original)) {
       detalles.push(withCentroCosto(mapFadDetalle(activity, categoryType), idCentroCosto));
       continue;
     }
 
-    if (!original?.detalles[0]) {
-      continue;
-    }
-
+    // Si viene de novedad, se actualiza si algo cambio
     const patched = patchFadDetailItem(original, activity, input);
     if (hasDetailChanges(original, patched)) {
       updateRequests.push(patched);
@@ -160,16 +243,17 @@ function collectCriteriaNovelty(
     }
 
     const original = loadedDetails.get(activity.idDetalleCargaDocente);
+    if (!original?.detalles[0]) {
+      continue;
+    }
 
+    // Si viene de la original, se debe crear como nuevo detalle y se agrega al save
     if (!isMarkedAsNovelty(original)) {
       detalles.push(withCentroCosto(mapCriteriaDetalle(activity, categoryType), idCentroCosto));
       continue;
     }
 
-    if (!original?.detalles[0]) {
-      continue;
-    }
-
+    // Si viene de novedad, se actualiza si algo cambio
     const patched = patchCriteriaDetailItem(original, activity, categoryType, input);
     if (hasDetailChanges(original, patched)) {
       updateRequests.push(patched);
@@ -194,16 +278,17 @@ function collectProjectNovelty(
     }
 
     const original = loadedDetails.get(project.idDetalleCargaDocente);
+    if (!original?.detalles[0]) {
+      continue;
+    }
 
+    // Si viene de la original, se debe crear como nuevo detalle y se agrega al save
     if (!isMarkedAsNovelty(original)) {
       detalles.push(withCentroCosto(mapProjectDetalle(project), idCentroCosto));
       continue;
     }
 
-    if (!original?.detalles[0]) {
-      continue;
-    }
-
+    // Si viene de novedad, se actualiza si algo cambio
     const patched = patchProjectDetailItem(original, project, input);
     if (hasDetailChanges(original, patched)) {
       updateRequests.push(patched);

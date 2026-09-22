@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input
 import { TipoActividad } from '../../../../../../model/professor-activities.model';
 import { ProfessorProjectRow } from '../../../../../../model/professor-projects.model';
 import { CoordinationService } from '../../../../../../data/coordination.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Tooltip } from '../../../../../../../../../shared/ui/tooltip/tooltip';
 import { Checkbox } from '../../../../../../../../../shared/components/form/input/checkbox';
 import { Button } from '../../../../../../../../../shared/ui/button/button';
@@ -22,12 +21,8 @@ export class AlterationProjectActivityCard {
   isRegistrationProcessed = input(false);
   associationExpired = input(false);
   associationExpiredReason = input<string | null>(null);
-  areNoveltyActivities = input(false);
 
   associatedRowsChange = output<ProfessorProjectRow[]>();
-
-  private readonly coordinationService = inject(CoordinationService);
-  private readonly destroyRef = inject(DestroyRef);
 
   private readonly selectedIds = signal<ReadonlySet<number>>(new Set(),);
 
@@ -131,22 +126,8 @@ export class AlterationProjectActivityCard {
       return;
     }
 
-    if (row.idDetalleCargaDocente == null) {
-      this.removeAssociatedProject(row.idPersonaProyecto);
-      return;
-    }
-
-    if (!this.areNoveltyActivities()) {
-      this.removeAssociatedProject(row.idPersonaProyecto);
-      return;
-    }
-
-    this.coordinationService
-      .deleteProfessorActivityNovelty(row.idDetalleCargaDocente)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.removeAssociatedProject(row.idPersonaProyecto);
-      });
+    this.removeAssociatedProject(row.idPersonaProyecto);
+    return;
   }
 
   private removeAssociatedProject(idPersonaProyecto: number): void {
