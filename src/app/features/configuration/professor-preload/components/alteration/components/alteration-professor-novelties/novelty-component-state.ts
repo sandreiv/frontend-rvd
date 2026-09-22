@@ -42,11 +42,19 @@ export interface ChangeProjectActivitiesPayload {
   deleteIds: number[];
 }
 
+export interface ChangeDirectActivitiesPayload {
+  component: 'change-direct-activities';
+  saveRequest: SaveDetailProfessorPreloadRequest;
+  updateRequests: DetailProfessorPreloadItemApi[];
+  deleteIds: number[];
+}
+
 export type NoveltyComponentPayload =
   | AssignNameNnPayload
   | ChangeProfessorPayload
   | ChangeContractModalityPayload
-  | ChangeProjectActivitiesPayload;
+  | ChangeProjectActivitiesPayload
+  | ChangeDirectActivitiesPayload;
 
 @Injectable()
 export class NoveltyComponentState {
@@ -95,6 +103,19 @@ export class NoveltyComponentState {
       saveRequest,
       updateRequests,
       deleteIds
+    });
+  }
+
+  setChangeDirectActivities(
+    saveRequest: SaveDetailProfessorPreloadRequest,
+    updateRequests: DetailProfessorPreloadItemApi[],
+    deleteIds: number[],
+  ): void {
+    this.payload.set({
+      component: 'change-direct-activities',
+      saveRequest,
+      updateRequests,
+      deleteIds,
     });
   }
 

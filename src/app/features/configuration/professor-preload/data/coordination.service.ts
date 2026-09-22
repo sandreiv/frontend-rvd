@@ -41,7 +41,10 @@ import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 import { NoveltiesItem } from '../model/novelties.model';
-import { SaveNovedadCargaDocenteRequest, SaveNoveltyProjectActivitiesRequest } from '../model/novelty-carga-docente.model';
+import {
+  SaveNovedadCargaDocenteRequest,
+  SaveNoveltyProjectActivitiesRequest,
+} from '../model/novelty-carga-docente.model';
 import { CargaBudget } from '../model/carga-budget.model';
 
 @Injectable({

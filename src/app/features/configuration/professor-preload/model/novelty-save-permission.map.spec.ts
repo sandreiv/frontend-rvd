@@ -22,6 +22,12 @@ describe('hasNoveltySavePermission', () => {
     expect(
       hasNoveltySavePermission(() => false, 'asign-name-nn'),
     ).toBe(true);
+    expect(
+      hasNoveltySavePermission(
+        () => false,
+        'change-direct-activities',
+      ),
+    ).toBe(true);
   });
 
   it('es falsa si no hay componente seleccionado', () => {

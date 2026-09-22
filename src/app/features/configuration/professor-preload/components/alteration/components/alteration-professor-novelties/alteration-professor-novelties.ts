@@ -29,7 +29,10 @@ import {
   NoveltiesItem,
 } from '../../../../model/novelties.model';
 import { CoordinationService } from '../../../../data/coordination.service';
-import { SaveNovedadCargaDocenteRequest, SaveNoveltyProjectActivitiesRequest } from '../../../../model/novelty-carga-docente.model';
+import {
+  SaveNovedadCargaDocenteRequest,
+  SaveNoveltyProjectActivitiesRequest,
+} from '../../../../model/novelty-carga-docente.model';
 import { NotificationService } from '../../../../../../../core/service/notification-service';
 import { PermissionService } from '../../../../../../../core/service/permission-service';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
@@ -41,7 +44,10 @@ import { Icon } from '../../../../../../../shared/ui/icon/icon';
 import { Label } from '../../../../../../../shared/components/form/label/label';
 import { Select } from '../../../../../../../shared/components/form/select/select';
 import { NOVELTY_COMPONENTS } from './novelty-components';
-import { NoveltyComponentState } from './novelty-component-state';
+import {
+  NoveltyComponentPayload,
+  NoveltyComponentState,
+} from './novelty-component-state';
 import { NoveltyBudgetStore } from './novelty-budget.store';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { firstValueFrom } from 'rxjs';
@@ -212,7 +218,18 @@ export class AlterationProfessorNovelties {
     if (!this.canSaveNoveltyKey(payload?.component ?? null)) {
       return Promise.resolve(false);
     }
+    return this.dispatchNoveltySave(
+      payload,
+      idNovedad,
+      idCargaDocente,
+    );
+  }
 
+  private dispatchNoveltySave(
+    payload: NoveltyComponentPayload | null,
+    idNovedad: number,
+    idCargaDocente: number,
+  ): Promise<boolean> {
     if (payload?.component === 'asign-name-nn') {
       return this.saveAssignNameNn(
         idNovedad,
@@ -220,7 +237,6 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
-
     if (payload?.component === 'change-professor') {
       return this.saveChangeProfessor(
         idNovedad,
@@ -228,28 +244,25 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
-
     if (payload?.component === 'change-contract-modality') {
-      const request = {
+      return this.saveChangeContractModality({
         ...payload.request,
         idNovedad,
         idCargaDocente,
-      };
-
-      return this.saveChangeContractModality(request);
+      });
     }
-    if (payload?.component === 'change-project-activities') {
-      const request: SaveNoveltyProjectActivitiesRequest = {
+    if (
+      payload?.component === 'change-project-activities' ||
+      payload?.component === 'change-direct-activities'
+    ) {
+      return this.saveNoveltyActivityDetails({
         detallesNuevos: payload.saveRequest.detalles,
         detallesActualizados: payload.updateRequests,
         detallesEliminados: payload.deleteIds,
         idNovedad,
-        idCargaDocente
-      };
-    
-      return this.saveChangeProjectActivities(request);
+        idCargaDocente,
+      });
     }
-
     return Promise.resolve(false);
   }
 
@@ -298,11 +311,13 @@ export class AlterationProfessorNovelties {
     return true;
   }
 
-  private async saveChangeProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Promise<boolean> {
+  private async saveNoveltyActivityDetails(
+    request: SaveNoveltyProjectActivitiesRequest,
+  ): Promise<boolean> {
     const { detallesNuevos, detallesActualizados, detallesEliminados } = request;
     if (detallesNuevos.length === 0 && detallesActualizados.length === 0 && detallesEliminados.length === 0) {
       this.notificationService.warning(
-        'Agrega, modifica o elimina al menos una actividad o proyecto asociado para guardar.',
+        'Agrega, modifica o elimina al menos una actividad para guardar.',
         'Sin actividades',
       );
       return false;
