@@ -25,11 +25,17 @@ import {
 } from '../../../../model/coordination.model';
 import {
   isNoveltyComponentKey,
+  NoveltyComponentKey,
   NoveltiesItem,
 } from '../../../../model/novelties.model';
 import { CoordinationService } from '../../../../data/coordination.service';
 import { SaveNovedadCargaDocenteRequest, SaveNoveltyProjectActivitiesRequest } from '../../../../model/novelty-carga-docente.model';
 import { NotificationService } from '../../../../../../../core/service/notification-service';
+import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { forNext } from '../../../../../../../core/utils/for-next.function';
+import {
+  hasNoveltySavePermission,
+} from '../../../../model/novelty-save-permission.map';
 import { Modal } from '../../../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../../../shared/ui/icon/icon';
 import { Label } from '../../../../../../../shared/components/form/label/label';
@@ -58,6 +64,7 @@ import { firstValueFrom } from 'rxjs';
 export class AlterationProfessorNovelties {
   private readonly coordinationService = inject(CoordinationService);
   private readonly notificationService = inject(NotificationService);
+  private readonly permissions = inject(PermissionService);
   readonly noveltyState = inject(NoveltyComponentState);
   readonly budgetStore = inject(NoveltyBudgetStore);
 
@@ -92,10 +99,17 @@ export class AlterationProfessorNovelties {
   });
 
   readonly noveltyOptions = computed(() => {
-    return this.noveltiesResource.value().map((novelty) => ({
-      value: String(novelty.id),
-      label: novelty.tipo,
-    }));
+    const options: { value: string; label: string }[] = [];
+    forNext(this.noveltiesResource.value(), (novelty) => {
+      if (!this.canSelectNovelty(novelty)) {
+        return;
+      }
+      options.push({
+        value: String(novelty.id),
+        label: novelty.tipo,
+      });
+    });
+    return options;
   });
 
   readonly selectedNoveltyKey = computed(() => {
@@ -119,6 +133,10 @@ export class AlterationProfessorNovelties {
     noveltyId: this.parseNoveltyId(this.selectedNoveltyId()),
   }));
 
+  readonly canSaveSelectedNovelty = computed(() => {
+    return this.canSaveNoveltyKey(this.selectedNoveltyKey());
+  });
+
   constructor() {
     effect(() => {
       this.selectedNoveltyId();
@@ -133,7 +151,8 @@ export class AlterationProfessorNovelties {
     if (
       this.saving() ||
       this.idNovedadControl.invalid ||
-      this.budgetStore.excede()
+      this.budgetStore.excede() ||
+      !this.canSaveSelectedNovelty()
     ) {
       return;
     }
@@ -189,8 +208,10 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
   ): Promise<boolean> {
-
     const payload = this.noveltyState.payload();
+    if (!this.canSaveNoveltyKey(payload?.component ?? null)) {
+      return Promise.resolve(false);
+    }
 
     if (payload?.component === 'asign-name-nn') {
       return this.saveAssignNameNn(
@@ -264,7 +285,13 @@ export class AlterationProfessorNovelties {
     return true;
   }
 
-  private async saveChangeContractModality(request: SaveNovedadCargaDocenteRequest): Promise<boolean> {
+  private async saveChangeContractModality(
+    request: SaveNovedadCargaDocenteRequest,
+  ): Promise<boolean> {
+    if (!this.permissions.canSaveContractModalityProfessor()) {
+      return false;
+    }
+
     await firstValueFrom(
       this.coordinationService.saveContractModalityProfessor(request),
     );
@@ -286,6 +313,23 @@ export class AlterationProfessorNovelties {
     );
 
     return true;
+  }
+
+  private canSelectNovelty(novelty: NoveltiesItem): boolean {
+    const key = novelty.componente;
+    if (!isNoveltyComponentKey(key)) {
+      return true;
+    }
+    return this.canSaveNoveltyKey(key);
+  }
+
+  private canSaveNoveltyKey(
+    key: NoveltyComponentKey | null,
+  ): boolean {
+    return hasNoveltySavePermission(
+      (codigo) => this.permissions.can(codigo),
+      key,
+    );
   }
 
   private parseNoveltyId(value: string): number | null {

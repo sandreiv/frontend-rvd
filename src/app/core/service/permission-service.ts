@@ -83,6 +83,17 @@ export class PermissionService {
     return this.can(PRELOAD_FUNC.VIEW_ACTIVITIES_GRAPH);
   }
 
+  /**
+   * Funcionalidad única para rol de desarrollo académico.
+   */
+  canApproveProfessorNovelty(): boolean {
+    return this.can(PRELOAD_FUNC.APPROVE_PROFESSOR_NOVELTY);
+  }
+
+  
+  canSaveContractModalityProfessor(): boolean {
+    return this.can(PRELOAD_FUNC.SAVE_CONTRACT_MODALITY_PROFESSOR);
+  }
 
   
   canDownloadCdpReport(): boolean {

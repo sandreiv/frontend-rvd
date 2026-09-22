@@ -327,17 +327,29 @@ function parseUtcDate(value: string): number | null {
   return Number.isNaN(utc) ? null : utc;
 }
 
-export function computeContractValues(asignacionSalarial: number, cantidadDias: number,): ContractValues {
-  const valorContrato = (asignacionSalarial / 30) * cantidadDias;
-  const cesantias = (asignacionSalarial * cantidadDias) / 360;
-  const intereses = ((cesantias * cantidadDias) / 360) * 0.12;
-  const valorVacaciones = (asignacionSalarial * cantidadDias) / 720;
-  const primaLegal = cesantias;
-  const valorPrestaciones = cesantias + intereses + primaLegal + valorVacaciones;
+export function computeContractValues(
+  asignacionSalarial: number,
+  cantidadDias: number,
+): ContractValues {
+  const cesantiasRaw =
+    (asignacionSalarial * cantidadDias) / 360;
+  const cesantias = roundTo2(cesantiasRaw);
+  const intereses = roundTo2(
+    ((cesantiasRaw * cantidadDias) / 360) * 0.12,
+  );
+  const valorVacaciones = roundTo2(
+    (asignacionSalarial * cantidadDias) / 720,
+  );
+  const valorContrato = roundTo2(
+    (asignacionSalarial / 30) * cantidadDias,
+  );
+  const valorPrestaciones = roundTo2(
+    cesantias + intereses + cesantias + valorVacaciones,
+  );
 
   return {
-    valorContrato: roundTo2(valorContrato),
-    valorPrestaciones: roundTo2(valorPrestaciones),
+    valorContrato,
+    valorPrestaciones,
     totalContrato: roundTo2(valorContrato + valorPrestaciones),
   };
 }

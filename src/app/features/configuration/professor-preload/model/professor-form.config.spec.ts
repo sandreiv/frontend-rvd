@@ -35,4 +35,12 @@ describe('computeContractValues con dias inclusivos', () => {
     expect(result.valorPrestaciones).toBe(2_910_242.95);
     expect(result.totalContrato).toBe(16_594_770.95);
   });
+
+  it('redondea cada prestacion a 2 decimales como en BD', () => {
+    const result = computeContractValues(2_990_500, 156);
+
+    expect(result.valorContrato).toBe(15_550_600);
+    expect(result.valorPrestaciones).toBe(3_307_094.26);
+    expect(result.totalContrato).toBe(18_857_694.26);
+  });
 });

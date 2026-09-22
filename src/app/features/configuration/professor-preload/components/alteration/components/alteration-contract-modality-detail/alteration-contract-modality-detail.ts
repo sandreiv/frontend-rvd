@@ -8,7 +8,7 @@ import {
 } from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom, Observable, map, forkJoin } from 'rxjs';
+import { firstValueFrom, Observable, map, forkJoin, switchMap, finalize } from 'rxjs';
 import { isProfessorNoveltyPendingReview } from '../../../../model/professor-novelty-state';
 import { NoveltyBudgetStore } from '../alteration-professor-novelties/novelty-budget.store';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
@@ -17,6 +17,7 @@ import { formatSentenceValue } from '../../../../../../../shared/utils/normalize
 import { resolveModalityKind } from '../../../../model/professor-form.config';
 import { TabBar } from '../../../../../../../shared/ui/tab-bar/tab-bar';
 import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { NOVELTY_SAVE_FUNC } from '../../../../model/novelty-save-permission.map';
 import { Button } from "../../../../../../../shared/ui/button/button";
 import { Icon } from "../../../../../../../shared/ui/icon/icon";
 import { AppIconName } from '../../../../../../../shared/ui/icon/icons';
@@ -25,6 +26,7 @@ import { Item } from "../../../../../../../shared/ui/dropdown/item/item";
 import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
+import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -116,7 +118,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -131,6 +133,10 @@ export class AlterationContractModalityDetail {
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
+
+  readonly isDeleteProfessorModalOpen = signal(false);
+  readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
+  readonly isRequestingDeleteProfessor = signal(false);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly openMenuKey = signal<string | null>(null);
@@ -297,6 +303,18 @@ export class AlterationContractModalityDetail {
     );
   });
 
+  readonly deleteProfessorMessage = computed(() => {
+    const professor = this.deleteProfessorTarget();
+
+    if (!professor) {
+      return '¿Desea enviar a aprobación la eliminación del docente?';
+    }
+
+    const professorName = this.resolveProfessorName(professor);
+
+    return `¿Desea enviar a aprobación la eliminación del docente "${professorName}"?`;
+  });
+
   constructor() {
     effect(() => {
       const tabs = this.modalityTabs();
@@ -363,9 +381,7 @@ export class AlterationContractModalityDetail {
   }
 
   canOpenProfessorMenu(professor: ModalityProfessor): boolean {
-    if (!professor.tieneCarga) return false;
-
-    return this.isCoordinator() && this.isCargaEnAvalDesarrollo();
+    return this.resolveProfessorActions(professor).length > 0;
   }
 
   toggleProfessorMenu(menuKey: string, professor?: ModalityProfessor): void {
@@ -386,12 +402,13 @@ export class AlterationContractModalityDetail {
     estadoNovedad?: string | number | null;
   }): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
-    const hasDetail = professor.tieneDetalleActividades === true;
 
-    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
+    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) {
+      return [];
+    }
 
     const actions: ProfessorMenuAction[] = [];
-    if (isProfessorNoveltyPendingReview(professor.estadoNovedad)) {
+    if (this.canApprovePendingNovelty(professor.estadoNovedad)) {
       actions.push({
         id: 'aprobar-novedad',
         label: 'Aprobar novedad',
@@ -400,11 +417,13 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    actions.push({
-      id: 'novedad',
-      label: 'Gestionar novedad',
-      icon: 'newspaper',
-    });
+    if (this.canManageProfessorNovelties()) {
+      actions.push({
+        id: 'novedad',
+        label: 'Gestionar novedad',
+        icon: 'newspaper',
+      });
+    }
 
     if (this.permissions.canDeleteProfessor()) {
       actions.push({
@@ -415,7 +434,6 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    // Agregar las acciones
     return actions;
   }
 
@@ -428,11 +446,14 @@ export class AlterationContractModalityDetail {
     }
 
     if (actionId === 'novedad') {
+      if (!this.canManageProfessorNovelties()) {
+        return;
+      }
       this.openNoveltiesModal(professor);
     }
 
     if (actionId === 'eliminar') {
-      this.deleteModalityProfessor(professor.idCargaDocente);
+      this.openDeleteProfessorModal(professor);
     }
   }
 
@@ -440,10 +461,34 @@ export class AlterationContractModalityDetail {
     if (professor.idCargaDocente == null) {
       return false;
     }
-    if (!this.canOpenProfessorMenu(professor)) {
+    if (!this.isCargaEnAvalDesarrollo()) {
       return false;
     }
-    return isProfessorNoveltyPendingReview(professor.estadoNovedad);
+    return this.canApprovePendingNovelty(professor.estadoNovedad);
+  }
+
+  private canApprovePendingNovelty(
+    estadoNovedad: string | number | null | undefined,
+  ): boolean {
+    return (
+      this.permissions.canApproveProfessorNovelty() &&
+      isProfessorNoveltyPendingReview(estadoNovedad)
+    );
+  }
+
+  private canManageProfessorNovelties(): boolean {
+    if (this.isCoordinator()) {
+      return true;
+    }
+
+    const codes = Object.values(NOVELTY_SAVE_FUNC);
+    let allowed = false;
+    forNext(codes, (codigo) => {
+      if (codigo && this.permissions.can(codigo)) {
+        allowed = true;
+      }
+    });
+    return allowed;
   }
 
   isApprovingNovelty(professor: ModalityProfessor): boolean {
@@ -514,20 +559,22 @@ export class AlterationContractModalityDetail {
     }
   }
 
-  private deleteModalityProfessor(idCargaDocente: number | null): void {
-    if (idCargaDocente == null) {
+  openDeleteProfessorModal(professor: ModalityProfessor): void {
+    if (professor.idCargaDocente == null) {
       return;
     }
 
-    // Llamar a este o a otro servicio?
-    /*
-    this.coordinationService
-      .deleteProfessor(idCargaDocente)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.modalityProfessorsResource.reload();
-    });
-    */
+    this.deleteProfessorTarget.set(professor);
+    this.isDeleteProfessorModalOpen.set(true);
+  }
+
+  closeDeleteProfessorModal(): void {
+    if (this.isRequestingDeleteProfessor()) {
+      return;
+    }
+
+    this.isDeleteProfessorModalOpen.set(false);
+    this.deleteProfessorTarget.set(null);
   }
   
 
@@ -750,5 +797,53 @@ export class AlterationContractModalityDetail {
       badgeClass: `${BADGE_BASE} ${palette.badge}`,
       dotClass: `${DOT_BASE} ${palette.dot}`,
     };
+  }
+
+  confirmDeleteProfessor(): void {
+    if (this.isRequestingDeleteProfessor()) {
+      return;
+    }
+
+    const professor = this.deleteProfessorTarget();
+    const idCargaDocente = professor?.idCargaDocente;
+
+    if (idCargaDocente == null) {
+      return;
+    }
+
+    this.isRequestingDeleteProfessor.set(true);
+
+    this.coordinationService
+      this.coordinationService.getDeleteNovelties()
+      .pipe(
+        map((novelties) =>
+          novelties.find(
+            (novelty) => novelty.componente === 'delete-professor',
+          ),
+        ),
+        switchMap((novelty) => {
+          if (!novelty) {
+            throw new Error(
+              'No se encontró la novedad configurada para eliminar docente.',
+            );
+          }
+
+          return this.coordinationService.requestDeleteProfessor({
+            idCargaDocente,
+            idNovedad: novelty.id,
+          });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() =>
+          this.isRequestingDeleteProfessor.set(false)
+        ),
+      )
+      .subscribe({
+        next: () => {
+          this.isDeleteProfessorModalOpen.set(false);
+          this.deleteProfessorTarget.set(null);
+          this.modalityProfessorsResource.reload();
+        },
+      });
   }
 }
