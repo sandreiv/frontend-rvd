@@ -5,6 +5,7 @@ import { ProyectoDocenteDto } from './professor-projects.model';
 export interface DetailProfessorPreloadItemApi {
   idDetalleCargaDocente: number;
   idCargaDocente: number;
+  esDeNovedad?: number;
   detalles: DetalleCargaDocenteFormularioApi[];
 }
 

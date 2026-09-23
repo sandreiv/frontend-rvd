@@ -62,7 +62,8 @@
         noveltiesResource.isLoading() ||
         !noveltyState.isValid() ||
         budgetStore.excede() ||
-        saving()
+        saving() ||
+        !canSaveSelectedNovelty()
       "
       (btnClick)="onSave()"
     >

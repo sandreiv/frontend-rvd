@@ -17,6 +17,8 @@ import {
   signal,
 } from '@angular/core';
 import { SaveNovedadCargaDocenteRequest } from '../../../../model/novelty-carga-docente.model';
+import { SaveDetailProfessorPreloadRequest } from '../../../../model/save-detail-professor-preload.model';
+import { DetailProfessorPreloadItemApi } from '../../../../model/detail-professor-preload.model';
 
 export interface AssignNameNnPayload {
   component: 'asign-name-nn';
@@ -33,10 +35,26 @@ export interface ChangeContractModalityPayload {
   request: SaveNovedadCargaDocenteRequest;
 }
 
+export interface ChangeProjectActivitiesPayload {
+  component: 'change-project-activities';
+  saveRequest: SaveDetailProfessorPreloadRequest;
+  updateRequests: DetailProfessorPreloadItemApi[];
+  deleteIds: number[];
+}
+
+export interface ChangeDirectActivitiesPayload {
+  component: 'change-direct-activities';
+  saveRequest: SaveDetailProfessorPreloadRequest;
+  updateRequests: DetailProfessorPreloadItemApi[];
+  deleteIds: number[];
+}
+
 export type NoveltyComponentPayload =
   | AssignNameNnPayload
   | ChangeProfessorPayload
-  | ChangeContractModalityPayload;
+  | ChangeContractModalityPayload
+  | ChangeProjectActivitiesPayload
+  | ChangeDirectActivitiesPayload;
 
 @Injectable()
 export class NoveltyComponentState {
@@ -72,6 +90,32 @@ export class NoveltyComponentState {
     this.payload.set({
       component: 'change-contract-modality',
       request,
+    });
+  }
+
+  setChangeProjectActivities(
+    saveRequest: SaveDetailProfessorPreloadRequest,
+    updateRequests: DetailProfessorPreloadItemApi[],
+    deleteIds: number[]
+  ): void {
+    this.payload.set({
+      component: 'change-project-activities',
+      saveRequest,
+      updateRequests,
+      deleteIds
+    });
+  }
+
+  setChangeDirectActivities(
+    saveRequest: SaveDetailProfessorPreloadRequest,
+    updateRequests: DetailProfessorPreloadItemApi[],
+    deleteIds: number[],
+  ): void {
+    this.payload.set({
+      component: 'change-direct-activities',
+      saveRequest,
+      updateRequests,
+      deleteIds,
     });
   }
 

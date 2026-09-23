@@ -96,7 +96,7 @@ function filterNewItems<T extends { idDetalleCargaDocente?: number }>(
   return items.filter((item) => item.idDetalleCargaDocente == null);
 }
 
-function mapFadDetalle(
+export function mapFadDetalle(
   activity: DirectLearningActivity,
   categoryType: TipoActividad | undefined,
 ): DetalleCargaDocenteRequest {
@@ -116,7 +116,7 @@ function mapFadDetalle(
   };
 }
 
-function mapCriteriaDetalle(
+export function mapCriteriaDetalle(
   activity: SimpleActivity,
   categoryType: TipoActividad | undefined,
 ): DetalleCargaDocenteRequest {
@@ -130,7 +130,7 @@ function mapCriteriaDetalle(
   };
 }
 
-function mapProjectDetalle(
+export function mapProjectDetalle(
   project: ProfessorProjectRow,
 ): DetalleCargaDocenteRequest {
   return {
@@ -147,14 +147,14 @@ function mapProjectDetalle(
   };
 }
 
-function findActivityType(
+export function findActivityType(
   activityTypes: TipoActividad[],
   codigo: string,
 ): TipoActividad | undefined {
   return activityTypes.find((type) => type.codigo === codigo);
 }
 
-function withCentroCosto(
+export function withCentroCosto(
   detalle: DetalleCargaDocenteRequest,
   idCentroCosto: number | undefined,
 ): DetalleCargaDocenteRequest {

@@ -41,7 +41,10 @@ import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
 import { NoveltiesItem } from '../model/novelties.model';
-import { SaveNovedadCargaDocenteRequest } from '../model/novelty-carga-docente.model';
+import {
+  SaveNovedadCargaDocenteRequest,
+  SaveNoveltyProjectActivitiesRequest,
+} from '../model/novelty-carga-docente.model';
 import { CargaBudget } from '../model/carga-budget.model';
 
 @Injectable({
@@ -435,6 +438,20 @@ export class CoordinationService {
   }
 
   /**
+   * Guarda o actualiza las novedades en detalles de actividades
+   *
+   * @param request Distribución de actividades de la precarga docente para guardar dentro de detalles novedades.
+   * @returns Observable sin contenido cuando el guardado finaliza correctamente.
+   */
+  saveNoveltyProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Observable<void> {
+    console.log('request', request);
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-novelty-detail-professor-preload`,
+      request,
+    );
+  }
+
+  /**
    * Consulta el detalle de la distribución de actividades de un docente.
    *
    * @param idCargaDocente Identificador de la carga docente.
@@ -444,6 +461,20 @@ export class CoordinationService {
   listDetailProfessorPreload(idCargaDocente: number): Observable<DetailProfessorPreloadApi> {
     return this.webRequestService.get<DetailProfessorPreloadApi>(
       `${this.endpoint}/list-detail-professor-preload`,
+      { idCargaDocente },
+    );
+  }
+
+  /**
+   * Consulta el novedad detalle de la distribución de actividades de un docente.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con el novedad detalle de actividades de la precarga.
+   */
+
+  listNoveltyDetailProfessorPreload(idCargaDocente: number): Observable<DetailProfessorPreloadApi> {
+    return this.webRequestService.get<DetailProfessorPreloadApi>(
+      `${this.endpoint}/list-novelty-detail-professor-preload`,
       { idCargaDocente },
     );
   }

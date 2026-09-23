@@ -65,6 +65,11 @@ export class ProjectPersonTable {
       cell: (row) => row.observacion || '-',
       formatAsSentence: true,
     },
+    {
+      id: 'esActivo',
+      header: 'Es activo',
+      cell: (row) => this.formatYesNo(row.esActivo),
+    },
   ];
 
   readonly rowActions: DataTableRowAction<ProjectPersonItem>[] = [
@@ -112,5 +117,13 @@ export class ProjectPersonTable {
 
   onSelectedIdsChange(keys: Array<string | number>): void {
     this.selectedPersonIds.set(keys.map((key) => String(key)));
+  }
+
+  private formatYesNo(value: string | null): string {
+    const normalized = String(value ?? '').trim().toUpperCase();
+
+    return normalized === '1' || normalized === 'S' || normalized === 'SI' || normalized === 'TRUE'
+      ? 'Sí'
+      : 'No';
   }
 }

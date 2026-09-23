@@ -44,6 +44,7 @@ export interface ProjectPersonItem {
   tipo: string;
   horas: string;
   observacion: string | null;
+  esActivo: '1' | '0' | 'S' | 'N' | string;
 }
 
 export interface ProjectPersonFormData {
@@ -53,6 +54,7 @@ export interface ProjectPersonFormData {
   tipo: string;
   horas: string;
   observacion: string | null;
+  esActivo: '1' | '0';
 }
 
 export interface DeleteBulkProjectsRequest {

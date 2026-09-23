@@ -2,17 +2,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
   output,
   signal,
+  viewChild,
   untracked,
 } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import {
+  rxResource,
+  takeUntilDestroyed,
+  toSignal,
+} from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 import {
   CoordinationContractModality,
   CoordinationItem,
@@ -20,19 +25,32 @@ import {
 } from '../../../../model/coordination.model';
 import {
   isNoveltyComponentKey,
+  NoveltyComponentKey,
   NoveltiesItem,
 } from '../../../../model/novelties.model';
 import { CoordinationService } from '../../../../data/coordination.service';
-import { SaveNovedadCargaDocenteRequest } from '../../../../model/novelty-carga-docente.model';
+import {
+  SaveNovedadCargaDocenteRequest,
+  SaveNoveltyProjectActivitiesRequest,
+} from '../../../../model/novelty-carga-docente.model';
 import { NotificationService } from '../../../../../../../core/service/notification-service';
+import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { forNext } from '../../../../../../../core/utils/for-next.function';
+import {
+  hasNoveltySavePermission,
+} from '../../../../model/novelty-save-permission.map';
 import { Modal } from '../../../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../../../shared/ui/icon/icon';
 import { Label } from '../../../../../../../shared/components/form/label/label';
 import { Select } from '../../../../../../../shared/components/form/select/select';
-import { Button } from '../../../../../../../shared/ui/button/button';
 import { NOVELTY_COMPONENTS } from './novelty-components';
-import { NoveltyComponentState } from './novelty-component-state';
+import {
+  NoveltyComponentPayload,
+  NoveltyComponentState,
+} from './novelty-component-state';
 import { NoveltyBudgetStore } from './novelty-budget.store';
+import { Button } from '../../../../../../../shared/ui/button/button';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-alteration-professor-novelties',
@@ -41,10 +59,10 @@ import { NoveltyBudgetStore } from './novelty-budget.store';
     Icon,
     Label,
     Select,
-    Button,
     ReactiveFormsModule,
     NgComponentOutlet,
-  ],
+    Button
+],
   providers: [NoveltyComponentState],
   templateUrl: './alteration-professor-novelties.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,14 +70,14 @@ import { NoveltyBudgetStore } from './novelty-budget.store';
 export class AlterationProfessorNovelties {
   private readonly coordinationService = inject(CoordinationService);
   private readonly notificationService = inject(NotificationService);
+  private readonly permissions = inject(PermissionService);
   readonly noveltyState = inject(NoveltyComponentState);
   readonly budgetStore = inject(NoveltyBudgetStore);
 
   readonly isOpen = input(false);
   readonly professor = input<ModalityProfessor | null>(null);
+  readonly contractModality = input<CoordinationContractModality | null>(null);
   readonly coordination = input<CoordinationItem | null>(null);
-  readonly contractModality =
-    input<CoordinationContractModality | null>(null);
   readonly close = output<void>();
   readonly saved = output<void>();
 
@@ -87,10 +105,17 @@ export class AlterationProfessorNovelties {
   });
 
   readonly noveltyOptions = computed(() => {
-    return this.noveltiesResource.value().map((novelty) => ({
-      value: String(novelty.id),
-      label: novelty.tipo,
-    }));
+    const options: { value: string; label: string }[] = [];
+    forNext(this.noveltiesResource.value(), (novelty) => {
+      if (!this.canSelectNovelty(novelty)) {
+        return;
+      }
+      options.push({
+        value: String(novelty.id),
+        label: novelty.tipo,
+      });
+    });
+    return options;
   });
 
   readonly selectedNoveltyKey = computed(() => {
@@ -114,6 +139,10 @@ export class AlterationProfessorNovelties {
     noveltyId: this.parseNoveltyId(this.selectedNoveltyId()),
   }));
 
+  readonly canSaveSelectedNovelty = computed(() => {
+    return this.canSaveNoveltyKey(this.selectedNoveltyKey());
+  });
+
   constructor() {
     effect(() => {
       this.selectedNoveltyId();
@@ -128,7 +157,8 @@ export class AlterationProfessorNovelties {
     if (
       this.saving() ||
       this.idNovedadControl.invalid ||
-      this.budgetStore.excede()
+      this.budgetStore.excede() ||
+      !this.canSaveSelectedNovelty()
     ) {
       return;
     }
@@ -184,9 +214,22 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
   ): Promise<boolean> {
-
     const payload = this.noveltyState.payload();
+    if (!this.canSaveNoveltyKey(payload?.component ?? null)) {
+      return Promise.resolve(false);
+    }
+    return this.dispatchNoveltySave(
+      payload,
+      idNovedad,
+      idCargaDocente,
+    );
+  }
 
+  private dispatchNoveltySave(
+    payload: NoveltyComponentPayload | null,
+    idNovedad: number,
+    idCargaDocente: number,
+  ): Promise<boolean> {
     if (payload?.component === 'asign-name-nn') {
       return this.saveAssignNameNn(
         idNovedad,
@@ -194,7 +237,6 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
-
     if (payload?.component === 'change-professor') {
       return this.saveChangeProfessor(
         idNovedad,
@@ -202,17 +244,25 @@ export class AlterationProfessorNovelties {
         payload.idPersonaGeneral,
       );
     }
-
     if (payload?.component === 'change-contract-modality') {
-      const request = {
+      return this.saveChangeContractModality({
         ...payload.request,
         idNovedad,
         idCargaDocente,
-      };
-
-      return this.saveChangeContractModality(request);
+      });
     }
-
+    if (
+      payload?.component === 'change-project-activities' ||
+      payload?.component === 'change-direct-activities'
+    ) {
+      return this.saveNoveltyActivityDetails({
+        detallesNuevos: payload.saveRequest.detalles,
+        detallesActualizados: payload.updateRequests,
+        detallesEliminados: payload.deleteIds,
+        idNovedad,
+        idCargaDocente,
+      });
+    }
     return Promise.resolve(false);
   }
 
@@ -248,11 +298,53 @@ export class AlterationProfessorNovelties {
     return true;
   }
 
-  private async saveChangeContractModality(request: SaveNovedadCargaDocenteRequest): Promise<boolean> {
+  private async saveChangeContractModality(
+    request: SaveNovedadCargaDocenteRequest,
+  ): Promise<boolean> {
+    if (!this.permissions.canSaveContractModalityProfessor()) {
+      return false;
+    }
+
     await firstValueFrom(
       this.coordinationService.saveContractModalityProfessor(request),
     );
     return true;
+  }
+
+  private async saveNoveltyActivityDetails(
+    request: SaveNoveltyProjectActivitiesRequest,
+  ): Promise<boolean> {
+    const { detallesNuevos, detallesActualizados, detallesEliminados } = request;
+    if (detallesNuevos.length === 0 && detallesActualizados.length === 0 && detallesEliminados.length === 0) {
+      this.notificationService.warning(
+        'Agrega, modifica o elimina al menos una actividad para guardar.',
+        'Sin actividades',
+      );
+      return false;
+    }
+
+    await firstValueFrom(
+      this.coordinationService.saveNoveltyProjectActivities(request),
+    );
+
+    return true;
+  }
+
+  private canSelectNovelty(novelty: NoveltiesItem): boolean {
+    const key = novelty.componente;
+    if (!isNoveltyComponentKey(key)) {
+      return true;
+    }
+    return this.canSaveNoveltyKey(key);
+  }
+
+  private canSaveNoveltyKey(
+    key: NoveltyComponentKey | null,
+  ): boolean {
+    return hasNoveltySavePermission(
+      (codigo) => this.permissions.can(codigo),
+      key,
+    );
   }
 
   private parseNoveltyId(value: string): number | null {
