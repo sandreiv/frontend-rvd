@@ -31,7 +31,7 @@
                 type="button"
                 size="sm"
                 className="h-11 shrink-0 whitespace-nowrap"
-                (btnClick)="onProfessorAddModalOpen()"
+                (btnClick)="openAddProfessorModal()"
               >
                 <app-icon name="plus" size="sm" />
                 Agregar docente
@@ -246,6 +246,17 @@
   [contractModality]="selectedContractModality()"
   (close)="closeNoveltiesModal()"
   (saved)="onNoveltySaved()"
+/>
+
+<app-alteration-professor-add-modal
+  [isOpen]="isAddProfessorModalOpen()"
+  [idCarga]="coordination().idCarga"
+  [anioUniversidad]="coordination().anioUniversidad"
+  [periodoUniversidad]="coordination().periodoUniversidad"
+  [contractModality]="selectedContractModality()"
+  [mode]="'create'"
+  (close)="closeAddProfessorModal()"
+  (saved)="onProfessorSaved()"
 />
 
 <app-new-modal

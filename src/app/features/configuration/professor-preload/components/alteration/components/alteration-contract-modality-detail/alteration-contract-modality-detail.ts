@@ -27,6 +27,7 @@ import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
 import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
+import { ProfessorAddModal } from '../alteration-professor-add-modal/alteration-professor-add-modal';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -118,7 +119,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -135,6 +136,7 @@ export class AlterationContractModalityDetail {
   readonly refreshKey = input(0);
 
   readonly isDeleteProfessorModalOpen = signal(false);
+  readonly isAddProfessorModalOpen = signal(false);
   readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
   readonly isRequestingDeleteProfessor = signal(false);
 
@@ -376,8 +378,22 @@ export class AlterationContractModalityDetail {
     this.tcoDurationFilter.set('todos');
   }
 
-  onProfessorAddModalOpen(): void {
+  openAddProfessorModal(): void {
+    if (!this.selectedContractModality()) {
+      return;
+    }
 
+    this.isAddProfessorModalOpen.set(true);
+  }
+
+  closeAddProfessorModal(): void {
+    this.isAddProfessorModalOpen.set(false);
+  }
+
+  onProfessorSaved(): void {
+    this.closeAddProfessorModal();
+    this.modalityProfessorsResource.reload();
+    void this.refreshBudget();
   }
 
   canOpenProfessorMenu(professor: ModalityProfessor): boolean {
