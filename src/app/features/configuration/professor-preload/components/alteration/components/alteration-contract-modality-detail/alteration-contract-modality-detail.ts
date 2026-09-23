@@ -785,7 +785,6 @@ export class AlterationContractModalityDetail {
 
     this.isRequestingDeleteProfessor.set(true);
 
-    this.coordinationService
       this.coordinationService.getDeleteNovelties()
       .pipe(
         map((novelties) =>
