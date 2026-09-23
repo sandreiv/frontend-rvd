@@ -18,6 +18,7 @@ import {
   ValuePointsPreload,
   WorkDate,
   normalizeCoordinationItem,
+  UpdateContractValueRequest,
 } from '../model/coordination.model';
 import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
@@ -435,20 +436,6 @@ export class CoordinationService {
   }
 
   /**
-   * Guarda o actualiza las novedades en detalles de actividades
-   *
-   * @param request Distribución de actividades de la precarga docente para guardar dentro de detalles novedades.
-   * @returns Observable sin contenido cuando el guardado finaliza correctamente.
-   */
-  saveNoveltyProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Observable<void> {
-    console.log('request', request);
-    return this.webRequestService.post<void>(
-      `${this.endpoint}/save-novelty-detail-professor-preload`,
-      request,
-    );
-  }
-
-  /**
    * Consulta el detalle de la distribución de actividades de un docente.
    *
    * @param idCargaDocente Identificador de la carga docente.
@@ -755,6 +742,21 @@ export class CoordinationService {
   }
 
 
+  /**
+   * Actualiza el valor de los puntos segun los que se almacenan en la tabla ESCALAFON siempre y cuando no supere el presupuesto
+   * 
+   * @param request Objeto con la carga docente a actualizar y el ID de la novedad
+   * @returns Observable sin contenido cuando el la actualización en novedad carga docente finaliza correctamente.
+   */
+  updateContractValue(
+    request: UpdateContractValueRequest
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/novelties/update-contract-value`,
+      request,
+    );
+  }
+  
   assignNameToNn(
     request: AssignNameNnRequest,
   ): Observable<void> {
@@ -784,8 +786,6 @@ export class CoordinationService {
     );
   }
 
-
-
   /**
    * Lista las modalidades de contratación.
    *
@@ -809,6 +809,20 @@ export class CoordinationService {
   ): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/save-contract-modality-professor`,
+      request,
+    );
+  }
+
+  /**
+   * Guarda o actualiza las novedades en detalles de actividades
+   *
+   * @param request Distribución de actividades de la precarga docente para guardar dentro de detalles novedades.
+   * @returns Observable sin contenido cuando el guardado finaliza correctamente.
+   */
+  saveNoveltyProjectActivities(request: SaveNoveltyProjectActivitiesRequest): Observable<void> {
+    console.log('request', request);
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-novelty-detail-professor-preload`,
       request,
     );
   }

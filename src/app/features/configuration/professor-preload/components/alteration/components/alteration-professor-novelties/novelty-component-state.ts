@@ -25,6 +25,10 @@ export interface AssignNameNnPayload {
   idPersonaGeneral: number;
 }
 
+export interface UpdateContractValue {
+  component: 'update-contract-value';
+}
+
 export interface ChangeProfessorPayload {
   component: 'change-professor';
   idPersonaGeneral: number;
@@ -44,6 +48,7 @@ export interface ChangeProjectActivitiesPayload {
 
 export type NoveltyComponentPayload =
   | AssignNameNnPayload
+  | UpdateContractValue
   | ChangeProfessorPayload
   | ChangeContractModalityPayload
   | ChangeProjectActivitiesPayload;
@@ -64,6 +69,12 @@ export class NoveltyComponentState {
     this.payload.set({
       component: 'asign-name-nn',
       idPersonaGeneral,
+    });
+  }
+
+  setUpdateContractValue(): void {
+    this.payload.set({
+      component: 'update-contract-value',
     });
   }
 

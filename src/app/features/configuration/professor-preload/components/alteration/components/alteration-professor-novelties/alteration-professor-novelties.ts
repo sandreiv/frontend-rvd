@@ -221,6 +221,13 @@ export class AlterationProfessorNovelties {
       );
     }
 
+    if (payload?.component === 'update-contract-value') {
+      return this.updateContractValue(
+        idNovedad,
+        idCargaDocente,
+      );
+    }
+
     if (payload?.component === 'change-professor') {
       return this.saveChangeProfessor(
         idNovedad,
@@ -263,6 +270,19 @@ export class AlterationProfessorNovelties {
         idCargaDocente,
         idNovedad,
         idPersonaGeneral,
+      }),
+    );
+    return true;
+  }
+
+  private async updateContractValue(
+    idNovedad: number,
+    idCargaDocente: number,
+  ): Promise<boolean> {
+    await firstValueFrom(
+      this.coordinationService.updateContractValue({
+        idCargaDocente,
+        idNovedad,
       }),
     );
     return true;
@@ -311,7 +331,6 @@ export class AlterationProfessorNovelties {
     await firstValueFrom(
       this.coordinationService.saveNoveltyProjectActivities(request),
     );
-
     return true;
   }
 

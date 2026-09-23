@@ -354,7 +354,13 @@ export interface ChangeProfessorRequest {
   idNovedad: number;
   idPersonaGeneral: number;
 }
+
 export interface DeleteProfessorRequest {
+  idCargaDocente: number;
+  idNovedad: number;
+}
+
+export interface UpdateContractValueRequest {
   idCargaDocente: number;
   idNovedad: number;
 }
