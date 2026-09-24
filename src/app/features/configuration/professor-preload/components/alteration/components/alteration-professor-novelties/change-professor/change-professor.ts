@@ -200,12 +200,22 @@ export class ChangeProfessor {
       return;
     }
 
+    const idEscalafon =
+      professor.escalafon?.id;
+
+    if (idEscalafon == null) {
+      this.selectedProfessor.set(null);
+      this.noveltyState.clear();
+      return;
+    }
+
     this.selectedProfessor.set(
       professor,
     );
 
     this.noveltyState.setChangeProfessor(
       professor.id,
+      idEscalafon,
     );
   }
 

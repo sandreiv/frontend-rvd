@@ -48,6 +48,7 @@ import {
   NoveltyComponentPayload,
   NoveltyComponentState,
 } from './novelty-component-state';
+import { isProfessorNoveltyPendingReview } from '../../../../model/professor-novelty-state';
 import { NoveltyBudgetStore } from './novelty-budget.store';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { firstValueFrom } from 'rxjs';
@@ -82,6 +83,12 @@ export class AlterationProfessorNovelties {
   readonly saved = output<void>();
 
   readonly saving = signal(false);
+
+  readonly hasNoveltyInReview = computed(() =>
+    isProfessorNoveltyPendingReview(
+      this.professor()?.estadoNovedad,
+    ),
+  );
 
   readonly idNovedadControl = new FormControl('', {
     nonNullable: true,
@@ -242,6 +249,7 @@ export class AlterationProfessorNovelties {
         idNovedad,
         idCargaDocente,
         payload.idPersonaGeneral,
+        payload.idEscalafon,
       );
     }
     if (payload?.component === 'change-contract-modality') {
@@ -285,6 +293,7 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
     idPersonaGeneral: number,
+    idEscalafon: number,
   ): Promise<boolean> {
 
     await firstValueFrom(
@@ -292,6 +301,7 @@ export class AlterationProfessorNovelties {
         idCargaDocente,
         idNovedad,
         idPersonaGeneral,
+        idEscalafon,
       }),
     );
 

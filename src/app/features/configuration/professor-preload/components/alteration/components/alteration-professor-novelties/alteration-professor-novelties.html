@@ -24,57 +24,89 @@
   </div>
 
   <div class="max-h-[65vh] overflow-y-auto px-6 py-6 sm:px-8">
-    <div class="flex flex-col gap-2">
-      <app-label>Novedad</app-label>
-      <app-select
-        [formControl]="idNovedadControl"
-        [options]="noveltyOptions()"
-        [disabled]="noveltiesResource.isLoading()"
-        placeholder="Seleccione la novedad"
-        searchPlaceholder="Buscar novedad..."
-        emptyText="No hay novedades disponibles"
-      />
 
-      @if (idNovedadControl.touched && idNovedadControl.invalid) {
-        <p class="text-xs font-medium text-red-600 dark:text-red-400">
-          Debe seleccionar una novedad.
+    @if (hasNoveltyInReview()) {
+
+      <div
+        class="rounded-xl border border-warning-200 bg-warning-50 px-5 py-4
+              dark:border-warning-500/20 dark:bg-warning-500/10"
+      >
+        <p
+          class="text-sm font-semibold text-warning-700
+                dark:text-warning-400"
+        >
+          El docente tiene una novedad en revisión.
         </p>
+
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+          La novedad actual debe ser resuelta antes de registrar una nueva.
+        </p>
+      </div>
+
+    } @else {
+
+      <div class="flex flex-col gap-2">
+        <app-label>Novedad</app-label>
+
+        <app-select
+          [formControl]="idNovedadControl"
+          [options]="noveltyOptions()"
+          [disabled]="noveltiesResource.isLoading()"
+          placeholder="Seleccione la novedad"
+          searchPlaceholder="Buscar novedad..."
+          emptyText="No hay novedades disponibles"
+        />
+
+        @if (idNovedadControl.touched && idNovedadControl.invalid) {
+          <p class="text-xs font-medium text-red-600 dark:text-red-400">
+            Debe seleccionar una novedad.
+          </p>
+        }
+      </div>
+
+      @if (selectedNoveltyComponent(); as component) {
+        <div class="mt-6">
+          <ng-container
+            [ngComponentOutlet]="component"
+            [ngComponentOutletInputs]="noveltyInputs()"
+          />
+        </div>
       }
+
+    }
+
+  </div>
+
+  @if (!hasNoveltyInReview()) {
+
+    <div
+      class="flex justify-end gap-3 border-t border-gray-200 px-6 py-5
+            dark:border-gray-700 sm:px-8"
+    >
+      <app-button
+        type="button"
+        [disabled]="
+          idNovedadControl.invalid ||
+          noveltiesResource.isLoading() ||
+          !noveltyState.isValid() ||
+          budgetStore.excede() ||
+          saving() ||
+          !canSaveSelectedNovelty()
+        "
+        (btnClick)="onSave()"
+      >
+        {{ saving() ? 'Guardando...' : 'Guardar' }}
+      </app-button>
     </div>
 
-    @if (selectedNoveltyComponent(); as component) {
-      <div class="mt-6">
-        <ng-container
-          [ngComponentOutlet]="component"
-          [ngComponentOutletInputs]="noveltyInputs()"
-        />
-      </div>
+    @if (budgetStore.excede()) {
+      <p
+        class="px-6 pb-5 text-sm font-medium text-red-600
+              dark:text-red-400 sm:px-8"
+      >
+        El valor proyectado supera el valor autorizado.
+      </p>
     }
-  </div>
 
-  <div
-    class="flex justify-end gap-3 border-t border-gray-200 px-6 py-5 dark:border-gray-700 sm:px-8"
-  >
-    <app-button
-      type="button"
-      [disabled]="
-        idNovedadControl.invalid ||
-        noveltiesResource.isLoading() ||
-        !noveltyState.isValid() ||
-        budgetStore.excede() ||
-        saving() ||
-        !canSaveSelectedNovelty()
-      "
-      (btnClick)="onSave()"
-    >
-      {{ saving() ? 'Guardando...' : 'Guardar' }}
-    </app-button>
-  </div>
-  @if (budgetStore.excede()) {
-    <p
-      class="px-6 pb-5 text-sm font-medium text-red-600 dark:text-red-400 sm:px-8"
-    >
-      El valor proyectado supera el valor autorizado.
-    </p>
   }
 </app-modal>

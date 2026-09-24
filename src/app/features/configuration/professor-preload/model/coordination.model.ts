@@ -353,6 +353,7 @@ export interface ChangeProfessorRequest {
   idCargaDocente: number;
   idNovedad: number;
   idPersonaGeneral: number;
+  idEscalafon: number;
 }
 export interface DeleteProfessorRequest {
   idCargaDocente: number;

@@ -17,7 +17,6 @@ import { formatSentenceValue } from '../../../../../../../shared/utils/normalize
 import { resolveModalityKind } from '../../../../model/professor-form.config';
 import { TabBar } from '../../../../../../../shared/ui/tab-bar/tab-bar';
 import { PermissionService } from '../../../../../../../core/service/permission-service';
-import { NOVELTY_SAVE_FUNC } from '../../../../model/novelty-save-permission.map';
 import { Button } from "../../../../../../../shared/ui/button/button";
 import { Icon } from "../../../../../../../shared/ui/icon/icon";
 import { AppIconName } from '../../../../../../../shared/ui/icon/icons';
@@ -381,7 +380,9 @@ export class AlterationContractModalityDetail {
   }
 
   canOpenProfessorMenu(professor: ModalityProfessor): boolean {
-    return this.resolveProfessorActions(professor).length > 0;
+    if (!professor.tieneCarga) return false;
+
+    return this.isCoordinator() && this.isCargaEnAvalDesarrollo();
   }
 
   toggleProfessorMenu(menuKey: string, professor?: ModalityProfessor): void {
@@ -402,13 +403,12 @@ export class AlterationContractModalityDetail {
     estadoNovedad?: string | number | null;
   }): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
+    const hasDetail = professor.tieneDetalleActividades === true;
 
-    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) {
-      return [];
-    }
+    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
 
     const actions: ProfessorMenuAction[] = [];
-    if (this.canApprovePendingNovelty(professor.estadoNovedad)) {
+    if (isProfessorNoveltyPendingReview(professor.estadoNovedad)) {
       actions.push({
         id: 'aprobar-novedad',
         label: 'Aprobar novedad',
@@ -417,13 +417,11 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    if (this.canManageProfessorNovelties()) {
-      actions.push({
-        id: 'novedad',
-        label: 'Gestionar novedad',
-        icon: 'newspaper',
-      });
-    }
+    actions.push({
+      id: 'novedad',
+      label: 'Gestionar novedad',
+      icon: 'newspaper',
+    });
 
     if (this.permissions.canDeleteProfessor()) {
       actions.push({
@@ -434,6 +432,7 @@ export class AlterationContractModalityDetail {
       });
     }
 
+    // Agregar las acciones
     return actions;
   }
 
@@ -446,9 +445,6 @@ export class AlterationContractModalityDetail {
     }
 
     if (actionId === 'novedad') {
-      if (!this.canManageProfessorNovelties()) {
-        return;
-      }
       this.openNoveltiesModal(professor);
     }
 
@@ -461,34 +457,10 @@ export class AlterationContractModalityDetail {
     if (professor.idCargaDocente == null) {
       return false;
     }
-    if (!this.isCargaEnAvalDesarrollo()) {
+    if (!this.canOpenProfessorMenu(professor)) {
       return false;
     }
-    return this.canApprovePendingNovelty(professor.estadoNovedad);
-  }
-
-  private canApprovePendingNovelty(
-    estadoNovedad: string | number | null | undefined,
-  ): boolean {
-    return (
-      this.permissions.canApproveProfessorNovelty() &&
-      isProfessorNoveltyPendingReview(estadoNovedad)
-    );
-  }
-
-  private canManageProfessorNovelties(): boolean {
-    if (this.isCoordinator()) {
-      return true;
-    }
-
-    const codes = Object.values(NOVELTY_SAVE_FUNC);
-    let allowed = false;
-    forNext(codes, (codigo) => {
-      if (codigo && this.permissions.can(codigo)) {
-        allowed = true;
-      }
-    });
-    return allowed;
+    return isProfessorNoveltyPendingReview(professor.estadoNovedad);
   }
 
   isApprovingNovelty(professor: ModalityProfessor): boolean {

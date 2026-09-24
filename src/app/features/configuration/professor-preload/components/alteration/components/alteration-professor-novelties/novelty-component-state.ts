@@ -28,6 +28,7 @@ export interface AssignNameNnPayload {
 export interface ChangeProfessorPayload {
   component: 'change-professor';
   idPersonaGeneral: number;
+  idEscalafon: number;
 }
 
 export interface ChangeContractModalityPayload {
@@ -77,10 +78,12 @@ export class NoveltyComponentState {
 
   setChangeProfessor(
     idPersonaGeneral: number,
-    ): void {
+    idEscalafon: number,
+  ): void {
     this.payload.set({
-        component: 'change-professor',
-        idPersonaGeneral,
+      component: 'change-professor',
+      idPersonaGeneral,
+      idEscalafon,
     });
   }
 
