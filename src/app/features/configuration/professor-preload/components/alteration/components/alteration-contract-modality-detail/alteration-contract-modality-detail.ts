@@ -9,7 +9,7 @@ import {
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable, map, forkJoin, switchMap, finalize } from 'rxjs';
-import { isProfessorNoveltyPendingReview } from '../../../../model/professor-novelty-state';
+import {isProfessorNoveltyPendingReview, NOVELTY_APPROVED_STATE, NOVELTY_PENDING_REVIEW_STATE, NOVELTY_RETURNED_STATE, } from '../../../../model/professor-novelty-state';
 import { NoveltyBudgetStore } from '../alteration-professor-novelties/novelty-budget.store';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
@@ -31,7 +31,7 @@ type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
 type TcoFilter = 'todos' | 'duracion' | 'estado';
 type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';
-type TcoStateFilter = 'todos' | 'enRegistro' | 'porVerificar' | 'verificado' | 'devuelto' | 'aprobado';
+type TcoStateFilter ='todos' | 'enRevision' | 'aprobado' | 'devuelto';
 
 interface StatusBadge {
   label: string;
@@ -78,11 +78,7 @@ interface TcoStateSwitchItem {
 }
 
 const NN_LABEL = 'NN';
-const ON_REGISTER_STATE = '0';
-const PENDING_VERIFY_STATE = '1';
-const VERIFIED_STATE = '2';
-const RETURNED_STATE = '3';
-const APPROVED_STATE = '4';
+const CADO_ON_REGISTER_STATE = '0';
 
 const BADGE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 ' +
@@ -175,30 +171,21 @@ export class AlterationContractModalityDetail {
     },
   ];
   readonly tcoStateFilter = signal<TcoStateFilter>('todos');
+
   readonly tcoStateSwitchItems: TcoStateSwitchItem[] = [
     {
-      id: 'enRegistro',
-      label: 'En registro',
-      icon: 'orbit',
-    },
-    {
-      id: 'porVerificar',
-      label: 'Por verificar',
-      icon: 'orbit',
-    },
-    {
-      id: 'verificado',
-      label: 'Verificado',
-      icon: 'orbit',
-    },
-    {
-      id: 'devuelto',
-      label: 'Devuelto',
+      id: 'enRevision',
+      label: 'En revisión',
       icon: 'orbit',
     },
     {
       id: 'aprobado',
-      label: 'Aprobado',
+      label: 'Aprobada',
+      icon: 'orbit',
+    },
+    {
+      id: 'devuelto',
+      label: 'Devuelta',
       icon: 'orbit',
     },
   ];
@@ -550,24 +537,35 @@ export class AlterationContractModalityDetail {
   }
   
 
-  professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
-    if (!professor.estado) {
-      return null;
-    }
+  professorStatusBadge(
+    professor: ModalityProfessor,
+  ): StatusBadge | null {
+    const estadoNovedad =
+      professor.estadoNovedad == null
+        ? ''
+        : String(professor.estadoNovedad).trim();
 
-    switch (professor.estado) {
-      case ON_REGISTER_STATE:
-        return this.buildStatusBadge('En registro', 'gray');
-      case PENDING_VERIFY_STATE:
-        return this.buildStatusBadge('Enviado para verificar', 'warning');
-      case VERIFIED_STATE:
-        return this.buildStatusBadge('Verificado', 'brand');
-      case RETURNED_STATE:
-        return this.buildStatusBadge('Devuelto', 'error');
-      case APPROVED_STATE:
-        return this.buildStatusBadge('Aprobada', 'success');
+    switch (estadoNovedad) {
+      case NOVELTY_PENDING_REVIEW_STATE:
+        return this.buildStatusBadge(
+          'En revisión',
+          'gray',
+        );
+
+      case NOVELTY_APPROVED_STATE:
+        return this.buildStatusBadge(
+          'Aprobada',
+          'success',
+        );
+
+      case NOVELTY_RETURNED_STATE:
+        return this.buildStatusBadge(
+          'Devuelta',
+          'error',
+        );
+
       default:
-        return this.buildStatusBadge('Estado desconocido', 'gray');
+        return null;
     }
   }
 
@@ -609,19 +607,29 @@ export class AlterationContractModalityDetail {
     }
 
     return professors.filter((professor) => {
-      const estado = professor.estado.trim();
+      const estadoNovedad =
+        professor.estadoNovedad == null
+          ? ''
+          : String(professor.estadoNovedad).trim();
 
-      if (filter === 'enRegistro') {
-        return estado === ON_REGISTER_STATE;
-      } else if (filter === 'porVerificar') {
-        return estado === PENDING_VERIFY_STATE;
-      } else if (filter === 'verificado') {
-        return estado === VERIFIED_STATE;
-      } else if (filter === 'devuelto') {
-        return estado === RETURNED_STATE;
-      } else {
-        return estado === APPROVED_STATE;
+      if (filter === 'enRevision') {
+        return (
+          estadoNovedad ===
+          NOVELTY_PENDING_REVIEW_STATE
+        );
       }
+
+      if (filter === 'aprobado') {
+        return (
+          estadoNovedad ===
+          NOVELTY_APPROVED_STATE
+        );
+      }
+
+      return (
+        estadoNovedad ===
+        NOVELTY_RETURNED_STATE
+      );
     });
   }
 
@@ -728,7 +736,8 @@ export class AlterationContractModalityDetail {
     }
 
     const verified = professors.filter(
-      (professor) => professor.estado !== ON_REGISTER_STATE,
+      (professor) =>
+        professor.estado !== CADO_ON_REGISTER_STATE,
     ).length;
 
     return {

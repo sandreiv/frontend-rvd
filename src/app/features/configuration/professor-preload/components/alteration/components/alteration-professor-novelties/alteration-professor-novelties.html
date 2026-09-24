@@ -38,6 +38,15 @@
           El docente tiene una novedad en revisión.
         </p>
 
+        @if (professor()?.tipoNovedad; as tipoNovedad) {
+          <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">
+            Novedad en curso:
+            <span class="font-semibold">
+              {{ tipoNovedad }}
+            </span>
+          </p>
+        }
+
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
           La novedad actual debe ser resuelta antes de registrar una nueva.
         </p>

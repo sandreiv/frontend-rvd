@@ -242,6 +242,7 @@ export interface ModalityProfessor {
   idCarga: number;
   idNovedadCatalogo?: number | null;
   estadoNovedad?: string | number | null;
+  tipoNovedad?: string | null;
   idFechasConvocatoria: number;
   fechaConvocatoriaCodigo: string | null;
   fechaInicio: string;

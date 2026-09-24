@@ -1,4 +1,6 @@
 export const NOVELTY_PENDING_REVIEW_STATE = '0';
+export const NOVELTY_APPROVED_STATE = '1';
+export const NOVELTY_RETURNED_STATE = '2';
 
 /**
  * Indica si la novedad del docente está en revisión
@@ -10,5 +12,6 @@ export function isProfessorNoveltyPendingReview(
   if (estadoNovedad == null || estadoNovedad === '') {
     return false;
   }
+
   return String(estadoNovedad) === NOVELTY_PENDING_REVIEW_STATE;
 }
