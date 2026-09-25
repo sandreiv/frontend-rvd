@@ -348,6 +348,7 @@ export interface AssignNameNnRequest {
   idCargaDocente: number;
   idNovedad: number;
   idPersonaGeneral: number;
+  idEscalafon: number;
 }
 
 export interface ChangeProfessorRequest {
