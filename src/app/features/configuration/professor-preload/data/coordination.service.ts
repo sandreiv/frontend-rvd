@@ -19,6 +19,7 @@ import {
   WorkDate,
   normalizeCoordinationItem,
   UpdateContractValueRequest,
+  AddNoveltyProfessorRequest,
 } from '../model/coordination.model';
 import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
@@ -741,12 +742,24 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Consulta las novedades con acción GUARDAR.
+   *
+   * @returns Observable con las novedades de guardar disponibles.
+   */
+  getSaveNovelties(): Observable<NoveltiesItem[]> {
+    return this.webRequestService.get<NoveltiesItem[]>(
+      `${this.endpoint}/list-novelties`,
+      { accion: 'GUARDAR' },
+    );
+  }
+
 
   /**
    * Actualiza el valor de los puntos segun los que se almacenan en la tabla ESCALAFON siempre y cuando no supere el presupuesto
    * 
    * @param request Objeto con la carga docente a actualizar y el ID de la novedad
-   * @returns Observable sin contenido cuando el la actualización en novedad carga docente finaliza correctamente.
+   * @returns Observable sin contenido cuando la actualización en novedad carga docente finaliza correctamente.
    */
   updateContractValue(
     request: UpdateContractValueRequest
@@ -782,6 +795,22 @@ export class CoordinationService {
   ): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/novelties/delete-professor`,
+      request,
+    );
+  }
+
+
+  /**
+   * Registra un docente en la precarga y en la novedad carga docente.
+   * 
+   * @param request Información del docente, carga y modalidad de contratación.
+   * @returns Observable sin contenido cuando la creación finaliza correctamente.
+   */
+  addNoveltyProfessor(
+    request: AddNoveltyProfessorRequest
+  ): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/novelties/add-professor`,
       request,
     );
   }
