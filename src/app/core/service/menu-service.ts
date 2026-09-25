@@ -1,7 +1,5 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, map, Observable, of, tap } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import {
   FUNC_ROUTE_MAP,
   FuncRouteItem,
@@ -24,7 +22,6 @@ export type MenuNavItem = {
   providedIn: 'root',
 })
 export class MenuService {
-  private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
 
   readonly tree = signal<FuncionalidadNodo[]>([]);
@@ -41,25 +38,17 @@ export class MenuService {
     });
   }
 
+  /**
+   * Carga el árbol de funcionalidades vía GET /api/auth/menu (RVD lo pide a
+   * SecurityAuth con el JWT guardado en el servidor).
+   */
   load(): Observable<void> {
     if (!this.authService.isAuthenticated()) {
       this.markLoaded([]);
       return of(undefined);
     }
 
-    const params = this.buildArbolParams(
-      this.authService.getRoles(),
-      environment.auth.applicationId,
-    );
-
-    const arbolUrl = this.resolveArbolUrl();
-
-    if (!arbolUrl) {
-      this.markLoaded([]);
-      return of(undefined);
-    }
-
-    return this.http.get<unknown>(arbolUrl, { params }).pipe(
+    return this.authService.menu().pipe(
       map((payload) => nestByCodigo(normalizeArbol(payload))),
       tap((nodos) => this.markLoaded(nodos)),
       map(() => undefined),
@@ -105,25 +94,6 @@ export class MenuService {
     this.tree.set(nodos);
     this.navItems.set(toNavItems(nodos));
     this.loaded.set(true);
-  }
-
-  private resolveArbolUrl(): string | null {
-    const configured = environment.api.securityAuthUrl.trim();
-    const issuer = this.authService.getIssuer();
-    const base = configured || issuer;
-
-    if (!base) {
-      return null;
-    }
-
-    return `${base}/funcionalidad/arbol-roles`;
-  }
-
-  private buildArbolParams(roles: string[], appId: number): HttpParams {
-    return roles.reduce(
-      (params, role) => params.append('roles', role),
-      new HttpParams().set('idAplicacion', String(appId)),
-    );
   }
 }
 

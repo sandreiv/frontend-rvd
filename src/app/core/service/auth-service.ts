@@ -1,38 +1,36 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { jwtDecode } from 'jwt-decode';
+import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  BootstrapResponse,
+  CsrfResponse,
+  SessionResponse,
   SessionUser,
 } from '../model/session-user.model';
-import { StorageService } from './storage-service';
 import { WebRequestService } from './web-request-service';
 
-interface JwtIssuerPayload {
-  iss?: string;
-}
+const AUTH_ENDPOINT = '/api/auth';
+const DEFAULT_CSRF_HEADER = 'X-XSRF-TOKEN';
 
+/**
+ * Sesión RVD basada en cookie HttpOnly (RVD_SESSION).
+ * El JWT de Vortal se entrega una sola vez en bootstrap y nunca se guarda
+ * en el cliente; los datos del usuario y el token CSRF llegan en el body.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private readonly router = inject(Router);
-  private readonly storageService = inject(StorageService);
   private readonly webRequestService = inject(WebRequestService);
 
-  private readonly sessionUpdated = signal(0);
   private readonly bootstrapError = signal<string | null>(null);
 
-  readonly isAuthenticated = computed(() => {
-    this.sessionUpdated();
-    return this.storageService.hasSession();
-  });
-
-  readonly currentUser = signal<SessionUser | null>(
-    this.storageService.getUser<SessionUser>(),
-  );
+  readonly currentUser = signal<SessionUser | null>(null);
+  readonly isAuthenticated = computed(() => this.currentUser() !== null);
+  readonly expiresAt = signal<string | null>(null);
+  readonly csrfHeaderName = signal(DEFAULT_CSRF_HEADER);
+  readonly csrfToken = signal<string | null>(null);
 
   consumeBootstrapError(): string | null {
     const message = this.bootstrapError();
@@ -40,129 +38,116 @@ export class AuthService {
     return message;
   }
 
-  getToken(): string | null {
-    return this.storageService.getToken();
-  }
-
   getRoles(): string[] {
     return this.currentUser()?.roles ?? [];
   }
 
   /**
-   * Issuer del JWT SecurityAuth. Sirve como base URL del árbol.
+   * Arranque: consume #access_token de Vortal si viene en la URL;
+   * si no, intenta restaurar la sesión desde la cookie (GET /me).
    */
-  getIssuer(): string | null {
-    const token = this.getToken();
-
-    if (!token) {
-      return null;
-    }
-
-    try {
-      const payload = jwtDecode<JwtIssuerPayload>(token);
-      const issuer = payload.iss?.trim();
-      return issuer ? issuer.replace(/\/$/, '') : null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Lee #access_token (SSO Vortal) o token de desarrollo y arma la sesión.
-   */
-  async bootstrapFromVortalHash(): Promise<boolean> {
+  async initSession(): Promise<boolean> {
     const fromHash = this.readAccessTokenFromHash();
 
     if (fromHash) {
       return this.bootstrapWithToken(fromHash);
     }
 
-    if (this.isAuthenticated()) {
-      return true;
-    }
-
-    const fromDev = this.storageService.getDevToken();
-
-    if (!fromDev) {
-      return false;
-    }
-
-    return this.bootstrapWithToken(fromDev);
+    return this.restore();
   }
 
+  /**
+   * Entrega el JWT de Vortal al backend, que responde con la cookie de sesión.
+   */
   async bootstrapWithToken(accessToken: string): Promise<boolean> {
     try {
       const res = await firstValueFrom(
-        this.webRequestService.postWithoutAuth<BootstrapResponse>(
-          '/api/auth/bootstrap',
+        this.webRequestService.post<SessionResponse>(
+          `${AUTH_ENDPOINT}/bootstrap`,
           { accessToken },
         ),
       );
 
-      const persisted = this.persistSession(res);
       this.clearHashFromUrl();
-
-      if (!persisted) {
-        this.bootstrapError.set('No se pudo iniciar sesión desde Vortal.');
-        return false;
-      }
-
-      if (!environment.production) {
-        this.storageService.setDevToken(accessToken);
-      }
-
+      this.applySession(res);
       return true;
     } catch (err: unknown) {
       this.clearHashFromUrl();
-      this.bootstrapError.set(this.resolveBootstrapError(err));
+      this.bootstrapError.set(resolveBootstrapError(err));
       this.clearLocalSession();
       return false;
     }
   }
 
-  logout(): void {
+  /**
+   * Restaura la sesión (por ejemplo al recargar) a partir de la cookie.
+   */
+  async restore(): Promise<boolean> {
+    try {
+      const res = await firstValueFrom(
+        this.webRequestService.get<SessionResponse>(`${AUTH_ENDPOINT}/me`),
+      );
+
+      this.applySession(res);
+      return true;
+    } catch {
+      this.clearLocalSession();
+      return false;
+    }
+  }
+
+  /**
+   * Renueva el token CSRF (double submit) tras un 403 de CSRF.
+   */
+  async refreshCsrf(): Promise<void> {
+    const csrf = await firstValueFrom(
+      this.webRequestService.get<CsrfResponse>(`${AUTH_ENDPOINT}/csrf`),
+    );
+
+    this.csrfHeaderName.set(csrf.headerName || DEFAULT_CSRF_HEADER);
+    this.csrfToken.set(csrf.token ?? null);
+  }
+
+  /**
+   * Árbol de funcionalidades del usuario; RVD lo obtiene de SecurityAuth.
+   */
+  menu(): Observable<unknown> {
+    return this.webRequestService.get<unknown>(`${AUTH_ENDPOINT}/menu`);
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.webRequestService.post<void>(`${AUTH_ENDPOINT}/logout`, {}),
+      );
+    } catch {
+      // La sesión local se limpia igual aunque el servidor no responda.
+    }
+
     this.clearLocalSession();
     this.redirectAfterLogout();
   }
 
-  private persistSession(res: BootstrapResponse): boolean {
-    const token = res?.accessToken;
-
-    if (!token || typeof token !== 'string') {
-      return false;
-    }
-
-    const sessionUser = this.resolveSessionUser(res);
-
-    this.storageService.setToken(token);
-    this.storageService.setUser(sessionUser);
-    this.currentUser.set(sessionUser);
-    this.sessionUpdated.update((value) => value + 1);
-    return true;
+  /**
+   * Sesión inválida o vencida (401): limpiar y volver a Vortal
+   * para un nuevo bootstrap, sin llamar al servidor.
+   */
+  handleSessionExpired(): void {
+    this.clearLocalSession();
+    this.redirectAfterLogout();
   }
 
-  private resolveSessionUser(res: BootstrapResponse): SessionUser {
-    const fromUsuario = res.usuario;
-    const roles = fromUsuario?.roles ?? res.roles ?? [];
+  private applySession(res: SessionResponse): void {
+    this.currentUser.set(resolveSessionUser(res));
+    this.expiresAt.set(res.expiresAt ?? null);
+    this.csrfHeaderName.set(res.csrfHeaderName || DEFAULT_CSRF_HEADER);
+    this.csrfToken.set(res.csrfToken ?? null);
+  }
 
-    const username =
-      fromUsuario?.username ??
-      res.username ??
-      '';
-
-    const nombreCompleto =
-      fromUsuario?.nombreCompleto?.trim() ||
-      res.nombreCompleto?.trim() ||
-      username;
-
-    return {
-      username,
-      nombreCompleto,
-      idPersona: fromUsuario?.idPersona ?? res.idPersona ?? null,
-      roles: Array.isArray(roles) ? roles : [],
-      idAplicacion:
-        fromUsuario?.idAplicacion ?? environment.auth.applicationId,
-    };
+  private clearLocalSession(): void {
+    this.currentUser.set(null);
+    this.expiresAt.set(null);
+    this.csrfToken.set(null);
   }
 
   private readAccessTokenFromHash(): string | null {
@@ -189,12 +174,6 @@ export class AuthService {
     window.history.replaceState(null, '', path);
   }
 
-  private clearLocalSession(): void {
-    this.storageService.clearSession();
-    this.currentUser.set(null);
-    this.sessionUpdated.update((value) => value + 1);
-  }
-
   private redirectAfterLogout(): void {
     const vortalUrl = environment.auth.logoutRedirectUrl;
 
@@ -205,41 +184,56 @@ export class AuthService {
 
     void this.router.navigate([environment.auth.sessionRequiredUrl]);
   }
+}
 
-  private resolveBootstrapError(err: unknown): string {
-    const httpErr = err as {
-      status?: number;
-      error?: { message?: string; mensaje?: string } | string;
-      message?: string;
-    };
+function resolveSessionUser(res: SessionResponse): SessionUser {
+  const fromUsuario = res.usuario;
+  const roles = fromUsuario?.roles ?? res.roles ?? [];
+  const username = fromUsuario?.username ?? res.username ?? '';
+  const nombreCompleto =
+    fromUsuario?.nombreCompleto?.trim() ||
+    res.nombreCompleto?.trim() ||
+    username;
 
-    const backendMessage = this.readBackendMessage(httpErr);
+  return {
+    username,
+    nombreCompleto,
+    idPersona: fromUsuario?.idPersona ?? res.idPersona ?? null,
+    roles: Array.isArray(roles) ? roles : [],
+    idAplicacion:
+      fromUsuario?.idAplicacion ?? environment.auth.applicationId,
+  };
+}
 
-    if (httpErr?.status === 401) {
-      return backendMessage ?? 'Sesión de Vortal inválida o expirada.';
-    }
+interface HttpErrorLike {
+  status?: number;
+  error?: { message?: string; mensaje?: string } | string;
+  message?: string;
+}
 
-    if (httpErr?.status === 403) {
-      return (
-        backendMessage ?? 'Usuario no asociado a RVD. Contacte soporte.'
-      );
-    }
+function resolveBootstrapError(err: unknown): string {
+  const httpErr = err as HttpErrorLike;
+  const backendMessage = readBackendMessage(httpErr);
 
-    return backendMessage ?? 'No se pudo validar la sesión de Vortal.';
+  if (httpErr?.status === 401) {
+    return backendMessage ?? 'Sesión de Vortal inválida o expirada.';
   }
 
-  private readBackendMessage(httpErr: {
-    error?: { message?: string; mensaje?: string } | string;
-    message?: string;
-  }): string | null {
-    if (typeof httpErr?.error === 'string') {
-      return httpErr.error;
-    }
-
-    if (typeof httpErr?.error === 'object') {
-      return httpErr.error?.message ?? httpErr.error?.mensaje ?? null;
-    }
-
-    return httpErr?.message ?? null;
+  if (httpErr?.status === 403) {
+    return backendMessage ?? 'Usuario no asociado a RVD. Contacte soporte.';
   }
+
+  return backendMessage ?? 'No se pudo validar la sesión de Vortal.';
+}
+
+function readBackendMessage(httpErr: HttpErrorLike): string | null {
+  if (typeof httpErr?.error === 'string') {
+    return httpErr.error;
+  }
+
+  if (typeof httpErr?.error === 'object') {
+    return httpErr.error?.message ?? httpErr.error?.mensaje ?? null;
+  }
+
+  return httpErr?.message ?? null;
 }

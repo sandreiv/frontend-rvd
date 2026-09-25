@@ -20,8 +20,13 @@ const MUTATION_METHODS = new Set([
   'DELETE',
 ]);
 
-const BOOTSTRAP_PATH = '/api/auth/bootstrap';
+const AUTH_PATH = '/api/auth/';
 
+/**
+ * Toasts de éxito/error y manejo de 401 (sesión vencida → re-bootstrap).
+ * Debe ir por fuera de sessionInterceptor para ver solo el resultado final
+ * tras el reintento de CSRF.
+ */
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
   const authService = inject(AuthService);
@@ -57,7 +62,7 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
       );
 
       if (error.status === 401) {
-        authService.logout();
+        authService.handleSessionExpired();
       }
 
       toastService.show(toast.message, 'error', toast.title, 5000);
@@ -67,8 +72,10 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   );
 };
 
+/**
+ * Los endpoints de sesión gestionan sus propios errores
+ * (bootstrap, me, csrf, menu, logout).
+ */
 function shouldSkipToast(req: HttpRequest<unknown>): boolean {
-  return (
-    req.url.includes(BOOTSTRAP_PATH) || req.url.includes('/arbol-roles')
-  );
+  return req.url.includes(AUTH_PATH);
 }

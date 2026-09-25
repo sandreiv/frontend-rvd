@@ -1,12 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../service/auth-service';
+import { MenuService } from '../service/menu-service';
 
-export const authGuard: CanActivateFn = () => {
+/**
+ * Rutas privadas: si no hay sesión en memoria intenta restaurarla desde la
+ * cookie (GET /me); si sigue sin sesión, vuelve a Vortal.
+ */
+export const authGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
+  const menuService = inject(MenuService);
+  const router = inject(Router);
 
   if (authService.isAuthenticated()) {
+    return true;
+  }
+
+  if (await authService.restore()) {
+    await firstValueFrom(menuService.load());
     return true;
   }
 
@@ -17,5 +30,5 @@ export const authGuard: CanActivateFn = () => {
     return false;
   }
 
-  return inject(Router).parseUrl(environment.auth.sessionRequiredUrl);
+  return router.parseUrl(environment.auth.sessionRequiredUrl);
 };

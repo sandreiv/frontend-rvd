@@ -18,8 +18,8 @@ import { firstValueFrom } from 'rxjs';
 import { routes } from './app.routes';
 import { APP_CONFIG } from './core/config/app-config.token';
 import { environment } from '../environments/environment';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
+import { sessionInterceptor } from './core/interceptors/session.interceptor';
 import { AuthService } from './core/service/auth-service';
 import { MenuService } from './core/service/menu-service';
 import { TOAST_POSITION } from './shared/ui/toast/config/toast-style.config';
@@ -38,20 +38,22 @@ export const appConfig: ApplicationConfig = {
     }),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor, httpErrorInterceptor]),
+      // httpErrorInterceptor por fuera: ve el resultado final tras el
+      // reintento de CSRF que hace sessionInterceptor.
+      withInterceptors([httpErrorInterceptor, sessionInterceptor]),
     ),
     provideRouter(routes),
-    provideAppInitializer(() => {
+    provideAppInitializer(async () => {
       const authService = inject(AuthService);
       const menuService = inject(MenuService);
 
-      return authService.bootstrapFromVortalHash().then((ok) => {
-        if (!ok && !authService.isAuthenticated()) {
-          return;
-        }
+      const ok = await authService.initSession();
 
-        return firstValueFrom(menuService.load());
-      });
+      if (!ok) {
+        return;
+      }
+
+      await firstValueFrom(menuService.load());
     }),
     { provide: APP_CONFIG, useValue: environment },
   ],

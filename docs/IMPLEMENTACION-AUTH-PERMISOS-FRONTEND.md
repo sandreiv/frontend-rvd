@@ -1,5 +1,9 @@
 # Implementación de autenticación y permisos en el frontend RVD
 
+> **Obsoleto el flujo de sesión.** El JWT ya no vive en el navegador.
+> Contrato actual: [`docs/SESION-COOKIE-OPACA.md`](./SESION-COOKIE-OPACA.md).
+> Este documento sigue siendo útil para **menú / botones / códigos Vortal**.
+
 Documento de cómo quedó cableada la sesión SSO, el menú y los botones en Angular.
 Complementa el contrato de `docs/SEGURIDAD-BACKEND-FRONTEND-RVD.md`.
 

@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { StorageService } from './storage-service';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 
@@ -9,7 +8,6 @@ import { Observable } from 'rxjs';
 })
 export class WebRequestService {
   private http = inject(HttpClient);
-  private storageService = inject(StorageService);
 
   // Base URL desde environment
   private baseUrl: string = environment.api.baseUrl;
@@ -17,15 +15,13 @@ export class WebRequestService {
   constructor() {}
 
   /**
-   * Obtener headers con token de autorización
+   * Headers base. La autenticación va en la cookie de sesión y el CSRF
+   * lo agrega sessionInterceptor; aquí no se añade Authorization.
    */
   private getAuthHeaders(customHeaders?: any, includeJsonContentType = true): HttpHeaders {
-    //const token = this.storageService.getToken();
-    //const user = this.storageService.getUser();
     return new HttpHeaders({
       ...(includeJsonContentType && { 'Content-Type': 'application/json' }),
       ...customHeaders,
-      //...(token && { Authorization: `Bearer ${token}` }),
     });
   }
 

@@ -26,8 +26,6 @@ export interface ApiEndpoints {
  */
 export interface AuthConfig {
   applicationId: number;
-  tokenStorageKey: string;
-  userStorageKey: string;
   loginRedirectUrl: string;
   logoutRedirectUrl: string;
   sessionRequiredUrl: string;
@@ -47,7 +45,6 @@ export interface AppConfig {
   production: boolean;
   api: {
     baseUrl: string;
-    securityAuthUrl: string;
     endpoints?: ApiEndpoints;
   };
   auth: AuthConfig;

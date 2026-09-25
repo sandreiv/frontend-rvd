@@ -45,7 +45,7 @@ export class UserDropdown {
 
   onLogout(): void {
     this.closeDropdown();
-    this.authService.logout();
+    void this.authService.logout();
   }
 
   @HostListener('document:mousedown', ['$event'])
