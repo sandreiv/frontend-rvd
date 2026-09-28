@@ -33,6 +33,7 @@ export class CoordinationTable {
   actionLabel = input('Iniciar preasignación');
   loadingActionLabel = input('Iniciando...');
 
+  fromCDP = input(false);
   enableSelection = input(true);
   showActionButton = input(true);
   enableRowActions = input(false);
@@ -45,60 +46,69 @@ export class CoordinationTable {
 
   readonly rowIdentity = (row: CoordinationItem): string => String(row.id);
 
-  readonly columns: DataTableColumn<CoordinationItem>[] = [
-    {
-      id: 'unidadRegional',
-      header: 'Unidad',
-      cell: (row) => row.unidadRegional || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'unidadArea',
-      header: 'Facultad',
-      cell: (row) => row.unidadArea || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'descripcion',
-      header: 'Coordinación',
-      cell: (row) => row.descripcion || row.nombre || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'esAcademica',
-      header: 'Es académica',
-      cell: (row) => row.esAcademica || '-',
-    },
-    {
-      id: 'metodologia',
-      header: 'Metodología',
-      cell: (row) => row.metodologia || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'modalidad',
-      header: 'Modalidad',
-      cell: (row) => row.modalidad || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'nivelEducativo',
-      header: 'Nivel educativo',
-      cell: (row) => row.nivelEducativo || '-',
-      formatAsSentence: true,
-    },
-    {
-      id: 'periodoUniversidad',
-      header: 'Periodo universidad',
-      cell: (row) => row.periodoUniversidad || '-',
-    },
-    {
-      id: 'estadoCarga',
-      header: 'Estado carga',
-      cell: (row) => row.estadoCarga || '-',
-      formatAsSentence: true,
-    },
-  ];
+  readonly columns = computed<DataTableColumn<CoordinationItem>[]>(() => {
+    const columns: DataTableColumn<CoordinationItem>[] = [
+      {
+        id: 'unidadRegional',
+        header: 'Unidad',
+        cell: (row) => row.unidadRegional || '-',
+        formatAsSentence: true,
+      },
+      {
+        id: 'unidadArea',
+        header: 'Facultad',
+        cell: (row) => row.unidadArea || '-',
+        formatAsSentence: true,
+      },
+      {
+        id: 'descripcion',
+        header: 'Coordinación',
+        cell: (row) => row.descripcion || row.nombre || '-',
+        formatAsSentence: true,
+      },
+      {
+        id: 'esAcademica',
+        header: 'Es académica',
+        cell: (row) => row.esAcademica || '-',
+      },
+      {
+        id: 'metodologia',
+        header: 'Metodología',
+        cell: (row) => row.metodologia || '-',
+        formatAsSentence: true,
+      },
+      {
+        id: 'modalidad',
+        header: 'Modalidad',
+        cell: (row) => row.modalidad || '-',
+        formatAsSentence: true,
+      },
+      {
+        id: 'periodoUniversidad',
+        header: 'Periodo universidad',
+        cell: (row) => row.periodoUniversidad || '-',
+      },
+    ]
+
+    if (!this.fromCDP()) {
+      columns.push(
+        {
+          id: 'nivelEducativo',
+          header: 'Nivel educativo',
+          cell: (row) => row.nivelEducativo || '-',
+          formatAsSentence: true,
+        },
+        {
+          id: 'estadoCarga',
+          header: 'Estado carga',
+          cell: (row) => row.estadoCarga || '-',
+          formatAsSentence: true,
+        },
+      );
+    }
+
+    return columns;
+  })
 
   readonly rowActions = computed((): DataTableRowAction<CoordinationItem>[] => {
     const actions: DataTableRowAction<CoordinationItem>[] = [];

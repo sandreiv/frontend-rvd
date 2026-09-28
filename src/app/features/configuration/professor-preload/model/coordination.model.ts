@@ -1,3 +1,4 @@
+import { AddProfessorRequest } from './add-professor.model';
 import { PreloadCargaApi } from './preload-carga.model';
 
 export interface CoordinationLookupItem {
@@ -357,7 +358,18 @@ export interface ChangeProfessorRequest {
   idPersonaGeneral: number;
   idEscalafon: number;
 }
+
 export interface DeleteProfessorRequest {
+  idCargaDocente: number;
+  idNovedad: number;
+}
+
+export interface AddNoveltyProfessorRequest {
+  cargaDocente: AddProfessorRequest;
+  idNovedad: number;
+}
+
+export interface UpdateContractValueRequest {
   idCargaDocente: number;
   idNovedad: number;
 }
