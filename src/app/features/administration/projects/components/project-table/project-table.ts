@@ -86,12 +86,6 @@ export class ProjectTable {
       cell: (row) => resolveProjectLookupName(row.tipoProyecto),
       formatAsSentence: true,
     },
-    {
-      id: 'coordinacion',
-      header: 'Coordinación',
-      cell: (row) => resolveProjectLookupName(row.coordinacion),
-      formatAsSentence: true,
-    },
   ];
 
   readonly rowActions = computed<DataTableRowAction<ProjectItem>[]>(() => {
