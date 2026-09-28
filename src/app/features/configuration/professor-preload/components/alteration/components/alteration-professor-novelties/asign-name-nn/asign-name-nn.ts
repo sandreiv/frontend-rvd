@@ -183,12 +183,22 @@ export class AsignNameNn {
     const professor =
       option.data as ProfessorSearchResult;
 
+    const idEscalafon =
+      professor.escalafon?.id;
+
+    if (idEscalafon == null) {
+      this.selectedProfessor.set(null);
+      this.noveltyState.clear();
+      return;
+    }
+
     this.selectedProfessor.set(
       professor,
     );
 
     this.noveltyState.setAssignNameNn(
       professor.id,
+      idEscalafon,
     );
   }
 

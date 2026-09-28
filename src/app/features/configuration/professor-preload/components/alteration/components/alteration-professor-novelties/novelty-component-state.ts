@@ -23,6 +23,7 @@ import { DetailProfessorPreloadItemApi } from '../../../../model/detail-professo
 export interface AssignNameNnPayload {
   component: 'asign-name-nn';
   idPersonaGeneral: number;
+  idEscalafon: number;
 }
 
 export interface ChangeProfessorPayload {
@@ -69,10 +70,12 @@ export class NoveltyComponentState {
 
   setAssignNameNn(
     idPersonaGeneral: number,
+    idEscalafon: number,
   ): void {
     this.payload.set({
       component: 'asign-name-nn',
       idPersonaGeneral,
+      idEscalafon,
     });
   }
 

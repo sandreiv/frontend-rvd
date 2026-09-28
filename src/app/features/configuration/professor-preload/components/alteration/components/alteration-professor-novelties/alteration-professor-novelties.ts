@@ -242,6 +242,7 @@ export class AlterationProfessorNovelties {
         idNovedad,
         idCargaDocente,
         payload.idPersonaGeneral,
+        payload.idEscalafon,
       );
     }
     if (payload?.component === 'change-professor') {
@@ -278,14 +279,18 @@ export class AlterationProfessorNovelties {
     idNovedad: number,
     idCargaDocente: number,
     idPersonaGeneral: number,
+    idEscalafon: number,
   ): Promise<boolean> {
+
     await firstValueFrom(
       this.coordinationService.assignNameToNn({
         idCargaDocente,
         idNovedad,
         idPersonaGeneral,
+        idEscalafon,
       }),
     );
+
     return true;
   }
 
