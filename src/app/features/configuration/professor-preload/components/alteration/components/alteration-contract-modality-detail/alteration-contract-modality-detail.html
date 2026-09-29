@@ -258,6 +258,14 @@
   (saved)="onProfessorSaved()"
 />
 
+<app-novelty-summary
+  [isOpen]="isSummaryModalOpen()"
+  [professor]="summaryProfessor()"
+  [coordination]="coordination()"
+  [contractModality]="selectedContractModality()"
+  (close)="closeSummaryModal()"
+/>
+
 <app-new-modal
   [isOpen]="isDeleteProfessorModalOpen()"
   title="Solicitar eliminación de docente"

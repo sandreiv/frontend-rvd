@@ -27,6 +27,7 @@ import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
 import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
 import { ProfessorAddModal } from '../alteration-professor-add-modal/alteration-professor-add-modal';
+import { NoveltySummary } from '../novelty-summary/novelty-summary';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -114,7 +115,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal, NoveltySummary],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -132,7 +133,9 @@ export class AlterationContractModalityDetail {
 
   readonly isDeleteProfessorModalOpen = signal(false);
   readonly isAddProfessorModalOpen = signal(false);
+  readonly isSummaryModalOpen = signal(false);
   readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
+  readonly summaryProfessor = signal<ModalityProfessor | null>(null);
   readonly isRequestingDeleteProfessor = signal(false);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
@@ -383,9 +386,7 @@ export class AlterationContractModalityDetail {
   }
 
   canOpenProfessorMenu(professor: ModalityProfessor): boolean {
-    if (!professor.tieneCarga) return false;
-
-    return this.isCoordinator() && this.isCargaEnAvalDesarrollo();
+    return this.resolveProfessorActions(professor).length > 0;
   }
 
   toggleProfessorMenu(menuKey: string, professor?: ModalityProfessor): void {
@@ -406,12 +407,22 @@ export class AlterationContractModalityDetail {
     estadoNovedad?: string | number | null;
   }): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
-    const hasDetail = professor.tieneDetalleActividades === true;
 
     if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
 
     const actions: ProfessorMenuAction[] = [];
-    if (isProfessorNoveltyPendingReview(professor.estadoNovedad)) {
+    if (this.permissions.canListProfessorNovelty()) {
+      actions.push({
+        id: 'resumen',
+        label: 'Ver resumen',
+        icon: 'file',
+      });
+    }
+
+    if (
+      this.isCoordinator() &&
+      isProfessorNoveltyPendingReview(professor.estadoNovedad)
+    ) {
       actions.push({
         id: 'aprobar-novedad',
         label: 'Aprobar novedad',
@@ -420,11 +431,13 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    actions.push({
-      id: 'novedad',
-      label: 'Gestionar novedad',
-      icon: 'newspaper',
-    });
+    if (this.isCoordinator()) {
+      actions.push({
+        id: 'novedad',
+        label: 'Gestionar novedad',
+        icon: 'newspaper',
+      });
+    }
 
     if (this.permissions.canDeleteProfessor()) {
       actions.push({
@@ -435,7 +448,6 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    // Agregar las acciones
     return actions;
   }
 
@@ -449,6 +461,12 @@ export class AlterationContractModalityDetail {
 
     if (actionId === 'novedad') {
       this.openNoveltiesModal(professor);
+      return;
+    }
+
+    if (actionId === 'resumen') {
+      this.openSummaryModal(professor);
+      return;
     }
 
     if (actionId === 'eliminar') {
@@ -460,7 +478,10 @@ export class AlterationContractModalityDetail {
     if (professor.idCargaDocente == null) {
       return false;
     }
-    if (!this.canOpenProfessorMenu(professor)) {
+    if (!this.isCoordinator() || !this.isCargaEnAvalDesarrollo()) {
+      return false;
+    }
+    if (professor.tieneCarga !== true) {
       return false;
     }
     return isProfessorNoveltyPendingReview(professor.estadoNovedad);
@@ -511,6 +532,16 @@ export class AlterationContractModalityDetail {
   closeNoveltiesModal(): void {
     this.isNoveltiesModalOpen.set(false);
     this.noveltiesProfessor.set(null);
+  }
+
+  openSummaryModal(professor: ModalityProfessor): void {
+    this.summaryProfessor.set(professor);
+    this.isSummaryModalOpen.set(true);
+  }
+
+  closeSummaryModal(): void {
+    this.isSummaryModalOpen.set(false);
+    this.summaryProfessor.set(null);
   }
 
   onNoveltySaved(): void {

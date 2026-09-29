@@ -39,6 +39,7 @@ import { DetailProfessorPreloadApi, DetailProfessorPreloadItemApi } from '../mod
 import { SaveDetailProfessorPreloadRequest, SendProfessorToVerificationRequest } from '../model/save-detail-professor-preload.model';
 import { SaveCareerProfessorPreloadRequest } from '../model/save-career-professor-preload.model';
 import { ProfessorLoadSummaryApi } from '../model/professor-summary.model';
+import { ProfessorNoveltySummaryApi } from '../model/novelty-summary.model';
 import { DeclinePreloadDeanRequest } from '../model/preload-carga.model';
 import { ObservacionesCargaItem } from '../model/observations-load';
 import { FacultyCoordinationItem, FacultyRequestCdpApiItem, normalizeFacultyRequestCdpItem } from '../../cdp-requests/model/cdp-context.model';
@@ -587,6 +588,8 @@ export class CoordinationService {
     );
   }
 
+  
+
   /**
    * Descarga el reporte Excel de preasignación de una carga.
    *
@@ -872,6 +875,19 @@ export class CoordinationService {
     return this.webRequestService.put<void>(
       `${this.endpoint}/approve-professor-novelty/${idCargaDocente}`,
       {},
+    );
+  }
+
+  /**
+   * Obtiene el resumen de carga docente con novedad vigente:
+   * contratación, horas, centros de costo, observaciones e historial.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con el resumen de novedad de la carga docente.
+   */
+  getProfessorNoveltySummary(idCargaDocente: number): Observable<ProfessorNoveltySummaryApi> {
+    return this.webRequestService.get<ProfessorNoveltySummaryApi>(
+      `${this.endpoint}/professor-novelty-summary/${idCargaDocente}`,
     );
   }
 
