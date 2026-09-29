@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { TipoActividad } from '../../../../../../model/professor-activities.model';
 import { ProfessorProjectRow } from '../../../../../../model/professor-projects.model';
-import { CoordinationService } from '../../../../../../data/coordination.service';
 import { Tooltip } from '../../../../../../../../../shared/ui/tooltip/tooltip';
 import { Checkbox } from '../../../../../../../../../shared/components/form/input/checkbox';
 import { Button } from '../../../../../../../../../shared/ui/button/button';
@@ -18,7 +17,6 @@ export class AlterationProjectActivityCard {
   projectRows =input<ProfessorProjectRow[]>([]);
   associatedRows =input<ProfessorProjectRow[]>([]);
   isLoading = input(false);
-  isRegistrationProcessed = input(false);
   associationExpired = input(false);
   associationExpiredReason = input<string | null>(null);
 
@@ -55,7 +53,6 @@ export class AlterationProjectActivityCard {
 
   isCheckboxDisabled(row: ProfessorProjectRow): boolean {
     return (
-      this.isRegistrationProcessed() ||
       this.associationExpired() ||
       !row.esSeleccionable ||
       this.isAssociated(
@@ -65,7 +62,7 @@ export class AlterationProjectActivityCard {
   }
 
   onSelectionChange(row: ProfessorProjectRow, checked: boolean): void {
-    if (this.isRegistrationProcessed() || this.associationExpired()) {
+    if (this.associationExpired()) {
       return;
     }
 
@@ -89,7 +86,7 @@ export class AlterationProjectActivityCard {
   }
 
   onAssociateSelected(): void {
-    if (this.isRegistrationProcessed() || this.associationExpired()) {
+    if (this.associationExpired()) {
       return;
     }
 
@@ -122,7 +119,7 @@ export class AlterationProjectActivityCard {
   }
 
   onDisassociate(row: ProfessorProjectRow): void {
-    if (this.isRegistrationProcessed()) {
+    if (this.associationExpired()) {
       return;
     }
 

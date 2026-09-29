@@ -11,7 +11,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { ActividadModalidadDTO, ActivityFormType, TipoActividad } from '../../../../../model/professor-activities.model';
 import { catchError, of } from 'rxjs';
 import { PreloadCallDetailFecha } from '../../../../../../preload-call/model/preload-call.model';
-import { buildComponenteByCodigo, buildVisibleActivityItems, resolveInitialExpandedCategories } from '../../../../../model/professor-activities.config';
+import { buildComponenteByCodigo, buildVisibleActivityItems, createInitialAddFormOpen, resolveInitialExpandedCategories } from '../../../../../model/professor-activities.config';
 import { buildProjectHierarchyRows } from '../../../../../model/professor-projects.mapper';
 import { DirectLearningActivity, SimpleActivity } from '../../../../../model/professor-activities-modal.models';
 import { parseMaxWeeklyHours } from '../../../../../model/professor-form.config';
@@ -19,12 +19,13 @@ import { mapDetailProfessorPreloadToModalState } from '../../../../../model/prof
 import { SaveDetailProfessorPreloadInput } from '../../../../../model/professor-activities-save.mapper';
 import { buildNoveltyActivityDistributionRequest, hasNoveltyChanges } from '../../../../../model/professor-activities-novelty-save.mapper';
 import { NoveltyComponentState } from '../novelty-component-state';
+import { AlterationCriteriaActivityCard } from './components/alteration-criteria-activity-card';
 
 const NN_LABEL = 'NN';
 
 @Component({
   selector: 'app-change-project-activities',
-  imports: [Icon, CollapsibleSection, AlterationProjectActivityCard],
+  imports: [Icon, CollapsibleSection, AlterationProjectActivityCard, AlterationCriteriaActivityCard],
   templateUrl: './change-project-activities.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -160,6 +161,7 @@ export class ChangeProjectActivities {
   );
 
   readonly expandedCategories = signal<Record<string, boolean>>({});
+  readonly addFormOpen = signal<Record<string, boolean>>({});
 
   readonly visibleActivityItems = computed(() =>
     buildVisibleActivityItems(
@@ -168,13 +170,45 @@ export class ChangeProjectActivities {
     ),
   );
 
-  readonly visibleProjectItems = computed(() =>
+  readonly visibleNoveltyItems = computed(() =>
       this.visibleActivityItems().filter(
-          (item) => item.formType === 'project',
+          (item) => item.formType === 'project' || (item.formType === 'criteria' && item.codigo === 'AC'),
       ),
   );
 
-  readonly canViewProjects = computed(() => this.visibleProjectItems().length > 0)
+  readonly canViewActivities = computed(() => this.visibleNoveltyItems().length > 0);
+
+  readonly coordinationDates = computed(() => {
+    const fechas = this.preloadCallDetailResource.value()?.fechas ?? [];
+
+    return fechas.find((fecha) =>
+          String(fecha.codigo).trim().toUpperCase() === 'CNV',
+    ) ?? null;
+  })
+
+  readonly readOnly = computed(() => {
+    const fechaFin = this.dateOnly(this.coordinationDates()?.fechaFin);
+
+    if (fechaFin == null) {
+      return false;
+    }
+
+    return fechaFin < this.todayLocalDate();
+  });
+  readonly activityCardsReadOnlyReason = computed(() => {
+    if (!this.readOnly()) {
+      return '';
+    }
+
+    const fechaFin = this.dateOnly(this.coordinationDates()?.fechaFin);
+
+    if (fechaFin == null) {
+      return 'La coordinación no está habilitada para edición en esta convocatoria.';
+    }
+
+    return `La fecha límite para modificar actividades expiró el ${this.formatDate(fechaFin)}.`;
+  });
+  readonly isActivityCardsReadOnly = computed(() => this.readOnly());
 
   readonly projectAssociationDates = computed(() => {
     const fechas = this.preloadCallDetailResource.value()?.fechas ?? [];
@@ -197,12 +231,14 @@ export class ChangeProjectActivities {
   readonly projectHierarchyRowsByCodigo = computed(() => {
     const proyectos = this.professorProjectsResource.value();
     const idPersonaGeneral = this.professor()?.idPersonaGeneral;
-    const items = this.visibleProjectItems();
+    const items = this.visibleNoveltyItems();
     const result: Record<string, ProfessorProjectRow[]> = {};
 
     for (let index = 0; index < items.length; index += 1) {
       const item = items[index];
-
+      if (item.formType !== 'project') {
+        continue;
+      }
       result[item.codigo] = buildProjectHierarchyRows(
         proyectos,
         item.codigo,
@@ -373,9 +409,14 @@ export class ChangeProjectActivities {
         return;
       }
 
-      const items = this.visibleProjectItems();
-      if (items.length > 0 && this.professorProjectsResource.isLoading()) {
-          return;
+      const items = this.visibleNoveltyItems();
+      const hasProject = items.some((item) => item.formType === 'project');
+      if (hasProject && this.professorProjectsResource.isLoading()) {
+        return;
+      }
+
+      if (this.expandedCategoriesInitialized()) {
+        return;
       }
 
       const codigos = items.map((item) => item.codigo);
@@ -384,6 +425,7 @@ export class ChangeProjectActivities {
         this.expandedCategories.set(
           resolveInitialExpandedCategories(codigos, rows),
         );
+        this.addFormOpen.set(createInitialAddFormOpen(codigos));
         this.expandedCategoriesInitialized.set(true);
       });
     });
@@ -401,7 +443,7 @@ export class ChangeProjectActivities {
         return;
       }
 
-      if (this.visibleProjectItems().length === 0) {
+      if (this.visibleNoveltyItems().length === 0) {
         untracked(() => this.noveltyState.clear());
         return;
       }
@@ -427,8 +469,41 @@ export class ChangeProjectActivities {
     return this.expandedCategories()[codigo] === true;
   }
 
+  isAddFormOpen(codigo: string): boolean {
+    return this.addFormOpen()[codigo] === true;
+  }
+
+  onAddFormOpenChange(codigo: string, isFormOpen: boolean): void {
+    if (this.isActivityCardsReadOnly() && isFormOpen) {
+      return;
+    }
+
+    this.addFormOpen.update((current) => ({
+      ...current,
+      [codigo]: isFormOpen,
+    }));
+  }
+
   hoursLabel(hours: number): string {
     return `${hours ?? 0}h`;
+  }
+
+  criteriaActivitiesForCodigo(codigo: string): SimpleActivity[] {
+    return this.criteriaByCodigo()[codigo] ?? [];
+  }
+
+  setCriteriaActivitiesForCodigo(
+    codigo: string,
+    activities: SimpleActivity[],
+  ): void {
+    if (this.isActivityCardsReadOnly()) {
+      return;
+    }
+
+    this.criteriaByCodigo.update((current) => ({
+      ...current,
+      [codigo]: activities,
+    }));
   }
 
   projectHierarchyRowsForCodigo(codigo: string): ProfessorProjectRow[] {
@@ -451,9 +526,7 @@ export class ChangeProjectActivities {
   }
 
   areNoveltyActivities(): boolean {
-    const detail = this.detailResource.value();
-
-    return detail[0]?.esDeNovedad === 1;
+    return this.detailResource.value().some(detail => detail.esDeNovedad === 1);
   }
 
   isProjectAssociationExpired(codigo: string): boolean {

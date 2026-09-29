@@ -85,7 +85,7 @@
           <app-button
             type="button"
             size="sm"
-            [disabled]="isRegistrationProcessed() || associationExpired() || !hasSelection()"
+            [disabled]="associationExpired() || !hasSelection()"
             (btnClick)="onAssociateSelected()"
           >
             Asociar
@@ -119,11 +119,9 @@
                   Horas dedicación
                 </th>
 
-                @if (!isRegistrationProcessed()) {
-                  <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    Desasociar
-                  </th>
-                }
+                <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  Desasociar
+                </th>
               </tr>
             </thead>
 
@@ -153,18 +151,16 @@
                     }
                   </td>
 
-                  @if (!isRegistrationProcessed()) {
-                    <td class="px-4 py-3 text-center">
-                      <app-button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        (btnClick)="onDisassociate(row)"
-                      >
-                        Desasociar
-                      </app-button>
-                    </td>
-                  }
+                  <td class="px-4 py-3 text-center">
+                    <app-button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      (btnClick)="onDisassociate(row)"
+                    >
+                      Desasociar
+                    </app-button>
+                  </td>
                 </tr>
               }
             </tbody>
