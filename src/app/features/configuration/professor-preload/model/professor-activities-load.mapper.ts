@@ -144,6 +144,7 @@ function mapFadDetalle(
     grupo: detalle.grupo?.nombre?.trim() ?? '',
     cupos: detalle.grupo?.capacidad ?? 0,
     idTipoActividad: detalle.tipoActividad.id,
+    idTipoActividadHija: hija?.id,
     codigoTipoActividad: detalle.tipoActividad.codigo,
     idUnidadRegional: detalle.unidadRegional?.id ?? 0,
     idPrograma: detalle.programa?.id ?? 0,
