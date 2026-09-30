@@ -90,6 +90,14 @@ export class PermissionService {
     return this.can(PRELOAD_FUNC.APPROVE_PROFESSOR_NOVELTY);
   }
 
+  /**
+   * Permite ver el resumen de carga docente con novedad vigente.
+   * Código Vortal 02_17, asignado al rol Desarrollo académico.
+   */
+  canListProfessorNovelty(): boolean {
+    return this.can(PRELOAD_FUNC.LIST_PROFESSOR_NOVELTY);
+  }
+
   
   canSaveContractModalityProfessor(): boolean {
     return this.can(PRELOAD_FUNC.SAVE_CONTRACT_MODALITY_PROFESSOR);
