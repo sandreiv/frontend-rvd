@@ -91,6 +91,13 @@ export class PermissionService {
   }
 
   /**
+   * Funcionalidad única para rechazar novedad de docente.
+   */
+  canRejectProfessorNovelty(): boolean {
+    return this.can(PRELOAD_FUNC.REJECT_PROFESSOR_NOVELTY);
+  }
+
+  /**
    * Permite ver el resumen de carga docente con novedad vigente.
    * Código Vortal 02_17, asignado al rol Desarrollo académico.
    */

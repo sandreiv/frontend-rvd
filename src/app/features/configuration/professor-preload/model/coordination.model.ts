@@ -373,3 +373,8 @@ export interface UpdateContractValueRequest {
   idCargaDocente: number;
   idNovedad: number;
 }
+
+export interface RejectProfessorNoveltyRequest {
+  idPersonaGeneral: number;
+  observacion: string;
+}

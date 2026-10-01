@@ -10,16 +10,19 @@ import {
   untracked,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { firstValueFrom, catchError, of } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Modal } from '../../../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../../../shared/ui/icon/icon';
 import { CollapsibleSection } from '../../../../../../../shared/components/form/collapsible-section/collapsible-section';
+import { Button } from '../../../../../../../shared/ui/button/button';
 import { CoordinationService } from '../../../../data/coordination.service';
 import {
   CoordinationContractModality,
   CoordinationItem,
   isPlantaModality,
   ModalityProfessor,
+  RejectProfessorNoveltyRequest,
 } from '../../../../model/coordination.model';
 import {
   mapActivitySummaryTables,
@@ -33,23 +36,45 @@ import {
   NOVELTY_SUMMARY_SECTIONS,
   NoveltySummarySectionId,
 } from '../../../../model/novelty-summary.model';
+import { isProfessorNoveltyPendingReview } from '../../../../model/professor-novelty-state';
+import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { AuthService } from '../../../../../../../core/service/auth-service';
+import { NotificationService } from '../../../../../../../core/service/notification-service';
 
 const NN_LABEL = 'NN';
 
 @Component({
   selector: 'app-novelty-summary',
-  imports: [Modal, Icon, CollapsibleSection],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule],
   templateUrl: './novelty-summary.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NoveltySummary {
   private readonly coordinationService = inject(CoordinationService);
+  private readonly permissions = inject(PermissionService);
+  private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly fb = inject(FormBuilder);
 
   isOpen = input(false);
   professor = input<ModalityProfessor | null>(null);
   coordination = input<CoordinationItem | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
   close = output<void>();
+  reviewChanged = output<void>();
+
+  readonly isSavingReview = signal(false);
+  readonly savingAction = signal<'approve' | 'reject' | null>(null);
+
+  readonly observationForm = this.fb.group({
+    observacion: [''],
+  });
+
+  readonly observationError = signal(false);
+
+  readonly showObservationError = computed(
+    () => this.canRejectNovelty() && this.observationError(),
+  );
 
   readonly sections = NOVELTY_SUMMARY_SECTIONS;
 
@@ -122,6 +147,41 @@ export class NoveltySummary {
     mapNoveltyHistoryRows(this.summary().novedades),
   );
 
+  readonly isCargaEnAvalDesarrollo = computed(
+    () => this.coordination()?.estadoCarga === 'AVAL DESARROLLO',
+  );
+
+  readonly canReviewNovelty = computed(() => {
+    const professor = this.professor();
+
+    if (
+      professor == null ||
+      professor.idCargaDocente == null ||
+      !this.isCargaEnAvalDesarrollo() ||
+      professor.tieneCarga !== true
+    ) {
+      return false;
+    }
+
+    return isProfessorNoveltyPendingReview(professor.estadoNovedad);
+  });
+
+  readonly canApproveNovelty = computed(
+    () =>
+      this.canReviewNovelty() &&
+      this.permissions.canApproveProfessorNovelty(),
+  );
+
+  readonly canRejectNovelty = computed(
+    () =>
+      this.canReviewNovelty() &&
+      this.permissions.canRejectProfessorNovelty(),
+  );
+
+  readonly canSubmitReview = computed(
+    () => this.canApproveNovelty() || this.canRejectNovelty(),
+  );
+
   constructor() {
     effect(() => {
       const isOpen = this.isOpen();
@@ -133,6 +193,7 @@ export class NoveltySummary {
 
       untracked(() => {
         this.expandedSections.set(createInitialNoveltyExpandedSections());
+        this.resetObservation();
       });
     });
   }
@@ -156,7 +217,96 @@ export class NoveltySummary {
   }
 
   onClose(): void {
+    if (this.isSavingReview()) {
+      return;
+    }
+
+    this.resetObservation();
     this.close.emit();
+  }
+
+  async onApprove(): Promise<void> {
+    const idCargaDocente = this.professor()?.idCargaDocente;
+
+    if (
+      idCargaDocente == null ||
+      this.isSavingReview() ||
+      !this.canApproveNovelty()
+    ) {
+      return;
+    }
+
+    this.savingAction.set('approve');
+    this.isSavingReview.set(true);
+    try {
+      await firstValueFrom(
+        this.coordinationService.approveProfessorNovelty(idCargaDocente),
+      );
+      this.notificationService.success(
+        'La novedad fue aprobada correctamente.',
+        'Novedad aprobada',
+      );
+      this.finishReview();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isSavingReview.set(false);
+      this.savingAction.set(null);
+    }
+  }
+
+  async onReject(): Promise<void> {
+    const idCargaDocente = this.professor()?.idCargaDocente;
+
+    if (
+      idCargaDocente == null ||
+      this.isSavingReview() ||
+      !this.canRejectNovelty()
+    ) {
+      return;
+    }
+
+    if (this.observationForm.invalid) {
+      this.observationForm.markAllAsTouched();
+      return;
+    }
+
+    const observacion = this.observationForm.controls.observacion.value?.trim();
+    if (!observacion) {
+      this.observationError.set(true);
+      return;
+    }
+
+    const currentUser = this.authService.currentUser();
+    if (!currentUser || currentUser.idPersona === null) {
+      return;
+    }
+
+    const request: RejectProfessorNoveltyRequest = {
+      idPersonaGeneral: Number(currentUser.idPersona),
+      observacion,
+    };
+
+    this.savingAction.set('reject');
+    this.isSavingReview.set(true);
+    try {
+      await firstValueFrom(
+        this.coordinationService.rejectProfessorNovelty(
+          idCargaDocente,
+          request,
+        ),
+      );
+      this.notificationService.success(
+        'La novedad fue rechazada correctamente.',
+        'Novedad rechazada',
+      );
+      this.finishReview();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isSavingReview.set(false);
+      this.savingAction.set(null);
+    }
   }
 
   observationDateLabel(value: string | null | undefined): string {
@@ -171,6 +321,17 @@ export class NoveltySummary {
 
     const [, year, month, day, hour, minute] = match;
     return `${day}/${month}/${year} ${hour}:${minute}`;
+  }
+
+  private finishReview(): void {
+    this.resetObservation();
+    this.reviewChanged.emit();
+    this.close.emit();
+  }
+
+  private resetObservation(): void {
+    this.observationForm.reset({ observacion: '' });
+    this.observationError.set(false);
   }
 
   private resolveSummaryParams(): { idCargaDocente: number } | undefined {

@@ -9,7 +9,7 @@ import {
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable, map, forkJoin, switchMap, finalize } from 'rxjs';
-import {isProfessorNoveltyPendingReview, NOVELTY_APPROVED_STATE, NOVELTY_PENDING_REVIEW_STATE, NOVELTY_RETURNED_STATE, } from '../../../../model/professor-novelty-state';
+import { NOVELTY_APPROVED_STATE, NOVELTY_PENDING_REVIEW_STATE, NOVELTY_RETURNED_STATE, } from '../../../../model/professor-novelty-state';
 import { NoveltyBudgetStore } from '../alteration-professor-novelties/novelty-budget.store';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
@@ -22,7 +22,6 @@ import { Icon } from "../../../../../../../shared/ui/icon/icon";
 import { AppIconName } from '../../../../../../../shared/ui/icon/icons';
 import { Dropdown } from "../../../../../../../shared/ui/dropdown/dropdown/dropdown";
 import { Item } from "../../../../../../../shared/ui/dropdown/item/item";
-import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Tooltip } from '../../../../../../../shared/ui/tooltip/tooltip';
 import { AlterationProfessorNovelties } from '../alteration-professor-novelties/alteration-professor-novelties';
 import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
@@ -120,7 +119,6 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlterationContractModalityDetail {
-  private readonly authService = inject(AuthService);
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly budgetStore = inject(NoveltyBudgetStore, {
@@ -142,7 +140,6 @@ export class AlterationContractModalityDetail {
   readonly openMenuKey = signal<string | null>(null);
   readonly isNoveltiesModalOpen = signal(false);
   readonly noveltiesProfessor = signal<ModalityProfessor | null>(null);
-  readonly approvingNoveltyId = signal<number | null>(null);
   readonly tcoFilter = signal<TcoFilter>('todos');
   readonly openTcoFilterMenu = signal<TcoFilter | null>(null);
   readonly tcoFilterItems: TcoFilterSwitchItem[] = [
@@ -257,11 +254,6 @@ export class AlterationContractModalityDetail {
   });
 
   readonly isCargaEnAvalDesarrollo = computed(() => (this.coordination().estadoCarga === 'AVAL DESARROLLO'));
-  readonly isCoordinator = computed(() => {
-    const rolesUsuario = this.authService.getRoles();
-
-    return rolesUsuario.includes('Coordinador');
-  })
 
   readonly selectedContractModality = computed(() => {
     const selectedId = Number(this.selectedContractModalityId());
@@ -419,19 +411,7 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    if (
-      this.isCoordinator() &&
-      isProfessorNoveltyPendingReview(professor.estadoNovedad)
-    ) {
-      actions.push({
-        id: 'aprobar-novedad',
-        label: 'Aprobar novedad',
-        icon: 'check',
-        className: 'text-success-600 dark:text-success-400',
-      });
-    }
-
-    if (this.isCoordinator()) {
+    if (this.permissions.canSaveContractModalityProfessor()) {
       actions.push({
         id: 'novedad',
         label: 'Gestionar novedad',
@@ -454,11 +434,6 @@ export class AlterationContractModalityDetail {
   onProfessorMenuAction(actionId: string, professor: ModalityProfessor): void {
     this.closeProfessorMenu();
 
-    if (actionId === 'aprobar-novedad') {
-      void this.approveProfessorNovelty(professor);
-      return;
-    }
-
     if (actionId === 'novedad') {
       this.openNoveltiesModal(professor);
       return;
@@ -471,51 +446,6 @@ export class AlterationContractModalityDetail {
 
     if (actionId === 'eliminar') {
       this.openDeleteProfessorModal(professor);
-    }
-  }
-
-  canApproveProfessorNovelty(professor: ModalityProfessor): boolean {
-    if (professor.idCargaDocente == null) {
-      return false;
-    }
-    if (!this.isCoordinator() || !this.isCargaEnAvalDesarrollo()) {
-      return false;
-    }
-    if (professor.tieneCarga !== true) {
-      return false;
-    }
-    return isProfessorNoveltyPendingReview(professor.estadoNovedad);
-  }
-
-  isApprovingNovelty(professor: ModalityProfessor): boolean {
-    return this.approvingNoveltyId() === professor.idCargaDocente;
-  }
-
-  async approveProfessorNovelty(
-    professor: ModalityProfessor,
-  ): Promise<void> {
-    const idCargaDocente = professor.idCargaDocente;
-    if (
-      idCargaDocente == null ||
-      this.approvingNoveltyId() != null ||
-      !this.canApproveProfessorNovelty(professor)
-    ) {
-      return;
-    }
-
-    this.approvingNoveltyId.set(idCargaDocente);
-    try {
-      await firstValueFrom(
-        this.coordinationService.approveProfessorNovelty(
-          idCargaDocente,
-        ),
-      );
-      this.modalityProfessorsResource.reload();
-      await this.refreshBudget();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      this.approvingNoveltyId.set(null);
     }
   }
 
@@ -542,6 +472,11 @@ export class AlterationContractModalityDetail {
   closeSummaryModal(): void {
     this.isSummaryModalOpen.set(false);
     this.summaryProfessor.set(null);
+  }
+
+  onNoveltyReviewChanged(): void {
+    this.modalityProfessorsResource.reload();
+    void this.refreshBudget();
   }
 
   onNoveltySaved(): void {

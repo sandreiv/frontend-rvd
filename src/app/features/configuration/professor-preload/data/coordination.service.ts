@@ -20,6 +20,7 @@ import {
   normalizeCoordinationItem,
   UpdateContractValueRequest,
   AddNoveltyProfessorRequest,
+  RejectProfessorNoveltyRequest,
 } from '../model/coordination.model';
 import { SavePreloadRequest } from '../model/save-preload.model';
 import { AddProfessorRequest } from '../model/add-professor.model';
@@ -875,6 +876,24 @@ export class CoordinationService {
     return this.webRequestService.put<void>(
       `${this.endpoint}/approve-professor-novelty/${idCargaDocente}`,
       {},
+    );
+  }
+
+  /**
+   * Rechaza una novedad en revisión de un docente.
+   * Pasa NOCD_ESTADONOVEDAD de 0 a 2 y NOCD_VIGENTE a 0, y guarda la observación.
+   * Si la novedad es Agregar docente, elimina la carga docente creada y sus detalles.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @param request Observación y persona que registra el rechazo.
+   */
+  rejectProfessorNovelty(
+    idCargaDocente: number,
+    request: RejectProfessorNoveltyRequest,
+  ): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/reject-professor-novelty/${idCargaDocente}`,
+      request,
     );
   }
 

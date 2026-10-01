@@ -546,4 +546,77 @@
       }
     }
   </div>
+
+  @if (canSubmitReview()) {
+    <footer
+      class="border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10"
+    >
+      <div
+        class="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4"
+      >
+        <form
+          [formGroup]="observationForm"
+          class="flex min-w-0 flex-1 flex-col gap-2"
+        >
+          <textarea
+            rows="2"
+            maxlength="500"
+            formControlName="observacion"
+            placeholder="Escriba una observación (obligatoria para rechazar la novedad)"
+            class="w-full resize-y rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm font-normal text-gray-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-white/90"
+          ></textarea>
+
+          @if (showObservationError()) {
+            <p class="text-xs font-medium text-red-600 dark:text-red-400">
+              La observación es obligatoria para rechazar la novedad.
+            </p>
+          }
+        </form>
+
+        <div
+          class="flex shrink-0 flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+        >
+          <app-button
+            type="button"
+            variant="outline"
+            [disabled]="isSavingReview()"
+            (btnClick)="onClose()"
+          >
+            Cerrar
+          </app-button>
+
+          @if (canRejectNovelty()) {
+            <app-button
+              type="button"
+              variant="error"
+              [disabled]="isSavingReview()"
+              (btnClick)="onReject()"
+            >
+              <app-icon name="close" size="xs" />
+              {{
+                savingAction() === 'reject'
+                  ? 'Rechazando...'
+                  : 'Rechazar novedad'
+              }}
+            </app-button>
+          }
+
+          @if (canApproveNovelty()) {
+            <app-button
+              type="button"
+              [disabled]="isSavingReview()"
+              (btnClick)="onApprove()"
+            >
+              <app-icon name="check" size="xs" />
+              {{
+                savingAction() === 'approve'
+                  ? 'Aprobando...'
+                  : 'Aprobar novedad'
+              }}
+            </app-button>
+          }
+        </div>
+      </div>
+    </footer>
+  }
 </app-modal>
