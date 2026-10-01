@@ -870,6 +870,7 @@ export class AlterationContractModalityDetail {
           this.isDeleteProfessorModalOpen.set(false);
           this.deleteProfessorTarget.set(null);
           this.modalityProfessorsResource.reload();
+          void this.refreshBudget();
         },
       });
   }
