@@ -607,6 +607,7 @@ export class DirectActivityCard {
       grupo: grupo.nombre,
       cupos: grupo.capacidad,
       idTipoActividad: tipoActividad.id,
+      idTipoActividadHija: criterio.id,
       codigoTipoActividad: tipoActividad.codigo,
       idUnidadRegional: unidad.id,
       idPrograma: programa.id,

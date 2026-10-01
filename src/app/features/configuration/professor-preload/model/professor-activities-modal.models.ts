@@ -9,6 +9,7 @@ export interface DirectLearningActivity {
   grupo: string;
   cupos: number;
   idTipoActividad: number;
+  idTipoActividadHija?: number;
   codigoTipoActividad: string;
   idUnidadRegional: number;
   idPrograma: number;

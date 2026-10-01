@@ -172,7 +172,7 @@ export class ChangeProjectActivities {
 
   readonly visibleNoveltyItems = computed(() =>
       this.visibleActivityItems().filter(
-          (item) => item.formType === 'project' || (item.formType === 'criteria' && item.codigo === 'AC'),
+          (item) => item.formType === 'project' || item.formType === 'criteria',
       ),
   );
 

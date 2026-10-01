@@ -102,6 +102,7 @@ export function mapFadDetalle(
 ): DetalleCargaDocenteRequest {
   return {
     idTipoActividad: activity.idTipoActividad ?? categoryType?.id ?? 0,
+    idTipoActividadHija: activity.idTipoActividadHija,
     codigoTipoActividad:
       activity.codigoTipoActividad ?? categoryType?.codigo ?? '',
     horas: activity.horasPresenciales,
