@@ -53,7 +53,6 @@ export interface NoveltyHistoryRow {
   id: string;
   tipo: string;
   descripcion: string;
-  accion: string;
   fecha: string | null;
   estadoLabel: string;
   vigente: boolean;
@@ -125,7 +124,6 @@ export function mapNoveltyHistoryRows(
       id: `${item.idNovedad}-${index}`,
       tipo: item.tipo?.trim() || '-',
       descripcion: item.descripcion?.trim() || '-',
-      accion: item.accion?.trim() || '-',
       fecha: item.fecha,
       estadoLabel: noveltyStateLabel(item.estadoNovedad),
       vigente: isNoveltyCurrent(item.vigente),

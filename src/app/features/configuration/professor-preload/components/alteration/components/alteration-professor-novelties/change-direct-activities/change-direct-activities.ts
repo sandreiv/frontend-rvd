@@ -377,7 +377,6 @@ export class ChangeDirectActivities {
   private onNoveltySync(): void {
     const formaPago =
       this.loadRestrictionResource.value()?.formaPago;
-    const workDate = this.professorWorkDate();
     this.totalAssignedHours();
     this.professor();
     this.contractModality();
@@ -400,7 +399,7 @@ export class ChangeDirectActivities {
         updateRequests,
         deleteIds,
       );
-      this.writeBudgetDraft(formaPago, workDate);
+      this.writeBudgetDraft(formaPago);
     });
   }
 
@@ -420,7 +419,6 @@ export class ChangeDirectActivities {
 
   private writeBudgetDraft(
     formaPago: string | null | undefined,
-    workDate: WorkDate | null,
   ): void {
     const professor = this.professor();
     const idCargaDocente = professor?.idCargaDocente;
@@ -436,10 +434,10 @@ export class ChangeDirectActivities {
     const totalNuevo = computeProfessorContractTotal({
       esPlanta: modality != null && isPlantaModality(modality),
       formaPago,
-      fechaInicio: workDate?.fechaInicio ?? professor.fechaInicio,
-      fechaFin: workDate?.fechaFin ?? professor.fechaFin,
+      fechaInicio: professor.fechaInicio,
+      fechaFin: professor.fechaFin,
       valorHora: professor.valorHora,
-      semanas: workDate?.semanas ?? professor.semanas,
+      semanas: professor.semanas,
       horasActividades: this.totalAssignedHours(),
     });
     this.budgetStore.setDraft({
