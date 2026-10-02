@@ -22,11 +22,13 @@ export class CdpService {
 
   getCurrentRequest(
     idCoordinacionFacultad: number,
+    idPeriodoUniversidad: number,
   ): Observable<CdpRequest | null> {
     return this.webRequestService.get<CdpRequest | null>(
       `${this.endpoint}/request`,
       {
         idCoordinacionFacultad,
+        idPeriodoUniversidad,
       },
     );
   }
@@ -114,38 +116,44 @@ export class CdpService {
     archivos: File[],
     idPeriodo: string,
     idCoordinacionFacultad: string,
+    idConvocatoria: string,
   ): Observable<void> {
 
     const formData = new FormData();
 
     if (observacion.trim()) {
-        formData.append(
+      formData.append(
         'observacion',
         observacion.trim(),
-        );
+      );
     }
 
     archivos.forEach((archivo) => {
-        formData.append(
+      formData.append(
         'archivos',
         archivo,
         archivo.name,
-        );
+      );
     });
 
     formData.append(
       'idPeriodo',
-      idPeriodo.trim()
-    )
+      idPeriodo.trim(),
+    );
 
     formData.append(
       'idCoordinacionFacultad',
       idCoordinacionFacultad.trim(),
     );
 
+    formData.append(
+      'idConvocatoria',
+      idConvocatoria.trim(),
+    );
+
     return this.webRequestService.postFormData<void>(
-        `${this.endpoint}/requests`,
-        formData,
+      `${this.endpoint}/requests`,
+      formData,
     );
   }
   

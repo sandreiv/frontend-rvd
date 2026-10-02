@@ -113,7 +113,9 @@ export class CdpRequests implements OnInit {
   readonly canRequestCdp = computed(
     () =>
       this.resolveActiveCdpFacultyId() != null &&
-      this.resolveSelectedPeriodId() != null &&
+      this.appliedPeriodId() != null &&
+      this.appliedPreloadCallId() != null &&
+      this.hasCdpCoordinations() &&
       !this.isLoadingCurrentCdpRequest() &&
       !this.hasCdpRequest() &&
       this.cdpObservation().trim().length > 0 &&
@@ -229,18 +231,31 @@ export class CdpRequests implements OnInit {
       const idCoordinacionFacultad =
         this.resolveActiveCdpFacultyId();
 
-      if (idCoordinacionFacultad == null) {
+      const idPeriodoUniversidad =
+        this.appliedPeriodId();
+
+      const idConvocatoria =
+        this.appliedPreloadCallId();
+
+      if (
+        idCoordinacionFacultad == null ||
+        idPeriodoUniversidad == null ||
+        idConvocatoria == null ||
+        !idConvocatoria
+      ) {
         return undefined;
       }
 
       return {
         idCoordinacionFacultad,
+        idPeriodoUniversidad,
       };
     },
 
     stream: ({ params }) =>
       this.cdpService.getCurrentRequest(
         params.idCoordinacionFacultad,
+        params.idPeriodoUniversidad,
       ),
 
     defaultValue: null as CdpRequest | null,
@@ -446,6 +461,30 @@ export class CdpRequests implements OnInit {
   readonly canSendCdpToVice = computed(() => this.permissions.canSendCdpToVice());
   readonly canApproveCdpRequest = computed(() => this.permissions.canApproveCdpRequest());
 
+  readonly hasPendingDeanFilterChanges = computed(() => {
+    if (!this.isDean()) {
+      return false;
+    }
+
+    const selectedPeriodId =
+      this.resolveSelectedPeriodId();
+
+    const selectedConvocatoriaId =
+      this.resolveSelectedConvocatoriaId();
+
+    const appliedPeriodId =
+      this.appliedPeriodId();
+
+    const appliedConvocatoriaId =
+      this.appliedPreloadCallId();
+
+    return (
+      selectedPeriodId !== appliedPeriodId ||
+      String(selectedConvocatoriaId ?? '') !==
+        String(appliedConvocatoriaId ?? '')
+    );
+  });
+
   readonly canDownloadCdpReport = computed(() => {
     if (!this.canShowCdpReportButtons()) {
       return false;
@@ -463,7 +502,11 @@ export class CdpRequests implements OnInit {
     return (
       periodId != null &&
       convocatoriaId != null &&
-      idCoordinacionFacultad != null
+      idCoordinacionFacultad != null &&
+      this.hasAppliedFilter() &&
+      !this.hasPendingDeanFilterChanges() &&
+      !this.isLoadingCoordinations() &&
+      this.hasCdpCoordinations()
     );
   });
 
@@ -472,9 +515,15 @@ export class CdpRequests implements OnInit {
       return '';
     }
 
-    return (
-      'Seleccione periodo y convocatoria para generar el reporte.'
-    );
+    if (
+      this.hasAppliedFilter() &&
+      !this.isLoadingCoordinations() &&
+      !this.hasCdpCoordinations()
+    ) {
+      return 'No es posible descargar el reporte porque no hay coordinaciones con carga en Aval Desarrollo para el periodo y la convocatoria seleccionados.';
+    }
+
+    return 'Seleccione un periodo y una convocatoria para generar el reporte.';
   });
 
   readonly isFilterDisabled = computed(() => {
@@ -496,9 +545,24 @@ export class CdpRequests implements OnInit {
   })
 
   readonly canShowCdpSection = computed(() => {
-    if (this.isDean()) return true;
+    if (this.isDean()) {
+      return (
+        this.hasAppliedFilter() &&
+        !this.hasPendingDeanFilterChanges() &&
+        !this.isLoadingCoordinations() &&
+        this.hasCdpCoordinations()
+      );
+    }
 
     return this.selectedFaculty() !== null;
+  });
+
+  readonly hasCdpCoordinations = computed(() => {
+    if (!this.isDean()) {
+      return true;
+    }
+
+    return this.cdpRequestsForDeanResource.value().length > 0;
   });
 
   ngOnInit(): void {
@@ -694,13 +758,17 @@ export class CdpRequests implements OnInit {
     }
 
     const periodId =
-      this.selectedPeriodId();
+      this.appliedPeriodId();
 
     const idCoordinacionFacultad =
       this.resolveActiveCdpFacultyId();
 
+    const convocatoriaId =
+      this.appliedPreloadCallId();  
+
     if (
-      !periodId ||
+      periodId == null ||
+      convocatoriaId == null ||
       idCoordinacionFacultad == null
     ) {
       return;
@@ -714,8 +782,9 @@ export class CdpRequests implements OnInit {
         this.cdpService.createRequest(
           this.cdpObservation(),
           this.cdpAttachments(),
-          periodId,
+          String(periodId),
           String(idCoordinacionFacultad),
+          String(convocatoriaId),
         ),
       );
 
@@ -871,9 +940,16 @@ export class CdpRequests implements OnInit {
     }
 
     const idPeriodoUniversidad =
-      this.resolveSelectedPeriodId();
+      this.appliedPeriodId();
+
+    const appliedConvocatoriaId =
+      this.appliedPreloadCallId();
+
     const idConvocatoria =
-      this.resolveSelectedConvocatoriaId();
+      appliedConvocatoriaId != null
+        ? Number(appliedConvocatoriaId)
+        : null;
+
     const idCoordinacionFacultad =
       this.resolveActiveCdpFacultyId();  
 
