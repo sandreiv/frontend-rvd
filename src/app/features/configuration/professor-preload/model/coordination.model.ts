@@ -233,6 +233,7 @@ export function normalizeCoordinationItem(item: CoordinationApiItem): Coordinati
 }
 
 export interface ModalityProfessor {
+  idNovedadCargaDocente?: number | null;
   idCargaDocente: number | null;
   idPersonaGeneral: number | null;
   nombreCompleto: string | null;
