@@ -8,8 +8,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Icon } from '@shared/ui/icon/icon';
-import { AppIconName } from '@shared/ui/icon/icons';
+import { Icon } from '../icon/icon';
+import { AppIconName } from '../icon/icons';
 import { TooltipPlacement, TooltipTheme } from './tooltip.types';
 
 const HTML_TAG_REGEX = /<[a-z][\s\S]*>/i;

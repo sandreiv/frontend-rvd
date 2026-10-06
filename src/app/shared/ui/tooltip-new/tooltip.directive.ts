@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { TooltipContent, TooltipPlacement, TooltipTheme } from './tooltip.types';
 import { TooltipFloatingComponent } from './tooltip-floating.component';
-import { AppIconName } from '@shared/ui/icon/icons';
+import { AppIconName } from '../icon/icons';
 
 @Directive({
   selector: '[appTooltip]',

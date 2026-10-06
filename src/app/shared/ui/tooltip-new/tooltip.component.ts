@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, TemplateRef, input } from '@angular
 import { CommonModule } from '@angular/common';
 import { TooltipDirective } from './tooltip.directive';
 import { TooltipPlacement, TooltipTheme } from './tooltip.types';
-import { AppIconName } from '@shared/ui/icon/icons';
+import { AppIconName } from '../icon/icons';
 
 /**
  * Componente Wrapper versátil para envolver cualquier elemento y dotarlo de tooltip enriquecido.

@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { AppIconName } from '@shared/ui/icon/icons';
+import { AppIconName } from '../icon/icons';
 
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
 export type TooltipTheme = 'dark' | 'light' | 'brand' | 'success' | 'warning' | 'danger';
