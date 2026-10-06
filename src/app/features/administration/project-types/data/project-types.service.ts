@@ -15,9 +15,11 @@ export class ProjectTypesService {
   private readonly endpoint = '/configuration/administration/projects/project-types';
 
   /**
-   * Obtiene los tipos de proyecto
-   * @returns Observable<ProjectTypeItem[]>
-   */
+   * Lista los tipos de proyecto registrados.
+   *
+   * @returns Observable con los tipos de proyecto disponibles.
+  */
+
   listProjectTypes(): Observable<ProjectTypeItem[]> {
     return this.webRequestService.get<ProjectTypeItem[]>(
       `${this.endpoint}/list`,
@@ -25,10 +27,12 @@ export class ProjectTypesService {
   }
 
   /**
-   * Guarda un tipo de proyecto
-   * @param payload - El tipo de proyecto a guardar
-   * @returns Observable<void>
-   */
+   * Registra un nuevo tipo de proyecto.
+   *
+   * @param payload Información del tipo de proyecto a registrar.
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+  */
+
   saveProjectType(payload: ProjectTypeFormData): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/save`,
@@ -37,11 +41,13 @@ export class ProjectTypesService {
   }
 
   /**
-   * Actualiza un tipo de proyecto
-   * @param id - El ID del tipo de proyecto a actualizar
-   * @param payload - El tipo de proyecto a actualizar
-   * @returns Observable<void>
-   */
+   * Actualiza un tipo de proyecto existente.
+   *
+   * @param id Identificador del tipo de proyecto.
+   * @param payload Información actualizada del tipo de proyecto.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+  */
+
   updateProjectType(id: number, payload: ProjectTypeFormData): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/update/${id}`,
@@ -49,12 +55,13 @@ export class ProjectTypesService {
     );
   }
 
-
   /**
-   * Elimina un tipo de proyecto
-   * @param id - El ID del tipo de proyecto a eliminar
-   * @returns Observable<void>
-   */
+   * Elimina un tipo de proyecto por su identificador.
+   *
+   * @param id Identificador del tipo de proyecto.
+   * @returns Observable sin contenido cuando la eliminación finaliza correctamente.
+  */
+
   deleteProjectType(id: number): Observable<void> {
     return this.webRequestService.delete<void>(
       `${this.endpoint}/delete/${id}`,
@@ -62,14 +69,17 @@ export class ProjectTypesService {
   }
 
   /**
-   * Elimina varios tipos de proyecto
-   * @param payload - Los IDs de los tipos de proyecto a eliminar
-   * @returns Observable<void>
-   */
+   * Elimina varios tipos de proyecto en una sola operación.
+   *
+   * @param payload Identificadores de los tipos de proyecto a eliminar.
+   * @returns Observable sin contenido cuando la eliminación masiva finaliza correctamente.
+  */
+
   deleteBulkProjectTypes(payload: DeleteBulkProjectTypesRequest): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/delete-bulk`,
       payload,
     );
   }
+
 }

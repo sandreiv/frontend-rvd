@@ -19,8 +19,11 @@ export class VerifyProfessorsService {
   private readonly endpoint = '/configuration/verify-professor';
 
   /**
-   * Obtiene los periodos universitarios para el filtro.
-   */
+   * Obtiene los periodos universitarios disponibles para el filtro.
+   *
+   * @returns Observable con los periodos universitarios.
+  */
+
   listUniversityPeriod(): Observable<UniversityPeriodItem[]> {
     return this.webRequestService.get<UniversityPeriodItem[]>(
       `${this.endpoint}/list-university-period`,
@@ -28,8 +31,12 @@ export class VerifyProfessorsService {
   }
 
   /**
-   * Obtiene las convocatorias activas del periodo.
-   */
+   * Obtiene las convocatorias activas correspondientes al periodo seleccionado.
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @returns Observable con las convocatorias activas.
+  */
+
   listActivePreloadCalls(
     idPeriodoUniversidad: number,
   ): Observable<VerifyPreloadCallItem[]> {
@@ -40,9 +47,14 @@ export class VerifyProfessorsService {
   }
 
   /**
-   * Lista coordinaciones académicas con docentes para verificar
-   * en el periodo y la convocatoria.
-   */
+   * Lista las coordinaciones académicas con docentes pendientes
+   * de verificación en el periodo y convocatoria indicados.
+   *
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @param idConvocatoria Identificador de la convocatoria.
+   * @returns Observable con las coordinaciones disponibles.
+  */
+
   listAcademicCoordinations(
     idPeriodoUniversidad: number,
     idConvocatoria: number,
@@ -54,8 +66,12 @@ export class VerifyProfessorsService {
   }
 
   /**
-   * Lista docentes en estado para verificar.
-   */
+   * Lista los docentes que se encuentran en estado para verificar.
+   *
+   * @param filter Filtros utilizados para consultar los docentes.
+   * @returns Observable con los docentes encontrados.
+  */
+
   listProfessors(filter: VerifyProfessorsFilter): Observable<VerifyProfessorItem[]> {
     return this.webRequestService.get<VerifyProfessorItem[]>(
       `${this.endpoint}/list-professors`,
@@ -68,8 +84,12 @@ export class VerifyProfessorsService {
   }
 
   /**
-   * Lista docentes pendientes de verificación para el header.
-   */
+   * Lista los docentes pendientes de verificación utilizados
+   * para indicadores o notificaciones del módulo.
+   *
+   * @returns Observable con los docentes pendientes.
+  */
+
   listPendingProfessors(): Observable<PendingVerifyProfessorsList> {
     return this.webRequestService.get<PendingVerifyProfessorsList>(
       `${this.endpoint}/pending`,
@@ -77,9 +97,12 @@ export class VerifyProfessorsService {
   }
 
   /**
-   * Obtiene el resumen completo de una carga docente:
-   * valor de contratación, horas de actividades y centros de costo.
-   */
+   * Obtiene el resumen completo de una carga docente.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con contratación, actividades y centros de costo.
+  */
+
   getProfessorLoadSummary(
     idCargaDocente: number,
   ): Observable<ProfessorLoadSummaryApi> {
@@ -87,6 +110,14 @@ export class VerifyProfessorsService {
       `${this.endpoint}/professor-load-summary/${idCargaDocente}`,
     );
   }
+
+  /**
+   * Verifica una carga docente y registra la observación asociada al proceso.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @param observacion Observación registrada durante la verificación.
+   * @returns Observable sin contenido cuando la verificación finaliza correctamente.
+  */
 
   verifyProfessor(
     idCargaDocente: number,
@@ -97,6 +128,15 @@ export class VerifyProfessorsService {
       { observacion },
     );
   }
+
+  /**
+   * Devuelve una carga docente para corrección y registra
+   * la observación correspondiente.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @param observacion Motivo u observación de la devolución.
+   * @returns Observable sin contenido cuando la devolución finaliza correctamente.
+  */
 
   declineProfessor(
     idCargaDocente: number,

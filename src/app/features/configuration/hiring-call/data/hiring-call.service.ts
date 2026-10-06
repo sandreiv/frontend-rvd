@@ -22,7 +22,10 @@ export class HiringCallService {
 
   /**
    * Obtiene los periodos universitarios disponibles.
-   */
+   *
+   * @returns Observable con los periodos universitarios.
+  */
+
   getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
     return this.webRequestService.get<UniversityPeriodItem[]>(
       `${this.endpoint}/list-university-period`,
@@ -30,11 +33,12 @@ export class HiringCallService {
   }
 
   /**
-   * Lista convocatorias de contratación (CONV_CONTRATACION = 1)
-   * del periodo universitario indicado.
+   * Lista las convocatorias de contratación del periodo universitario indicado.
    *
    * @param idPeriodoUniversidad Identificador del periodo universitario.
-   */
+   * @returns Observable con las convocatorias de contratación del periodo.
+  */
+
   listHiringCalls(
     idPeriodoUniversidad: number,
   ): Observable<HiringCallItem[]> {
@@ -52,13 +56,14 @@ export class HiringCallService {
   }
 
   /**
-   * Lista coordinaciones del coordinador autenticado cuya carga está
-   * en AVAL DESARROLLO, asociadas a la preasignación de la convocatoria
-   * de contratación (CONV_IDRELACION).
+   * Lista las coordinaciones del coordinador autenticado cuya carga se encuentra
+   * en AVAL DESARROLLO y está asociada a la preasignación de la convocatoria
+   * de contratación.
    *
    * @param idPeriodoUniversidad Identificador del periodo universitario.
    * @param idConvocatoria Identificador opcional de la convocatoria de contratación.
-   */
+   * @returns Observable con las coordinaciones disponibles.
+  */
   listCoordinations(
     idPeriodoUniversidad: number,
     idConvocatoria?: number | null,
@@ -80,13 +85,14 @@ export class HiringCallService {
   }
 
   /**
-   * Lista docentes de una carga según la modalidad de contratación.
-   * Planta: docentes de la coordinación de la carga.
-   * Otras modalidades: solo docentes con CARGADOCENTE en esa carga.
+   * Lista los docentes de una carga según la modalidad de contratación.
+   * Para planta utiliza los docentes de la coordinación y para las demás
+   * modalidades los docentes registrados en CARGADOCENTE.
    *
    * @param idCarga Identificador de la carga.
-   * @param idModalidadContratacion Identificador de la modalidad.
-   */
+   * @param idModalidadContratacion Identificador de la modalidad de contratación.
+   * @returns Observable con los docentes de la modalidad seleccionada.
+  */
   listProfessorsByModality(
     idCarga: number,
     idModalidadContratacion: number,

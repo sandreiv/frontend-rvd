@@ -23,10 +23,12 @@ export class LoadRestrictionService {
   private readonly endpoint = '/configuration/administration/load-restriction';
 
   /**
-   * Lista las modalidades de contratación disponibles para configurar restricción de carga.
+   * Lista las modalidades de contratación disponibles
+   * para configurar restricciones de carga.
    *
-   * @returns Observable con la lista de modalidades.
-   */
+   * @returns Observable con las modalidades de contratación.
+  */
+
   listModalities(): Observable<LoadRestrictionModalityItem[]> {
     return this.webRequestService.get<LoadRestrictionModalityItem[]>(
       `${this.endpoint}/modalities/list`,
@@ -34,10 +36,11 @@ export class LoadRestrictionService {
   }
 
   /**
-   * Consulta los catálogos requeridos por el formulario de restricción de carga.
+   * Obtiene los catálogos requeridos para configurar una restricción de carga.
    *
-   * @returns Observable con categorías, tipos de actividad, programas y personas.
-   */
+   * @returns Observable con los catálogos utilizados por el formulario.
+  */
+
   getCatalogs(): Observable<LoadRestrictionCatalogs> {
     return this.webRequestService.get<LoadRestrictionCatalogs>(
       `${this.endpoint}/restriction/catalogs`,
@@ -45,11 +48,12 @@ export class LoadRestrictionService {
   }
 
   /**
-   * Consulta la restricción de carga configurada para una modalidad.
+   * Consulta el detalle de la restricción configurada para una modalidad.
    *
-   * @param idModalidadContratacion Identificador de la modalidad de contratación.
+   * @param idModalidadContratacion Identificador de la modalidad.
    * @returns Observable con el detalle de la restricción.
-   */
+  */
+
   getRestriction(
     idModalidadContratacion: number,
   ): Observable<LoadRestrictionDetail> {
@@ -59,11 +63,12 @@ export class LoadRestrictionService {
   }
 
   /**
-   * Registra o actualiza la restricción de carga de una modalidad.
+   * Registra o actualiza la restricción de carga correspondiente a una modalidad.
    *
    * @param request Información enviada desde el formulario.
    * @returns Observable sin contenido cuando el guardado finaliza correctamente.
-   */
+  */
+ 
   saveRestriction(request: LoadRestrictionFormData): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/restriction/save`,
