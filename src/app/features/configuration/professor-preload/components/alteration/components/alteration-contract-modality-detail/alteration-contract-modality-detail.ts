@@ -1,5 +1,6 @@
 
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   CoordinationContractModality,
   CoordinationItem,
@@ -27,6 +28,7 @@ import { AlterationProfessorNovelties } from '../alteration-professor-novelties/
 import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
 import { ProfessorAddModal } from '../alteration-professor-add-modal/alteration-professor-add-modal';
 import { NoveltySummary } from '../novelty-summary/novelty-summary';
+import { DocumentPreview } from '../../../../../../../shared/components/form/document-preview/document-preview';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -114,7 +116,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal, NoveltySummary],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal, NoveltySummary, DocumentPreview],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -125,6 +127,7 @@ export class AlterationContractModalityDetail {
     optional: true,
   });
   readonly permissions = inject(PermissionService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
@@ -132,6 +135,11 @@ export class AlterationContractModalityDetail {
   readonly isDeleteProfessorModalOpen = signal(false);
   readonly isAddProfessorModalOpen = signal(false);
   readonly isSummaryModalOpen = signal(false);
+  readonly showNoveltyPdfPreview = signal(false);
+  readonly noveltyPdfLoading = signal(false);
+  readonly noveltyPdfError = signal<string | null>(null);
+  readonly noveltyPdfFileName = signal('Documento PDF');
+  readonly noveltyPdfPreviewUrl = signal<SafeResourceUrl | null>(null);
   readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
   readonly summaryProfessor = signal<ModalityProfessor | null>(null);
   readonly isRequestingDeleteProfessor = signal(false);
@@ -298,7 +306,12 @@ export class AlterationContractModalityDetail {
     return `¿Desea enviar a aprobación la eliminación del docente "${professorName}"?`;
   });
 
+  private noveltyPdfObjectUrl: string | null = null;
+  private noveltyPdfRequestId = 0;
+
   constructor() {
+    this.destroyRef.onDestroy(() => this.revokeNoveltyPdfObjectUrl());
+
     effect(() => {
       const tabs = this.modalityTabs();
       const currentId = this.selectedContractModalityId();
@@ -411,6 +424,14 @@ export class AlterationContractModalityDetail {
       });
     }
 
+    if (this.permissions.canDownloadProfessorNoveltyPdf()) {
+      actions.push({
+        id: 'reporte-novedad',
+        label: 'Reporte novedad',
+        icon: 'file',
+      });
+    }
+
     if (this.permissions.canSaveContractModalityProfessor()) {
       actions.push({
         id: 'novedad',
@@ -444,6 +465,11 @@ export class AlterationContractModalityDetail {
       return;
     }
 
+    if (actionId === 'reporte-novedad') {
+      void this.openNoveltyPdfReport(professor);
+      return;
+    }
+
     if (actionId === 'eliminar') {
       this.openDeleteProfessorModal(professor);
     }
@@ -472,6 +498,91 @@ export class AlterationContractModalityDetail {
   closeSummaryModal(): void {
     this.isSummaryModalOpen.set(false);
     this.summaryProfessor.set(null);
+  }
+
+  async openNoveltyPdfReport(professor: ModalityProfessor): Promise<void> {
+    const idCargaDocente = professor.idCargaDocente;
+
+    if (
+      idCargaDocente == null ||
+      !this.permissions.canDownloadProfessorNoveltyPdf() ||
+      this.noveltyPdfLoading()
+    ) {
+      return;
+    }
+
+    const requestId = ++this.noveltyPdfRequestId;
+    this.revokeNoveltyPdfObjectUrl();
+    this.noveltyPdfError.set(null);
+    this.noveltyPdfPreviewUrl.set(null);
+    this.noveltyPdfFileName.set(
+      `novedad-carga-docente-${idCargaDocente}.pdf`,
+    );
+    this.noveltyPdfLoading.set(true);
+    this.showNoveltyPdfPreview.set(true);
+
+    try {
+      const file = await firstValueFrom(
+        this.coordinationService.downloadNoveltyPdfReport(idCargaDocente),
+      );
+
+      if (requestId !== this.noveltyPdfRequestId) {
+        return;
+      }
+
+      const blob =
+        file.blob.type === 'application/pdf'
+          ? file.blob
+          : new Blob([file.blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      this.noveltyPdfObjectUrl = url;
+      this.noveltyPdfFileName.set(file.fileName);
+      this.noveltyPdfPreviewUrl.set(
+        this.sanitizer.bypassSecurityTrustResourceUrl(url),
+      );
+    } catch (error) {
+      if (requestId !== this.noveltyPdfRequestId) {
+        return;
+      }
+
+      console.error(error);
+      this.noveltyPdfError.set(
+        'No fue posible cargar la previsualización del documento.',
+      );
+    } finally {
+      if (requestId === this.noveltyPdfRequestId) {
+        this.noveltyPdfLoading.set(false);
+      }
+    }
+  }
+
+  closeNoveltyPdfPreview(): void {
+    this.noveltyPdfRequestId++;
+    this.showNoveltyPdfPreview.set(false);
+    this.noveltyPdfLoading.set(false);
+    this.noveltyPdfError.set(null);
+    this.noveltyPdfPreviewUrl.set(null);
+    this.revokeNoveltyPdfObjectUrl();
+  }
+
+  downloadNoveltyPdfPreview(): void {
+    if (!this.noveltyPdfObjectUrl) {
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.href = this.noveltyPdfObjectUrl;
+    anchor.download = this.noveltyPdfFileName();
+    anchor.click();
+  }
+
+  private revokeNoveltyPdfObjectUrl(): void {
+    if (!this.noveltyPdfObjectUrl) {
+      return;
+    }
+
+    URL.revokeObjectURL(this.noveltyPdfObjectUrl);
+    this.noveltyPdfObjectUrl = null;
   }
 
   onNoveltyReviewChanged(): void {
