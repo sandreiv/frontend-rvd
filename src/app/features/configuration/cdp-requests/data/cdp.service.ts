@@ -14,11 +14,26 @@ export class CdpService {
 
   private readonly endpoint = '/configuration/cdp';
 
+  /**
+   * Obtiene los contextos de facultad disponibles para la gestión de solicitudes CDP.
+   *
+   * @returns Observable con los contextos CDP habilitados para el usuario autenticado.
+  */
+
   getContexts(): Observable<CdpContext[]> {
     return this.webRequestService.get<CdpContext[]>(
       `${this.endpoint}/context`,
     );
   }
+
+  /**
+   * Consulta la solicitud CDP vigente para una facultad y un periodo universitario.
+   * La combinación facultad-periodo identifica de forma única la solicitud.
+   *
+   * @param idCoordinacionFacultad Identificador de la coordinación que representa la facultad.
+   * @param idPeriodoUniversidad Identificador del periodo universitario.
+   * @returns Observable con la solicitud encontrada o null cuando todavía no existe.
+  */
 
   getCurrentRequest(
     idCoordinacionFacultad: number,
@@ -99,6 +114,15 @@ export class CdpService {
       );
   }
 
+  /**
+   * Construye los parámetros comunes utilizados por los reportes CDP.
+   *
+   * @param idConvocatoria Identificador de la convocatoria aplicada.
+   * @param idPeriodoUniversidad Identificador del periodo universitario aplicado.
+   * @param idCoordinacionFacultad Identificador de la facultad.
+   * @returns Parámetros requeridos por los endpoints de reporte.
+  */
+
   private buildReportParams(
     idConvocatoria: number,
     idPeriodoUniversidad: number,
@@ -110,6 +134,19 @@ export class CdpService {
       idCoordinacionFacultad,
     };
   }
+
+  /**
+   * Crea una solicitud CDP enviando observación, adjuntos y el contexto aplicado.
+   * La convocatoria se utiliza para validar el contexto de cargas, mientras que
+   * la solicitud queda asociada en backend a la facultad y al periodo universitario.
+   *
+   * @param observacion Observación registrada por el Decano.
+   * @param archivos Archivos adjuntos que soportan la solicitud.
+   * @param idPeriodo Identificador del periodo universitario aplicado.
+   * @param idCoordinacionFacultad Identificador de la facultad que realiza la solicitud.
+   * @param idConvocatoria Identificador de la convocatoria aplicada.
+   * @returns Observable sin contenido cuando la solicitud se crea correctamente.
+  */
 
   createRequest(
     observacion: string,
@@ -177,32 +214,41 @@ export class CdpService {
    * @returns Observable sin contenido cuando la operación finaliza correctamente.
    */
   approveCdpRequest(idSolicitud: number): Observable<void> {
-    return this.webRequestService.put<void>(
-      `${this.endpoint}/approve-cdp-request/${idSolicitud}`, {}
-    );
-  }
-}
-
-function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {
-  if (!contentDisposition) {
-    return fallback;
-  }
-
-  const utf8Match = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(
-    contentDisposition,
-  );
-  if (utf8Match?.[1]) {
-    try {
-      return decodeURIComponent(utf8Match[1].trim().replace(/"/g, ''));
-    } catch {
-      return utf8Match[1].trim().replace(/"/g, '');
+      return this.webRequestService.put<void>(
+        `${this.endpoint}/approve-cdp-request/${idSolicitud}`, {}
+      );
     }
   }
 
-  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(contentDisposition);
-  if (plainMatch?.[1]) {
-    return plainMatch[1].trim();
-  }
+  /**
+   * Resuelve el nombre de archivo sugerido por el encabezado Content-Disposition.
+   * Si el encabezado no contiene un nombre válido, utiliza el valor de respaldo.
+   *
+   * @param contentDisposition Encabezado Content-Disposition retornado por el backend.
+   * @param fallback Nombre de archivo utilizado cuando el encabezado no define uno.
+   * @returns Nombre de archivo normalizado para la descarga.
+  */
 
-  return fallback;
-}
+  function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {
+    if (!contentDisposition) {
+      return fallback;
+    }
+
+    const utf8Match = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(
+      contentDisposition,
+    );
+    if (utf8Match?.[1]) {
+      try {
+        return decodeURIComponent(utf8Match[1].trim().replace(/"/g, ''));
+      } catch {
+        return utf8Match[1].trim().replace(/"/g, '');
+      }
+    }
+
+    const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(contentDisposition);
+    if (plainMatch?.[1]) {
+      return plainMatch[1].trim();
+    }
+
+    return fallback;
+  }

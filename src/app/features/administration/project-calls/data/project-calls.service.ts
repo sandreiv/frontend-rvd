@@ -15,9 +15,11 @@ export class ProjectCallsService {
   private readonly endpoint = '/configuration/administration/projects/project-calls';
 
   /**
-   * Obtiene las convocatorias de proyecto
-   * @returns Observable<ProjectCallItem[]>
-   */
+   * Lista las convocatorias de proyectos registradas.
+   *
+   * @returns Observable con las convocatorias de proyectos disponibles.
+  */
+
   listProjectCalls(): Observable<ProjectCallItem[]> {
     return this.webRequestService.get<ProjectCallItem[]>(
       `${this.endpoint}/list`,
@@ -25,10 +27,12 @@ export class ProjectCallsService {
   }
 
   /**
-   * Guarda una convocatoria de proyecto
-   * @param payload - El tipo de proyecto a guardar
-   * @returns Observable<void>
-   */
+   * Registra una nueva convocatoria de proyecto.
+   *
+   * @param payload Información de la convocatoria a registrar.
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+  */
+
   saveProjectCall(payload: ProjectCallFormData): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/save`,
@@ -37,11 +41,13 @@ export class ProjectCallsService {
   }
 
   /**
-   * Actualiza una convocatoria de proyecto
-   * @param id - El ID del tipo de proyecto a actualizar
-   * @param payload - El tipo de proyecto a actualizar
-   * @returns Observable<void>
-   */
+   * Actualiza una convocatoria de proyecto existente.
+   *
+   * @param id Identificador de la convocatoria.
+   * @param payload Información actualizada de la convocatoria.
+   * @returns Observable sin contenido cuando la actualización finaliza correctamente.
+  */
+
   updateProjectCall(id: number, payload: ProjectCallFormData): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/update/${id}`,
@@ -49,12 +55,13 @@ export class ProjectCallsService {
     );
   }
 
-
   /**
-   * Elimina una convocatoria de proyecto
-   * @param id - El ID del tipo de proyecto a eliminar
-   * @returns Observable<void>
-   */
+   * Elimina una convocatoria de proyecto por su identificador.
+   *
+   * @param id Identificador de la convocatoria.
+   * @returns Observable sin contenido cuando la eliminación finaliza correctamente.
+  */
+
   deleteProjectCall(id: number): Observable<void> {
     return this.webRequestService.delete<void>(
       `${this.endpoint}/delete/${id}`,
@@ -62,10 +69,12 @@ export class ProjectCallsService {
   }
 
   /**
-   * Elimina varias convocatorias de proyecto
-   * @param payload - Los IDs de los tipos de proyecto a eliminar
-   * @returns Observable<void>
-   */
+   * Elimina varias convocatorias de proyecto en una sola operación.
+   *
+   * @param payload Identificadores de las convocatorias a eliminar.
+   * @returns Observable sin contenido cuando la eliminación masiva finaliza correctamente.
+  */
+
   deleteBulkProjectCalls(payload: DeleteBulkProjectCallsRequest): Observable<void> {
     return this.webRequestService.post<void>(
       `${this.endpoint}/delete-bulk`,
