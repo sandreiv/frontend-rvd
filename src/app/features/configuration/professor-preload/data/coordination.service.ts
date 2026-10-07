@@ -1090,6 +1090,31 @@ export class CoordinationService {
     );
   }
 
+  /**
+   * Descarga el PDF comparativo de la novedad vigente del docente.
+   * Si es la primera, compara contra el registro original de CARGADOCENTE.
+   *
+   * @param idCargaDocente Identificador de la carga docente (CADO_ID).
+   * @returns Observable con el archivo PDF y el nombre sugerido.
+   */
+  downloadNoveltyPdfReport(
+    idCargaDocente: number,
+  ): Observable<{ blob: Blob; fileName: string }> {
+    return this.webRequestService
+      .getBlobResponse(
+        `${this.endpoint}/novelty-pdf-report/${idCargaDocente}`,
+      )
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `novedad-carga-docente-${idCargaDocente}.pdf`,
+          ),
+        })),
+      );
+  }
+
 }
 
 function resolveDownloadFileName(contentDisposition: string | null, fallback: string): string {

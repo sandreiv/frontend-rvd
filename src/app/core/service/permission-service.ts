@@ -143,6 +143,10 @@ export class PermissionService {
     return this.can(VERIFY_FUNC.PARENT);
   }
 
+  canDownloadProfessorNoveltyPdf(): boolean {
+    return this.can(PRELOAD_FUNC.DOWNLOAD_PROFESSOR_NOVELTY_PDF);
+  }
+
 }
 
 function collectCodes(
