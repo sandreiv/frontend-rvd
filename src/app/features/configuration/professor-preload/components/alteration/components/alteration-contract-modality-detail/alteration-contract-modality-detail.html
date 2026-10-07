@@ -149,12 +149,32 @@
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                     @let statusBadge = professorStatusBadge(professor);
                     @if (statusBadge) {
-                      <span [class]="statusBadge.badgeClass">
+                      <span
+                        [class]="statusBadge.badgeClass"
+                        [appTooltip]="rejectionReasonTooltip(professor)"
+                        tooltipPlacement="top"
+                        [class.cursor-help]="
+                          isRejectedNovelty(professor) &&
+                          !!professor.motivoRechazo?.trim()
+                        "
+                      >
                         <span
                           [class]="statusBadge.dotClass"
                           aria-hidden="true"
                         ></span>
+
                         {{ statusBadge.label }}
+
+                        @if (
+                          isRejectedNovelty(professor) &&
+                          professor.motivoRechazo?.trim()
+                        ) {
+                          <app-icon
+                            name="magnifyingGlass"
+                            size="xs"
+                            classes="ml-0.5"
+                          />
+                        }
                       </span>
                     }
                   </div>

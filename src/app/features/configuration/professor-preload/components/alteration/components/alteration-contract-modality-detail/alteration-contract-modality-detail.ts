@@ -9,7 +9,7 @@ import {
 import { CoordinationService } from '../../../../data/coordination.service';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Observable, map, forkJoin, switchMap, finalize } from 'rxjs';
-import { NOVELTY_APPROVED_STATE, NOVELTY_PENDING_REVIEW_STATE, NOVELTY_RETURNED_STATE, } from '../../../../model/professor-novelty-state';
+import {NOVELTY_APPROVED_STATE,NOVELTY_PENDING_REVIEW_STATE,NOVELTY_REJECTED_STATE,} from '../../../../model/professor-novelty-state';
 import { NoveltyBudgetStore } from '../alteration-professor-novelties/novelty-budget.store';
 import { forNext } from '../../../../../../../core/utils/for-next.function';
 import { TabBarId, TabBarItem } from '../../../../../../../shared/ui/tab-bar/tab-bar.types';
@@ -32,7 +32,7 @@ type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
 type TcoFilter = 'todos' | 'duracion' | 'estado';
 type TcoDurationFilter = 'todos' | 'cuatroMeses' | 'onceMeses';
-type TcoStateFilter ='todos' | 'enRevision' | 'aprobado' | 'devuelto';
+type TcoStateFilter ='todos' | 'enRevision' | 'aprobado' | 'rechazado';
 
 interface StatusBadge {
   label: string;
@@ -186,8 +186,8 @@ export class AlterationContractModalityDetail {
       icon: 'orbit',
     },
     {
-      id: 'devuelto',
-      label: 'Devuelta',
+      id: 'rechazado',
+      label: 'Rechazada',
       icon: 'orbit',
     },
   ];
@@ -540,11 +540,11 @@ export class AlterationContractModalityDetail {
           'success',
         );
 
-      case NOVELTY_RETURNED_STATE:
-        return this.buildStatusBadge(
-          'Devuelta',
-          'error',
-        );
+      case NOVELTY_REJECTED_STATE:
+      return this.buildStatusBadge(
+        'Rechazada',
+        'error',
+      );
 
       default:
         return null;
@@ -610,7 +610,7 @@ export class AlterationContractModalityDetail {
 
       return (
         estadoNovedad ===
-        NOVELTY_RETURNED_STATE
+        NOVELTY_REJECTED_STATE
       );
     });
   }
@@ -809,4 +809,30 @@ export class AlterationContractModalityDetail {
         },
       });
   }
+
+  isRejectedNovelty(
+    professor: ModalityProfessor,
+  ): boolean {
+    const estadoNovedad =
+      professor.estadoNovedad == null
+        ? ''
+        : String(professor.estadoNovedad).trim();
+
+    return estadoNovedad === NOVELTY_REJECTED_STATE;
+  }
+
+  rejectionReasonTooltip(
+    professor: ModalityProfessor,
+  ): string {
+    if (!this.isRejectedNovelty(professor)) {
+      return '';
+    }
+
+    const motivo = professor.motivoRechazo?.trim();
+    return motivo
+      ? `Motivo del rechazo: ${motivo}`
+      : '';
+  }
+
+
 }

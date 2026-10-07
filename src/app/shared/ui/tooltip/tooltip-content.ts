@@ -13,9 +13,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     <div
       role="tooltip"
       @fade
-      class="max-w-xs rounded-lg bg-white px-3 py-2 text-xs
-       font-medium leading-snug text-gray-700 shadow-lg
-       ring-1 ring-gray-200"
+      class="max-w-xs whitespace-normal break-words [overflow-wrap:anywhere]
+      rounded-lg bg-white px-3 py-2 text-xs font-medium leading-snug
+      text-gray-700 shadow-lg ring-1 ring-gray-200"
     >
       {{ text() }}
     </div>

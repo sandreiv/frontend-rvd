@@ -4,7 +4,7 @@ import { formatCurrencyCOP } from './professor-form.config';
 import {
   NOVELTY_APPROVED_STATE,
   NOVELTY_PENDING_REVIEW_STATE,
-  NOVELTY_RETURNED_STATE,
+  NOVELTY_REJECTED_STATE,
 } from './professor-novelty-state';
 import {
   ContractValueRow,
@@ -138,10 +138,13 @@ function noveltyStateLabel(
   switch (String(estado ?? '').trim()) {
     case NOVELTY_PENDING_REVIEW_STATE:
       return 'En revisión';
+
     case NOVELTY_APPROVED_STATE:
       return 'Aprobada';
-    case NOVELTY_RETURNED_STATE:
-      return 'Devuelta';
+
+    case NOVELTY_REJECTED_STATE:
+      return 'Rechazada';
+
     default:
       return '-';
   }
