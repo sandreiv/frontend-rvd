@@ -10,11 +10,16 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { forkJoin, map, Observable } from 'rxjs';
 import { forNext } from '../../../../../core/utils/for-next.function';
+import { Dropdown } from '../../../../../shared/ui/dropdown/dropdown/dropdown';
+import { Item } from '../../../../../shared/ui/dropdown/item/item';
+import { Icon } from '../../../../../shared/ui/icon/icon';
+import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { TabBar } from '../../../../../shared/ui/tab-bar/tab-bar';
 import {
   TabBarId,
   TabBarItem,
 } from '../../../../../shared/ui/tab-bar/tab-bar.types';
+import { PtdModal } from '../ptd-modal/ptd-modal';
 import { formatSentenceValue } from '../../../../../shared/utils/normalized-text.util';
 import { resolveModalityKind } from '../../../professor-preload/model/professor-form.config';
 import {
@@ -33,8 +38,17 @@ interface StatusBadge {
   dotClass: string;
 }
 
+interface ProfessorMenuAction {
+  id: string;
+  label: string;
+  icon: AppIconName;
+  className?: string;
+  tooltip?: string;
+}
+
 interface ModalityProfessorRow {
   rowKey: string;
+  menuKey: string;
   displayName: string;
   professor: ModalityProfessor;
 }
@@ -85,7 +99,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 
 @Component({
   selector: 'app-hiring-contract-modality-detail',
-  imports: [TabBar],
+  imports: [TabBar, Dropdown, Item, Icon, PtdModal],
   templateUrl: './hiring-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -96,6 +110,17 @@ export class HiringContractModalityDetail {
   readonly refreshKey = input(0);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
+  readonly openMenuKey = signal<string | null>(null);
+  readonly isPtdModalOpen = signal(false);
+  readonly ptdProfessorId = signal<number | null>(null);
+
+  readonly professorMenuActions: ProfessorMenuAction[] = [
+    {
+      id: 'plan-trabajo',
+      label: 'Plan de trabajo',
+      icon: 'file',
+    },
+  ];
 
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
@@ -169,6 +194,34 @@ export class HiringContractModalityDetail {
 
   onContractModalityChange(id: TabBarId | null): void {
     this.selectedContractModalityId.set(id);
+    this.closeProfessorMenu();
+  }
+
+  toggleProfessorMenu(menuKey: string): void {
+    this.openMenuKey.update((current) =>
+      current === menuKey ? null : menuKey,
+    );
+  }
+
+  closeProfessorMenu(): void {
+    this.openMenuKey.set(null);
+  }
+
+  onProfessorMenuAction(
+    actionId: string,
+    professor: ModalityProfessor,
+  ): void {
+    this.closeProfessorMenu();
+
+    if (actionId === 'plan-trabajo') {
+      this.ptdProfessorId.set(professor.idCargaDocente);
+      this.isPtdModalOpen.set(true);
+    }
+  }
+
+  closePtdModal(): void {
+    this.isPtdModalOpen.set(false);
+    this.ptdProfessorId.set(null);
   }
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
@@ -240,8 +293,10 @@ export class HiringContractModalityDetail {
     forNext(professors, (professor, index) => {
       const rowId =
         professor.idCargaDocente || professor.idPersonaGeneral || index;
+      const menuKey = `professor-${rowId}`;
       rows.push({
-        rowKey: `professor-${rowId}`,
+        rowKey: menuKey,
+        menuKey,
         displayName: this.resolveProfessorName(professor),
         professor,
       });

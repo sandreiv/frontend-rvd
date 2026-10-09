@@ -13,7 +13,10 @@ import {
   ModalityProfessor,
   normalizeCoordinationItem,
 } from '../../professor-preload/model/coordination.model';
-import { HiringCallItem } from '../model/hiring-call.model';
+import {
+  HiringCallItem,
+  ProfessorInformationItem,
+} from '../model/hiring-call.model';
 
 @Injectable({ providedIn: 'root' })
 export class HiringCallService {
@@ -100,6 +103,23 @@ export class HiringCallService {
     return this.webRequestService.get<ModalityProfessor[]>(
       `${this.endpoint}/list-professors-modality`,
       { idCarga, idModalidadContratacion },
+    );
+  }
+
+  /**
+   * Obtiene la información de contratación de un docente: persona, modalidad
+   * con fechas, categoría, puntos y actividades PTD vigentes. Si hay una
+   * novedad vigente, esos datos salen de la novedad; si no, de la carga.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con la información de contratación del docente.
+   */
+  getProfessorInformation(
+    idCargaDocente: number,
+  ): Observable<ProfessorInformationItem> {
+    return this.webRequestService.get<ProfessorInformationItem>(
+      `${this.endpoint}/professor-information`,
+      { idCargaDocente },
     );
   }
 }

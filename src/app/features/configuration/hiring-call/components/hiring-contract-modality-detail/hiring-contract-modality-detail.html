@@ -50,6 +50,37 @@
                   }
                 </div>
               </div>
+
+              <button
+                #professorMenuBtn
+                type="button"
+                class="dropdown-toggle inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+                [class.bg-gray-100]="openMenuKey() === row.menuKey"
+                [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
+                [attr.aria-label]="'Acciones para ' + row.displayName"
+                [attr.aria-expanded]="openMenuKey() === row.menuKey"
+                (click)="toggleProfessorMenu(row.menuKey)"
+              >
+                <app-icon name="ellipsisVertical" size="sm" />
+              </button>
+
+              <app-dropdown
+                [isOpen]="openMenuKey() === row.menuKey"
+                [anchor]="professorMenuBtn"
+                className="w-56 p-2"
+                (close)="closeProfessorMenu()"
+              >
+                @for (action of professorMenuActions; track action.id) {
+                  <app-item
+                    (itemClick)="onProfessorMenuAction(action.id, professor)"
+                  >
+                    <span class="inline-flex items-center gap-2">
+                      <app-icon [name]="action.icon" size="xs" />
+                      {{ action.label }}
+                    </span>
+                  </app-item>
+                }
+              </app-dropdown>
             </article>
           }
         </div>
@@ -67,3 +98,9 @@
     </div>
   }
 </section>
+
+<app-ptd-modal
+  [isOpen]="isPtdModalOpen()"
+  [idCargaDocente]="ptdProfessorId()"
+  (close)="closePtdModal()"
+/>
