@@ -22,7 +22,7 @@
       'justify-start': (isExpanded$ | async) || (isHovered$ | async)
     }"
   >
-    <a routerLink="/">
+    <a [routerLink]="homePath">
       @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
         <img class="dark:hidden" src="/images/logo/logo.png" alt="Logo" width="1897" height="705" />
         <img class="hidden dark:block" src="/images/logo/logo-dark.png" alt="Logo" width="1907" height="733" />
@@ -46,7 +46,7 @@
             }"
           >
             @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
-              Configuración
+              {{ sectionLabel }}
             } @else {
               <app-icon name="ellipsisHorizontal" />
             }

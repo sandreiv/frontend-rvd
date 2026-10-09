@@ -7,6 +7,7 @@ import {
 } from '@angular/common/http';
 import { catchError, tap, throwError } from 'rxjs';
 import { AuthService } from '../service/auth-service';
+import { PublicSessionService } from '../service/public-session.service';
 import { ToastService } from '../service/toastService';
 import {
   resolveHttpErrorToast,
@@ -21,10 +22,12 @@ const MUTATION_METHODS = new Set([
 ]);
 
 const BOOTSTRAP_PATH = '/api/auth/bootstrap';
+const PUBLIC_SESSION_PATH = '/public/session';
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
   const authService = inject(AuthService);
+  const publicSession = inject(PublicSessionService);
 
   return next(req).pipe(
     tap((event) => {
@@ -56,7 +59,9 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         req.url,
       );
 
-      if (error.status === 401) {
+      if (error.status === 401 && req.url.includes('/public/')) {
+        publicSession.logout();
+      } else if (error.status === 401) {
         authService.logout();
       }
 
@@ -69,6 +74,8 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
 function shouldSkipToast(req: HttpRequest<unknown>): boolean {
   return (
-    req.url.includes(BOOTSTRAP_PATH) || req.url.includes('/arbol-roles')
+    req.url.includes(BOOTSTRAP_PATH) ||
+    req.url.includes(PUBLIC_SESSION_PATH) ||
+    req.url.includes('/arbol-roles')
   );
 }

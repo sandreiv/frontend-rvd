@@ -9,9 +9,11 @@ import {
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
+import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/service/auth-service';
 import { AvatarText } from '../../../ui/avatar/avatar-text';
 import { Icon } from '../../../ui/icon/icon';
+import { PublicSessionService } from '../../../../core/service/public-session.service';
 
 @Component({
   selector: 'app-user-dropdown',
@@ -22,12 +24,22 @@ import { Icon } from '../../../ui/icon/icon';
 export class UserDropdown {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly authService = inject(AuthService);
+  private readonly publicSession = inject(PublicSessionService);
+  private readonly router = inject(Router);
 
   readonly isOpen = signal(false);
 
   readonly user = computed(() => this.authService.currentUser());
 
   readonly displayName = computed(() => {
+    if (this.router.url.split('?')[0].startsWith('/publico')) {
+      return (
+        this.publicSession.teacher()?.nombreCompleto?.trim() ||
+        this.publicSession.teacher()?.numeroDocumento ||
+        'Docente'
+      );
+    }
+
     return (
       this.user()?.nombreCompleto?.trim() ||
       this.user()?.username?.trim() ||
@@ -45,6 +57,12 @@ export class UserDropdown {
 
   onLogout(): void {
     this.closeDropdown();
+
+    if (this.router.url.split('?')[0].startsWith('/publico')) {
+      this.publicSession.logout();
+      return;
+    }
+
     this.authService.logout();
   }
 

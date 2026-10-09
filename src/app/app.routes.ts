@@ -9,6 +9,9 @@ import { ProjectTypes } from './features/administration/project-types/pages/proj
 import { SessionRequired } from './features/auth/session-required/session-required';
 import { authGuard } from './core/guards/auth.guard';
 import { homeRedirectGuard, menuGuard } from './core/guards/menu.guard';
+import { TeacherAccess } from './features/public-view/professor-access/professor-access';
+import { publicViewRoutes } from './features/public-view/public-view.routes';
+import { publicSessionGuard } from './core/guards/public-session.guard';
 import { VerifyProfessors } from './features/configuration/verify-professors/pages/verify-professors/verify-professors';
 import { HiringCall } from './features/configuration/hiring-call/pages/hiring-call/hiring-call';
 
@@ -17,6 +20,19 @@ export const routes: Routes = [
     path: 'sesion-requerida',
     component: SessionRequired,
     title: 'Sesión requerida',
+  },
+  {
+    path: 'acceso-docente',
+    component: TeacherAccess,
+    title: 'Acceso docente - RVD',
+  },
+  {
+    path: 'publico',
+    component: AppLayout,
+    title: 'RVD UdeC',
+    canActivate: [publicSessionGuard],
+    canActivateChild: [publicSessionGuard],
+    children: publicViewRoutes,
   },
   {
     path: '',

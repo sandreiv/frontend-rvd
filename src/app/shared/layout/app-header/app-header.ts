@@ -1,7 +1,7 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { SidebarService } from '../../../core/service/sidebar-service';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ThemeToggleButton } from '../../components/common/theme-toggle-button/theme-toggle-button';
 import { Icon } from '../../ui/icon/icon';
 import { UserDropdown } from '../../components/header/user-dropdown/user-dropdown';
@@ -21,12 +21,18 @@ export class AppHeader {
 
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
+  private readonly router = inject(Router);
+
   constructor(
     public sidebarService: SidebarService,
     public sidebarThemeService: SidebarTheme,
   ) {
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.sidebarThemeMode$ = this.sidebarThemeService.mode$;
+  }
+
+  get isPublicArea(): boolean {
+    return this.router.url.split('?')[0].startsWith('/publico');
   }
 
   handleToggle() {

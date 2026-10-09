@@ -6,6 +6,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Icon } from '../../ui/icon/icon';
 import { AppIconName } from '../../ui/icon/icons';
+import { PUBLIC_HOME_PATH, PUBLIC_NAV_ITEMS } from '../../../core/model/public-menu';
 
 type NavItem = {
   name: string;
@@ -45,8 +46,20 @@ export class AppSidebar {
     this.isHovered$ = this.sidebarService.isHovered$;
   }
 
+  get isPublicArea(): boolean {
+    return this.router.url.split('?')[0].startsWith('/publico');
+  }
+
+  get homePath(): string {
+    return this.isPublicArea ? PUBLIC_HOME_PATH : '/';
+  }
+
+  get sectionLabel(): string {
+    return this.isPublicArea ? 'Docente' : 'Configuración';
+  }
+
   get navItems(): MenuNavItem[] {
-    return this.menuService.navItems();
+    return this.isPublicArea ? PUBLIC_NAV_ITEMS : this.menuService.navItems();
   }
 
   ngOnInit() {
@@ -130,7 +143,10 @@ export class AppSidebar {
       group.items.forEach((nav, i) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
-            if (currentUrl === subItem.path) {
+            if (
+              currentUrl === subItem.path ||
+              currentUrl.startsWith(`${subItem.path}/`)
+            ) {
               const key = `${group.prefix}-${i}`;
               this.openSubmenu = key;
 
