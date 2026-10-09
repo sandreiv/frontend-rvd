@@ -17,27 +17,22 @@ export const administrationRoutes: Routes = [
       {
         path: 'coordinaciones',
         component: CoordinationAdministration,
-        title: 'Coordinaciones - RVD',
       },
       {
         path: 'tipo-actividades',
         component: ActivityTypesPage,
-        title: 'Tipo actividades - RVD',
       },
       {
         path: 'restriccion-carga',
         component: LoadRestrictionPage,
-        title: 'Restricción de carga - RVD',
       },
       {
         path: 'novedades',
         component: Novelties,
-        title: 'Novedades - RVD',
       },
       {
         path: 'puntos-vigencia',
         component: PointsValidity,
-        title: 'Puntos por vigencia - RVD',
       },
       {
         path: '',
@@ -47,17 +42,14 @@ export const administrationRoutes: Routes = [
       {
         path: 'convocatorias-de-proyecto',
         component: ProjectCalls,
-        title: 'Convocatorias de proyecto - RVD',
       },
       {
         path: 'tipos-de-proyecto',
         component: ProjectTypes,
-        title: 'Tipos de proyecto - RVD',
       },
       {
         path: 'proyectos',
         component: Projects,
-        title: 'Proyectos - RVD',
       },
     ],
   },

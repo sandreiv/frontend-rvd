@@ -39,19 +39,11 @@ export const routes: Routes = [
       { path: 'convocatoria-precarga', component: PreloadCall },
       { path: 'precarga-docente', component: ProfessorPreload },
       { path: 'administracion', children: administrationRoutes },
-      { path: 'solicitudes-cdp', component: CdpRequests, title: 'Solicitudes CDP' },
+      { path: 'solicitudes-cdp', component: CdpRequests },
       { path: 'convocatorias-de-proyecto', component: ProjectCalls },
       { path: 'tipos-de-proyecto', component: ProjectTypes },
-      {
-        path: 'verificar-docentes',
-        component: VerifyProfessors,
-        title: 'Verificar docentes - RVD',
-      },
-      { 
-        path: 'convocatoria-contratacion', 
-        component: HiringCall, 
-        title: 'Convocatoria contratación' 
-      },
+      { path: 'verificar-docentes', component: VerifyProfessors },
+      { path: 'convocatoria-contratacion', component: HiringCall },
     ],
   },
 ];
