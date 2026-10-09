@@ -18,6 +18,7 @@ import { formatSentenceValue } from '../../../../../../../shared/utils/normalize
 import { resolveModalityKind } from '../../../../model/professor-form.config';
 import { TabBar } from '../../../../../../../shared/ui/tab-bar/tab-bar';
 import { PermissionService } from '../../../../../../../core/service/permission-service';
+import { AuthService } from '../../../../../../../core/service/auth-service';
 import { Button } from "../../../../../../../shared/ui/button/button";
 import { Icon } from "../../../../../../../shared/ui/icon/icon";
 import { AppIconName } from '../../../../../../../shared/ui/icon/icons';
@@ -29,6 +30,7 @@ import { NewModal } from '../../../../../../../shared/ui/new-modal/new-modal';
 import { ProfessorAddModal } from '../alteration-professor-add-modal/alteration-professor-add-modal';
 import { NoveltySummary } from '../novelty-summary/novelty-summary';
 import { DocumentPreview } from '../../../../../../../shared/components/form/document-preview/document-preview';
+import {NoveltyGeneralHistory,} from '../novelty-general-history/novelty-general-history';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -116,13 +118,14 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 };
 @Component({
   selector: 'app-alteration-contract-modality-detail',
-  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal, NoveltySummary, DocumentPreview],
+  imports: [TabBar, Button, Icon, Dropdown, Item, Tooltip, AlterationProfessorNovelties, NewModal, ProfessorAddModal, NoveltySummary, DocumentPreview, NoveltyGeneralHistory],
   templateUrl: './alteration-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlterationContractModalityDetail {
   private readonly coordinationService = inject(CoordinationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
   private readonly budgetStore = inject(NoveltyBudgetStore, {
     optional: true,
   });
@@ -131,6 +134,16 @@ export class AlterationContractModalityDetail {
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
+  readonly isCoordinator = computed(() => {
+    const roles =
+      this.authService.currentUser()?.roles ?? [];
+
+    return roles.some(
+      (role) =>
+        role.trim().toUpperCase() ===
+        'COORDINADOR',
+    );
+  });
 
   readonly isDeleteProfessorModalOpen = signal(false);
   readonly isAddProfessorModalOpen = signal(false);
@@ -143,6 +156,7 @@ export class AlterationContractModalityDetail {
   readonly deleteProfessorTarget = signal<ModalityProfessor | null>(null);
   readonly summaryProfessor = signal<ModalityProfessor | null>(null);
   readonly isRequestingDeleteProfessor = signal(false);
+  readonly noveltyHistoryRefreshKey = signal(0);
 
   readonly selectedContractModalityId = signal<TabBarId | null>(null);
   readonly openMenuKey = signal<string | null>(null);
@@ -386,7 +400,11 @@ export class AlterationContractModalityDetail {
 
   onProfessorSaved(): void {
     this.closeAddProfessorModal();
+
     this.modalityProfessorsResource.reload();
+
+    this.reloadNoveltyHistory();
+
     void this.refreshBudget();
   }
 
@@ -500,57 +518,134 @@ export class AlterationContractModalityDetail {
     this.summaryProfessor.set(null);
   }
 
-  async openNoveltyPdfReport(professor: ModalityProfessor): Promise<void> {
-    const idCargaDocente = professor.idCargaDocente;
+  async openNoveltyPdfReport(
+    professor: ModalityProfessor,
+  ): Promise<void> {
+    const idCargaDocente =
+      professor.idCargaDocente;
 
     if (
       idCargaDocente == null ||
-      !this.permissions.canDownloadProfessorNoveltyPdf() ||
+      !this.permissions
+        .canDownloadProfessorNoveltyPdf() ||
       this.noveltyPdfLoading()
     ) {
       return;
     }
 
-    const requestId = ++this.noveltyPdfRequestId;
+    await this.openNoveltyPdfPreview(
+      this.coordinationService
+        .downloadNoveltyPdfReport(
+          idCargaDocente,
+        ),
+      `novedad-carga-docente-${idCargaDocente}.pdf`,
+    );
+  }
+
+  async openHistoricalNoveltyPdfReport(
+    idNovedadCargaDocente: number,
+  ): Promise<void> {
+    if (
+      idNovedadCargaDocente == null ||
+      !Number.isFinite(
+        idNovedadCargaDocente,
+      ) ||
+      !this.permissions
+        .canDownloadProfessorNoveltyPdf() ||
+      this.noveltyPdfLoading()
+    ) {
+      return;
+    }
+
+    await this.openNoveltyPdfPreview(
+      this.coordinationService
+        .downloadHistoricalNoveltyPdfReport(
+          idNovedadCargaDocente,
+        ),
+      `novedad-historica-${idNovedadCargaDocente}.pdf`,
+    );
+  }
+
+  private async openNoveltyPdfPreview(
+    request$: Observable<{
+      blob: Blob;
+      fileName: string;
+    }>,
+    fallbackFileName: string,
+  ): Promise<void> {
+    const requestId =
+      ++this.noveltyPdfRequestId;
+
     this.revokeNoveltyPdfObjectUrl();
+
     this.noveltyPdfError.set(null);
     this.noveltyPdfPreviewUrl.set(null);
     this.noveltyPdfFileName.set(
-      `novedad-carga-docente-${idCargaDocente}.pdf`,
+      fallbackFileName,
     );
+
     this.noveltyPdfLoading.set(true);
     this.showNoveltyPdfPreview.set(true);
 
     try {
       const file = await firstValueFrom(
-        this.coordinationService.downloadNoveltyPdfReport(idCargaDocente),
+        request$,
       );
 
-      if (requestId !== this.noveltyPdfRequestId) {
+      if (
+        requestId !==
+        this.noveltyPdfRequestId
+      ) {
         return;
       }
 
       const blob =
-        file.blob.type === 'application/pdf'
+        file.blob.type ===
+        'application/pdf'
           ? file.blob
-          : new Blob([file.blob], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+          : new Blob(
+              [file.blob],
+              {
+                type: 'application/pdf',
+              },
+            );
+
+      const url =
+        URL.createObjectURL(blob);
+
       this.noveltyPdfObjectUrl = url;
-      this.noveltyPdfFileName.set(file.fileName);
-      this.noveltyPdfPreviewUrl.set(
-        this.sanitizer.bypassSecurityTrustResourceUrl(url),
+
+      this.noveltyPdfFileName.set(
+        file.fileName ||
+        fallbackFileName,
       );
+
+      this.noveltyPdfPreviewUrl.set(
+        this.sanitizer
+          .bypassSecurityTrustResourceUrl(
+            url,
+          ),
+      );
+
     } catch (error) {
-      if (requestId !== this.noveltyPdfRequestId) {
+      if (
+        requestId !==
+        this.noveltyPdfRequestId
+      ) {
         return;
       }
 
       console.error(error);
+
       this.noveltyPdfError.set(
         'No fue posible cargar la previsualización del documento.',
       );
+
     } finally {
-      if (requestId === this.noveltyPdfRequestId) {
+      if (
+        requestId ===
+        this.noveltyPdfRequestId
+      ) {
         this.noveltyPdfLoading.set(false);
       }
     }
@@ -587,12 +682,19 @@ export class AlterationContractModalityDetail {
 
   onNoveltyReviewChanged(): void {
     this.modalityProfessorsResource.reload();
+
+    this.reloadNoveltyHistory();
+
     void this.refreshBudget();
   }
 
   onNoveltySaved(): void {
     this.modalityProfessorsResource.reload();
+
+    this.reloadNoveltyHistory();
+
     this.closeNoveltiesModal();
+
     void this.refreshBudget();
   }
 
@@ -873,6 +975,12 @@ export class AlterationContractModalityDetail {
     };
   }
 
+  private reloadNoveltyHistory(): void {
+    this.noveltyHistoryRefreshKey.update(
+      (value) => value + 1,
+    );
+  }
+
   confirmDeleteProfessor(): void {
     if (this.isRequestingDeleteProfessor()) {
       return;
@@ -916,6 +1024,7 @@ export class AlterationContractModalityDetail {
           this.isDeleteProfessorModalOpen.set(false);
           this.deleteProfessorTarget.set(null);
           this.modalityProfessorsResource.reload();
+          this.reloadNoveltyHistory();
           void this.refreshBudget();
         },
       });

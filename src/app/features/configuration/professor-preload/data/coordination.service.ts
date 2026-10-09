@@ -50,6 +50,7 @@ import {
   SaveNoveltyProjectActivitiesRequest,
 } from '../model/novelty-carga-docente.model';
 import { CargaBudget } from '../model/carga-budget.model';
+import { GeneralNoveltyHistoryItem } from '../model/novelty-history.model';
 
 @Injectable({
   providedIn: 'root',
@@ -279,6 +280,22 @@ export class CoordinationService {
     return this.webRequestService.get<ModalityProfessor[]>(
       `${this.endpoint}/list-alteration-professors-modality`,
       { idCarga, idModalidadContratacion },
+    );
+  }
+
+  /**
+   * Obtiene el historial general de novedades de una carga.
+   *
+   * @param idCarga Identificador de la carga.
+  */
+  listGeneralNoveltyHistory(
+    idCarga: number,
+  ): Observable<GeneralNoveltyHistoryItem[]> {
+    return this.webRequestService.get<
+      GeneralNoveltyHistoryItem[]
+    >(
+      `${this.endpoint}/list-general-novelty-history`,
+      { idCarga },
     );
   }
 
@@ -1114,6 +1131,36 @@ export class CoordinationService {
         })),
       );
   }
+
+  /**
+   * Obtiene el PDF comparativo de una novedad aprobada histórica.
+   *
+   * La novedad se identifica por NOCD_ID y el backend la compara
+   * contra la aprobación inmediatamente anterior. Si no existe una
+   * aprobación anterior, la comparación se realiza contra el registro
+   * original de CARGADOCENTE.
+   *
+   * @param idNovedadCargaDocente Identificador de la novedad (NOCD_ID).
+   * @returns Observable con el archivo PDF y el nombre sugerido.
+   */
+  downloadHistoricalNoveltyPdfReport(
+    idNovedadCargaDocente: number,
+  ): Observable<{ blob: Blob; fileName: string }> {
+    return this.webRequestService
+      .getBlobResponse(
+        `${this.endpoint}/novelty-pdf-report/history/${idNovedadCargaDocente}`,
+      )
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `novedad-historica-${idNovedadCargaDocente}.pdf`,
+          ),
+        })),
+      );
+  }
+
 
 }
 

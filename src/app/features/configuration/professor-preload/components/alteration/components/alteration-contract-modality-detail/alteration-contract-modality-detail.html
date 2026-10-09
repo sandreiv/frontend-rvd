@@ -240,6 +240,22 @@
   }
 </section>
 
+@if (
+  coordination().idCarga != null &&
+  isCoordinator()
+) {
+  <app-novelty-general-history
+    [idCarga]="coordination().idCarga"
+    [refreshKey]="
+      refreshKey() +
+      noveltyHistoryRefreshKey()
+    "
+    (reportRequested)="
+      openHistoricalNoveltyPdfReport($event)
+    "
+  />
+}
+
 <app-alteration-professor-novelties
   [isOpen]="isNoveltiesModalOpen()"
   [professor]="noveltiesProfessor()"
