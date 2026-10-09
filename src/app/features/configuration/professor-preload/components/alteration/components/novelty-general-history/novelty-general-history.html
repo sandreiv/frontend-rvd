@@ -262,17 +262,19 @@
     } @else if (filteredHistory().length) {
 
       <div
-        class="overflow-x-auto rounded-xl
-               border border-gray-200
-               dark:border-white/10"
-      >
+        [class]="
+            filteredHistory().length > 10
+            ? 'max-h-[29rem] overflow-auto rounded-xl border border-gray-200 dark:border-white/10'
+            : 'overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10'
+        "
+        >
         <table
           class="w-full min-w-[820px] text-left"
         >
           <thead
-            class="bg-gray-50
-                   dark:bg-white/5"
-          >
+            class="sticky top-0 z-10 bg-gray-50
+                    dark:bg-gray-900"
+            >
             <tr>
               <!--
                 PASO 2:

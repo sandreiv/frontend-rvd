@@ -103,6 +103,36 @@
     </div>
   </div>
 
+  <div
+    class="mt-4 rounded-lg border border-gray-100 p-3
+          dark:border-white/10"
+  >
+    <div class="mb-2">
+      <h5
+        class="text-sm font-semibold text-gray-900
+              dark:text-white"
+      >
+        Plan de trabajo digital
+      </h5>
+
+      <p
+        class="text-xs text-gray-500
+              dark:text-gray-400"
+      >
+        Define si este tipo de actividad aplica al
+        Plan de Trabajo Digital.
+      </p>
+    </div>
+
+    <app-checkbox
+      label="Plan de trabajo digital"
+      [checked]="form.controls.ptd.value"
+      (checkedChange)="
+        form.controls.ptd.setValue($event)
+      "
+    />
+  </div>
+
   <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div>
       <app-label>Mínimo de horas</app-label>

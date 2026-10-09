@@ -49,6 +49,11 @@ export class ActivityTypeTable {
       cell: (row) => row.codigo || '-',
     },
     {
+      id: 'ptd',
+      header: 'Plan de trabajo digital',
+      cell: (row) => this.formatPtd(row.ptd),
+    },
+    {
       id: 'minimoHoras',
       header: 'Mínimo horas',
       cell: (row) => row.minimoHoras ?? '-',
@@ -145,4 +150,11 @@ export class ActivityTypeTable {
       ? 'Activo'
       : 'Inactivo';
   }
+
+  private formatPtd(
+    value: string | null,
+  ): string {
+    return value === '1' ? 'Sí' : 'No';
+  }
+
 }

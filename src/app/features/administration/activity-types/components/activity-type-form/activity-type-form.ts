@@ -36,6 +36,7 @@ type ActivityTypeFormGroup = FormGroup<{
   componente: FormControl<string>;
   minimoHoras: FormControl<number | null>;
   maximoHoras: FormControl<number | null>;
+  ptd: FormControl<boolean>;
   estado: FormControl<boolean>;
 }>;
 
@@ -109,6 +110,9 @@ export class ActivityTypeForm implements OnChanges {
       maximoHoras: new FormControl<number | null>(null, {
         validators: [Validators.required, this.parentMaxHoursValidator()],
       }),
+      ptd: new FormControl(false, {
+        nonNullable: true,
+      }),
       estado: new FormControl(true, {
         nonNullable: true,
       }),
@@ -161,6 +165,7 @@ export class ActivityTypeForm implements OnChanges {
       componente: raw.componente,
       minimoHoras: Number(raw.minimoHoras),
       maximoHoras: Number(raw.maximoHoras),
+      ptd: raw.ptd ? '1' : '0',
       estado: raw.estado ? '1' : '0',
     });
   }
@@ -200,6 +205,7 @@ export class ActivityTypeForm implements OnChanges {
       componente: item?.componente ?? '',
       minimoHoras: item?.minimoHoras != null ? Number(item.minimoHoras) : null,
       maximoHoras: item?.maximoHoras != null ? Number(item.maximoHoras) : null,
+      ptd: this.isPtdEnabled(item?.ptd),
       estado: this.isActive(item?.estado),
     });
   }
@@ -212,5 +218,24 @@ export class ActivityTypeForm implements OnChanges {
     const normalized = String(value).trim().toUpperCase();
 
     return normalized === '1' || normalized === 'ACTIVO' || normalized === 'A';
+  }
+
+  private isPtdEnabled(
+    value: ActivityTypeItem['ptd'] | undefined,
+  ): boolean {
+    if (value == null || value === '') {
+      return false;
+    }
+
+    const normalized =
+      String(value).trim().toUpperCase();
+
+    return (
+      normalized === '1' ||
+      normalized === 'S' ||
+      normalized === 'SI' ||
+      normalized === 'SÍ' ||
+      normalized === 'TRUE'
+    );
   }
 }

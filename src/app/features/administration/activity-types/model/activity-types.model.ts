@@ -14,6 +14,7 @@ export interface ActivityTypeItem {
   minimoHoras: string | null;
   maximoHoras: string | null;
   orden: string | null;
+  ptd: '1' | '0' | string | null;
   estado: '1' | '0' | 'ACTIVO' | 'INACTIVO' | string;
   /** Presente cuando el backend exponga tiac_componente. */
   componente?: ActivityTypeComponente | string | null;
@@ -25,6 +26,7 @@ export interface ActivityTypeFormData {
   codigo: ActivityTypeCode | string;
   minimoHoras: number;
   maximoHoras: number;
+  ptd: '1' | '0';
   estado: '1' | '0';
   componente: ActivityTypeComponente | string;
 }
