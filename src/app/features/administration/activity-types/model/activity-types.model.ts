@@ -1,4 +1,4 @@
-export type ActivityTypeCode = 'CTEI' | 'AC' | 'FAD' | 'FAI' | 'ISU';
+export type ActivityTypeCode = 'CTEI' | 'AC' | 'FAD' | 'FAI' | 'ISU' | 'PTD';
 
 /**
  * Tipo de tarjeta/formulario asociado al tipo de actividad.
@@ -24,11 +24,11 @@ export interface ActivityTypeFormData {
   nombre: string;
   descripcion: string;
   codigo: ActivityTypeCode | string;
-  minimoHoras: number;
-  maximoHoras: number;
+  minimoHoras: number | null;
+  maximoHoras: number | null;
   ptd: '1' | '0';
   estado: '1' | '0';
-  componente: ActivityTypeComponente | string;
+  componente: ActivityTypeComponente | string | null;
 }
 
 export interface DeleteBulkActivityTypesRequest {
@@ -41,6 +41,7 @@ export const ACTIVITY_TYPE_CODE_OPTIONS = [
   { value: 'FAD', label: 'FAD' },
   { value: 'FAI', label: 'FAI' },
   { value: 'ISU', label: 'ISU' },
+  { value: 'PTD', label: 'PTD' },
 ];
 
 export const ACTIVITY_TYPE_COMPONENTE_OPTIONS = [

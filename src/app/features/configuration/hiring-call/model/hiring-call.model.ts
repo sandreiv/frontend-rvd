@@ -45,3 +45,18 @@ export interface ActividadPtd {
   totalHoras: number;
   detalles: ActividadPtdDetalle[] | null;
 }
+
+export interface SummaryPtdActivity {
+  id: number
+  codigo: string
+  detalles: SummaryPtdActivityDetail[]
+  criterio: string
+  tipo: string
+  totalHoras: number | null
+}
+
+export interface SummaryPtdActivityDetail {
+  id: number | null;
+  esDeNovedad: number | null;
+  descripcion: string;
+}

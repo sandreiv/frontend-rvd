@@ -33,7 +33,7 @@ type ActivityTypeFormGroup = FormGroup<{
   nombre: FormControl<string>;
   descripcion: FormControl<string>;
   codigo: FormControl<string>;
-  componente: FormControl<string>;
+  componente: FormControl<string | null>;
   minimoHoras: FormControl<number | null>;
   maximoHoras: FormControl<number | null>;
   ptd: FormControl<boolean>;
@@ -43,6 +43,10 @@ type ActivityTypeFormGroup = FormGroup<{
 const hoursRangeValidator: ValidatorFn = (
   control: AbstractControl,
 ): ValidationErrors | null => {
+  if (control.get('ptd')?.value === true) {
+    return null;
+  }
+
   const minimo = Number(control.get('minimoHoras')?.value);
   const maximo = Number(control.get('maximoHoras')?.value);
 
@@ -100,8 +104,7 @@ export class ActivityTypeForm implements OnChanges {
         nonNullable: true,
         validators: [Validators.required],
       }),
-      componente: new FormControl('', {
-        nonNullable: true,
+      componente: new FormControl<string | null>(null, {
         validators: [Validators.required],
       }),
       minimoHoras: new FormControl<number | null>(null, {
@@ -120,6 +123,10 @@ export class ActivityTypeForm implements OnChanges {
     { validators: [hoursRangeValidator] },
   );
 
+  constructor() {
+    this.form.controls.ptd.valueChanges.subscribe(() => this.updatePtdValidations());
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (
       changes['activityType'] ||
@@ -127,6 +134,7 @@ export class ActivityTypeForm implements OnChanges {
       changes['siblingsMaxHoursSum']
     ) {
       this.patchForm();
+      this.updatePtdValidations();
       this.form.controls.maximoHoras.updateValueAndValidity({
         emitEvent: false,
       });
@@ -157,17 +165,38 @@ export class ActivityTypeForm implements OnChanges {
     }
 
     const raw = this.form.getRawValue();
+    const esPtd = raw.ptd;
 
     this.saveActivityType.emit({
       nombre: raw.nombre.trim(),
       descripcion: raw.descripcion.trim(),
       codigo: raw.codigo,
-      componente: raw.componente,
-      minimoHoras: Number(raw.minimoHoras),
-      maximoHoras: Number(raw.maximoHoras),
+      componente: esPtd ? null : raw.componente,
+      minimoHoras: esPtd ? null : Number(raw.minimoHoras),
+      maximoHoras: esPtd ? null : Number(raw.maximoHoras),
       ptd: raw.ptd ? '1' : '0',
       estado: raw.estado ? '1' : '0',
     });
+  }
+
+  private updatePtdValidations(): void {
+    const { componente, minimoHoras, maximoHoras, ptd } = this.form.controls;
+
+    if (ptd.value) {
+      componente.clearValidators();
+      minimoHoras.clearValidators();
+      maximoHoras.clearValidators();
+    } else {
+      componente.setValidators([Validators.required]);
+      minimoHoras.setValidators([Validators.required]);
+      maximoHoras.setValidators([Validators.required, this.parentMaxHoursValidator()]);
+    }
+
+    componente.updateValueAndValidity({ emitEvent: false });
+    minimoHoras.updateValueAndValidity({ emitEvent: false });
+    maximoHoras.updateValueAndValidity({ emitEvent: false });
+
+    this.form.updateValueAndValidity({ emitEvent: false });
   }
 
   private parentMaxHoursValidator(): ValidatorFn {
