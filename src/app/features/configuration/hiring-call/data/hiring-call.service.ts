@@ -16,6 +16,7 @@ import {
 import {
   HiringCallItem,
   ProfessorInformationItem,
+  SummaryPtdActivity,
 } from '../model/hiring-call.model';
 
 @Injectable({ providedIn: 'root' })
@@ -120,6 +121,19 @@ export class HiringCallService {
     return this.webRequestService.get<ProfessorInformationItem>(
       `${this.endpoint}/professor-information`,
       { idCargaDocente },
+    );
+  }
+
+  /**
+   * Lista las actividades disponibles para el plan de trabajo digital.
+   *
+   * @returns Observable con las actividades necesarias.
+  */
+
+  listPtdActivities(idCargaDocente: number): Observable<SummaryPtdActivity[]> {
+    return this.webRequestService.get<SummaryPtdActivity[]>(
+      `${this.endpoint}/list-ptd-activities`,
+      { idCargaDocente }
     );
   }
 }
