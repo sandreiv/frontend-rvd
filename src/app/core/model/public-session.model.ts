@@ -3,12 +3,16 @@ export interface PublicAccessRequest {
   fechaExpedicion: string;
 }
 
-export interface PublicTeacher {
+export interface PublicTeacherProfile {
   numeroDocumento: string;
   nombreCompleto: string;
 }
 
+export interface PublicTeacher extends PublicTeacherProfile {
+  id: number;
+}
+
 export interface PublicSessionResponse {
   accessToken: string;
-  docente: PublicTeacher;
+  docente: PublicTeacherProfile;
 }
