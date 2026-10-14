@@ -29,6 +29,7 @@ import {
   ModalityProfessor,
 } from '../../../professor-preload/model/coordination.model';
 import { HiringCallService } from '../../data/hiring-call.service';
+import { DraftContract } from '../draft-contract/draft-contract';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -99,7 +100,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 
 @Component({
   selector: 'app-hiring-contract-modality-detail',
-  imports: [TabBar, Dropdown, Item, Icon, PtdModal],
+  imports: [TabBar, Dropdown, Item, Icon, PtdModal, DraftContract],
   templateUrl: './hiring-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -113,6 +114,8 @@ export class HiringContractModalityDetail {
   readonly openMenuKey = signal<string | null>(null);
   readonly isPtdModalOpen = signal(false);
   readonly ptdProfessorId = signal<number | null>(null);
+  readonly draftContractProfessorId = signal<number | null>(null);
+  readonly isDraftContractModalOpen = signal(false);
 
   readonly professorMenuActions: ProfessorMenuAction[] = [
     {
@@ -120,6 +123,11 @@ export class HiringContractModalityDetail {
       label: 'Plan de trabajo',
       icon: 'file',
     },
+    {
+      id: 'diligenciar-contrato',
+      label: 'Diligenciar contrato',
+      icon: 'file',
+    }
   ];
 
   readonly contractModalities = computed(
@@ -217,11 +225,20 @@ export class HiringContractModalityDetail {
       this.ptdProfessorId.set(professor.idCargaDocente);
       this.isPtdModalOpen.set(true);
     }
+    if (actionId === 'diligenciar-contrato') {
+      this.draftContractProfessorId.set(professor.idCargaDocente);
+      this.isDraftContractModalOpen.set(true);
+    }
   }
 
   closePtdModal(): void {
     this.isPtdModalOpen.set(false);
     this.ptdProfessorId.set(null);
+  }
+
+  closeDraftContractModal(): void {
+    this.isDraftContractModalOpen.set(false);
+    this.draftContractProfessorId.set(null);
   }
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {

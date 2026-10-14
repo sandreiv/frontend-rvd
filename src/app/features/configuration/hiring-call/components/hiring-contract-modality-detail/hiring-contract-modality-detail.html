@@ -104,3 +104,9 @@
   [idCargaDocente]="ptdProfessorId()"
   (close)="closePtdModal()"
 />
+
+<app-draft-contract
+  [isOpen]="isDraftContractModalOpen()"
+  [idCargaDocente]="draftContractProfessorId()"
+  (close)="closeDraftContractModal()"
+/>
