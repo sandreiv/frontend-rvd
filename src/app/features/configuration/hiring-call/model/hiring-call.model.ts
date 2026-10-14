@@ -79,3 +79,13 @@ export interface SavePtdRequest {
   registros: SavePtdPayload[],
   observacion: ObservacionPtd
 }
+
+export interface ActivityWeights {
+  ponderado: number;
+  idTipoActividad: number;
+}
+
+export interface PdtInfoWithWeights {
+  actividades: ActivityWeights[],
+  observacion: ObservacionPtd
+}

@@ -18,7 +18,7 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { mapActivitySummaryTables } from '../../../professor-preload/model/professor-summary.model';
 import { HiringCallService } from '../../data/hiring-call.service';
-import { ObservacionPtd, ProfessorInformationItem, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
+import { ActivityWeights, ObservacionPtd, PdtInfoWithWeights, ProfessorInformationItem, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
 import { Button } from '../../../../../shared/ui/button/button';
 import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
@@ -106,6 +106,7 @@ export class PtdModal {
   ];
   
 
+  // Construir vista de ptd con actividades
   readonly informationResource = rxResource({
     params: () => this.resolveInformationParams(),
     stream: ({ params }) =>
@@ -116,6 +117,25 @@ export class PtdModal {
     params: () => this.resolveInformationParams(),
     stream: ({ params }) => this.hiringCallService.listPtdActivities(params.idCargaDocente),
   });
+
+  // Poblar modal PTD
+  readonly ptdInfoWithWeightsResource = rxResource({
+    params: () => {
+      const idCargaDocente = this.idCargaDocente();
+      const idPersonaGeneral = this.information()?.idPersonaGeneral;
+
+      if (!this.isOpen() || idCargaDocente == null || idPersonaGeneral == null) {
+        return undefined;
+      }
+
+      return { idPersonaGeneral, idCargaDocente };
+    },
+    stream: ({ params }) => this.hiringCallService.getInfoPtdWithWeights(
+      params.idPersonaGeneral,
+      params.idCargaDocente
+    )
+  });
+
 
   readonly information = computed(() => {
     if (!this.isOpen() || !this.informationResource.hasValue()) {
@@ -131,9 +151,22 @@ export class PtdModal {
     return this.ptdActivitiesResource.value();
   });
 
+  readonly ptdInfoWithWeights = computed(() => {
+    if (!this.isOpen() || !this.ptdInfoWithWeightsResource.hasValue()) {
+      return null;
+    }
+    return this.ptdInfoWithWeightsResource.value();
+  });
+
   readonly sections = computed (() => this.currentStep() === 'resumen' ? SUMMARY_SECTIONS : PTD_SECTIONS);
 
   readonly hasObservation = computed(() => this.observation().length !== 0);
+
+  readonly ptdExists = computed(() => this.ptdInfoWithWeights() != null);
+
+  readonly saveButtonDisabled = computed(() => {
+    return !this.hasObservation() || (this.currentStep() === 'ptd' && (!this.ponderacionValida() || this.ptdExists()));
+  })
 
   readonly isLoadingSummary = computed(
     () => this.isOpen() && this.informationResource.isLoading(),
@@ -211,8 +244,11 @@ export class PtdModal {
       if (activities === null) {
         return;
       }
+      if (this.ptdInfoWithWeightsResource.isLoading()) {
+        return;
+      }
 
-      untracked(() => this.initializePtdForm());
+      untracked(() => this.initializePtdForm(activities, this.ptdInfoWithWeights()));
     });
 
     effect(() => {
@@ -268,7 +304,7 @@ export class PtdModal {
   }
 
   onSave(): void {
-    if (this.isSaving()) {
+    if (this.isSaving() || this.ptdExists()) {
       return;
     }
 
@@ -392,14 +428,25 @@ export class PtdModal {
     return `${match[3]}/${match[2]}/${match[1]}`;
   }
 
-  private initializePtdForm(): void {
-    const activities = this.ptdActivities() ?? [];
+  private initializePtdForm(activities: SummaryPtdActivity[], ptdInfo: PdtInfoWithWeights|null): void {
     const ponderacionesPrecalculadas = this.calculatePonderaciones(activities);
+    const ponderacionesAlmacenadas = new Map<number, number>(
+      (ptdInfo?.actividades ?? []).map(
+        (item: ActivityWeights) => [
+          item.idTipoActividad,
+          item.ponderado,
+        ],
+      ),
+    );
+
     this.actividadesFormArray.clear();
 
     activities.forEach((activity, index) => {
       const esPtd = activity.codigo === 'PTD';
       const esLenguaExtranjera = this.isSecondLanguage(activity.criterio);
+      const ponderacion = ponderacionesAlmacenadas.has(activity.id)
+        ? ponderacionesAlmacenadas.get(activity.id)
+        : ponderacionesPrecalculadas[index]
 
       this.actividadesFormArray.push(
         new FormGroup({
@@ -407,7 +454,7 @@ export class PtdModal {
             nonNullable: true,
           }),
           ponderacion: new FormControl(
-            { value: ponderacionesPrecalculadas[index], disabled: !esPtd},
+            { value: ponderacion, disabled: (!esPtd || this.ptdExists()) },
             {
               nonNullable: true,
               validators: [
@@ -418,7 +465,7 @@ export class PtdModal {
             }
           ),
           nivel: new FormControl<string | null>(
-            { value: 'A1', disabled: !esLenguaExtranjera },
+            { value: 'A1', disabled: (!esLenguaExtranjera || this.ptdExists()) },
             {
               validators: esLenguaExtranjera
                 ? [Validators.required]
@@ -428,6 +475,10 @@ export class PtdModal {
         }),
       );
     });
+
+    if (ptdInfo) {
+      this.observation.set(ptdInfo.observacion.descripcion ?? '');
+    }
   }
 
   private calculatePonderaciones(activities: SummaryPtdActivity[]): number[] {
