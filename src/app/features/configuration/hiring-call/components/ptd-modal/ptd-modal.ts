@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -9,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -17,10 +18,11 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { mapActivitySummaryTables } from '../../../professor-preload/model/professor-summary.model';
 import { HiringCallService } from '../../data/hiring-call.service';
-import { ProfessorInformationItem, SummaryPtdActivity } from '../../model/hiring-call.model';
+import { ObservacionPtd, ProfessorInformationItem, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
 import { Button } from '../../../../../shared/ui/button/button';
 import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
+import { finalize } from 'rxjs';
 
 type PtdSectionId = 'detalle-actividades' | 'observaciones' | 'ptd-actividades';
 type PtdStep = 'resumen' | 'ptd';
@@ -31,6 +33,12 @@ interface PtdSectionConfig {
   icon: AppIconName;
   iconBgClass: string;
   iconColorClass: string;
+}
+
+interface HeaderChip {
+  id: string;
+  label: string;
+  icon?: AppIconName;
 }
 
 const SUMMARY_SECTIONS: PtdSectionConfig[] = [
@@ -68,12 +76,6 @@ function createInitialExpandedSections(): Record<PtdSectionId, boolean> {
   };
 }
 
-interface HeaderChip {
-  id: string;
-  label: string;
-  icon?: AppIconName;
-}
-
 @Component({
   selector: 'app-ptd-modal',
   imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule],
@@ -82,11 +84,13 @@ interface HeaderChip {
 })
 export class PtdModal {
   private readonly hiringCallService = inject(HiringCallService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
   readonly close = output<void>();
 
+  readonly isSaving = signal(false);
   readonly observation = signal('');
   readonly expandedSections = signal(createInitialExpandedSections());
   readonly currentStep = signal<PtdStep>('resumen')
@@ -263,6 +267,33 @@ export class PtdModal {
     return { idCargaDocente };
   }
 
+  onSave(): void {
+    if (this.isSaving()) {
+      return;
+    }
+
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idCargaDocente = this.idCargaDocente();
+    if (idPersonaGeneral == null || idCargaDocente == null || !this.ponderacionValida()) {
+      return
+    }
+
+    const result = this.buildSavePayload(idPersonaGeneral, idCargaDocente);
+    if (result.registros.length === 0 || result.observacion == null) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.hiringCallService.savePtd(result)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSaving.set(false))
+      )
+      .subscribe({
+        next: () => this.close.emit()
+      });
+  }
+
   private buildHeaderChips(
     information: ProfessorInformationItem | null,
   ): HeaderChip[] {
@@ -432,6 +463,53 @@ export class PtdModal {
     });
 
     return ponderaciones;
+  }
+
+  private buildSavePayload(idPersonaGeneral: number, idCargaDocente: number): SavePtdRequest {
+    const activities = this.ptdActivities() ?? [];
+    const formValues = this.ptdForm.getRawValue();
+    
+    const registros: SavePtdPayload[] = [];
+    const observacion: ObservacionPtd = {
+      idCargaDocente,
+      descripcion: this.observation().trim()
+    }
+    
+    activities.forEach((activity, index) => {
+      const formActivity = formValues.actividades[index];
+      if (!formActivity) {
+        return;
+      }
+
+      const base = {
+        nivel: this.isSecondLanguage(activity.criterio) ? formActivity['nivel'] : null,
+        ponderado: Number(formActivity['ponderacion']),
+        idTipoActividad: activity.id,
+        idPersonaGeneral
+      }
+
+      const esPtd = activity.codigo === 'PTD';
+      if (esPtd) {
+        registros.push({
+          ...base,
+          idDetalleCargaDocente: null,
+          idDetalleNovedadCargaDocente: null
+        });
+        return;
+      };
+
+      activity.detalles.forEach((detalle) => {
+        const esDeNovedad = detalle.esDeNovedad === 1;
+
+        registros.push({
+          ...base,
+          idDetalleCargaDocente: esDeNovedad ? null : detalle.id,
+          idDetalleNovedadCargaDocente: esDeNovedad ? detalle.id : null
+        })
+      });
+    });
+
+    return { registros, observacion };
   }
 
   isSecondLanguage(criterio: string): boolean {

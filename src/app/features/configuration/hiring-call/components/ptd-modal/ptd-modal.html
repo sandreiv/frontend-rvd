@@ -402,7 +402,7 @@
         !hasObservation() ||
         (currentStep() === 'ptd' && !ponderacionValida())
       "
-      (btnClick)="currentStep() === 'resumen' ? continueToPtd() : close.emit()"
+      (btnClick)="currentStep() === 'resumen' ? continueToPtd() : onSave()"
     >
       {{ currentStep() === 'resumen' ? 'Continuar al plan de trabajo' : 'Guardar' }}
     </app-button>

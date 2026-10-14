@@ -16,6 +16,7 @@ import {
 import {
   HiringCallItem,
   ProfessorInformationItem,
+  SavePtdRequest,
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
 
@@ -134,6 +135,19 @@ export class HiringCallService {
     return this.webRequestService.get<SummaryPtdActivity[]>(
       `${this.endpoint}/list-ptd-activities`,
       { idCargaDocente }
+    );
+  }
+
+  /**
+   * Registra un nuevo PTD para la persona seleccionada.
+   * 
+   * @param payload Información del Plan de Trabajo Digital.
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
+  savePtd(payload: SavePtdRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-ptd`,
+      payload,
     );
   }
 }
