@@ -81,6 +81,7 @@ export interface SavePtdRequest {
 }
 
 export interface ActivityWeights {
+  nivel: string | null;
   ponderado: number;
   idTipoActividad: number;
 }

@@ -438,6 +438,14 @@ export class PtdModal {
         ],
       ),
     );
+    const nivelesAlmacenados = new Map<number, string | null>(
+      (ptdInfo?.actividades ?? []).map(
+        (item: ActivityWeights) => [
+          item.idTipoActividad,
+          item.nivel,
+        ],
+      ),
+    );
 
     this.actividadesFormArray.clear();
 
@@ -447,6 +455,9 @@ export class PtdModal {
       const ponderacion = ponderacionesAlmacenadas.has(activity.id)
         ? ponderacionesAlmacenadas.get(activity.id)
         : ponderacionesPrecalculadas[index]
+      const nivel = nivelesAlmacenados.has(activity.id)
+        ? nivelesAlmacenados.get(activity.id) ?? null
+        : 'A1';
 
       this.actividadesFormArray.push(
         new FormGroup({
@@ -465,7 +476,7 @@ export class PtdModal {
             }
           ),
           nivel: new FormControl<string | null>(
-            { value: 'A1', disabled: (!esLenguaExtranjera || this.ptdExists()) },
+            { value: nivel, disabled: (!esLenguaExtranjera || this.ptdExists()) },
             {
               validators: esLenguaExtranjera
                 ? [Validators.required]

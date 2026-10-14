@@ -307,6 +307,7 @@
                                       <app-select
                                         [options]="englishLevels"
                                         [value]="actividadesFormArray.at(i).controls['nivel'].value ?? ''"
+                                        [disabled]="actividadesFormArray.at(i).controls['nivel'].disabled"
                                         [enableSearch]="false"
                                         placeholder="Seleccione un nivel"
                                         emptyText="No hay niveles disponibles"
