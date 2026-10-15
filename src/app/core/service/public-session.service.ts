@@ -41,15 +41,22 @@ export class PublicSessionService {
     );
 
     const token = response?.accessToken?.trim();
+    const id = token ? readPegeId(token) : null;
     const teacher = response?.docente;
 
-    if (!token || !teacher?.numeroDocumento) {
+    if (!token || id === null || !teacher?.numeroDocumento) {
       throw new Error('Respuesta de acceso docente incompleta.');
     }
 
+    const sessionTeacher: PublicTeacher = {
+      id,
+      numeroDocumento: teacher.numeroDocumento,
+      nombreCompleto: teacher.nombreCompleto,
+    };
+
     sessionStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(teacher));
-    this.teacher.set(teacher);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(sessionTeacher));
+    this.teacher.set(sessionTeacher);
     this.sessionUpdated.update((value) => value + 1);
     await this.router.navigateByUrl(PUBLIC_HOME_PATH);
   }
@@ -78,9 +85,42 @@ export class PublicSessionService {
     }
 
     try {
-      return JSON.parse(raw) as PublicTeacher;
+      const teacher = JSON.parse(raw) as PublicTeacher;
+      if (typeof teacher.id === 'number' && Number.isFinite(teacher.id)) {
+        return teacher;
+      }
+
+      const token = sessionStorage.getItem(TOKEN_KEY);
+      const id = token ? readPegeId(token) : null;
+      if (id === null || !teacher?.numeroDocumento) {
+        return null;
+      }
+
+      const sessionTeacher: PublicTeacher = {
+        id,
+        numeroDocumento: teacher.numeroDocumento,
+        nombreCompleto: teacher.nombreCompleto,
+      };
+      sessionStorage.setItem(USER_KEY, JSON.stringify(sessionTeacher));
+      return sessionTeacher;
     } catch {
       return null;
     }
+  }
+}
+
+function readPegeId(token: string): number | null {
+  const payload = token.split('.')[1];
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(normalized)) as { sub?: unknown };
+    const pegeId = Number(decoded.sub);
+    return Number.isInteger(pegeId) && pegeId > 0 ? pegeId : null;
+  } catch {
+    return null;
   }
 }

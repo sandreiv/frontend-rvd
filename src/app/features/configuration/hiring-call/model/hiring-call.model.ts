@@ -45,3 +45,48 @@ export interface ActividadPtd {
   totalHoras: number;
   detalles: ActividadPtdDetalle[] | null;
 }
+
+export interface SummaryPtdActivity {
+  id: number
+  codigo: string
+  detalles: SummaryPtdActivityDetail[]
+  criterio: string
+  tipo: string
+  totalHoras: number | null
+}
+
+export interface SummaryPtdActivityDetail {
+  id: number | null;
+  esDeNovedad: number | null;
+  descripcion: string;
+}
+
+export interface SavePtdPayload {
+  nivel: string | null;
+  ponderado: number;
+  idDetalleCargaDocente: number | null;
+  idDetalleNovedadCargaDocente: number | null;
+  idTipoActividad: number;
+  idPersonaGeneral: number;
+}
+
+export interface ObservacionPtd {
+  descripcion: string,
+  idCargaDocente: number
+}
+
+export interface SavePtdRequest {
+  registros: SavePtdPayload[],
+  observacion: ObservacionPtd
+}
+
+export interface ActivityWeights {
+  nivel: string | null;
+  ponderado: number;
+  idTipoActividad: number;
+}
+
+export interface PdtInfoWithWeights {
+  actividades: ActivityWeights[],
+  observacion: ObservacionPtd
+}

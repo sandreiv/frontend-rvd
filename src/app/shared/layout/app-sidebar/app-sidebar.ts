@@ -55,7 +55,7 @@ export class AppSidebar {
   }
 
   get sectionLabel(): string {
-    return this.isPublicArea ? 'Docente' : 'Configuración';
+    return this.isPublicArea ? 'Plan de trabajo' : 'Configuración';
   }
 
   get navItems(): MenuNavItem[] {

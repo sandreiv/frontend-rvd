@@ -15,7 +15,10 @@ import {
 } from '../../professor-preload/model/coordination.model';
 import {
   HiringCallItem,
+  PdtInfoWithWeights,
   ProfessorInformationItem,
+  SavePtdRequest,
+  SummaryPtdActivity,
 } from '../model/hiring-call.model';
 
 @Injectable({ providedIn: 'root' })
@@ -120,6 +123,47 @@ export class HiringCallService {
     return this.webRequestService.get<ProfessorInformationItem>(
       `${this.endpoint}/professor-information`,
       { idCargaDocente },
+    );
+  }
+
+  /**
+   * Lista las actividades disponibles para el plan de trabajo digital.
+   *
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con las actividades necesarias.
+  */
+
+  listPtdActivities(idCargaDocente: number): Observable<SummaryPtdActivity[]> {
+    return this.webRequestService.get<SummaryPtdActivity[]>(
+      `${this.endpoint}/list-ptd-activities`,
+      { idCargaDocente }
+    );
+  }
+
+  /**
+   * Registra un nuevo PTD para la persona seleccionada.
+   * 
+   * @param payload Información del Plan de Trabajo Digital.
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
+  savePtd(payload: SavePtdRequest): Observable<void> {
+    return this.webRequestService.post<void>(
+      `${this.endpoint}/save-ptd`,
+      payload,
+    );
+  }
+
+  /**
+   * Objeto con la información de la novedad registrada por el coordinador y las ponderaciones de cada actividad
+   * 
+   * @param idPersonaGeneral Identificador del docente.
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observable con la información del ptd y la especificación de la ponderación por actividades
+   */
+  getInfoPtdWithWeights(idPersonaGeneral: number, idCargaDocente: number): Observable<PdtInfoWithWeights> {
+    return this.webRequestService.get<PdtInfoWithWeights>(
+      `${this.endpoint}/get-ptd-with-weights`,
+      { idPersonaGeneral, idCargaDocente }
     );
   }
 }
