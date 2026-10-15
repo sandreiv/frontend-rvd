@@ -68,8 +68,24 @@ export class DraftContract {
     const chips: HeaderChip[] = [];
     const candidates: Array<HeaderChip | null> = [
       this.toChip('modalidad', null, information.modalidadContratacion),
+      this.toChip('horas', 'Horas', information.horasTrabajo),
       this.toChip('categoria', 'Categoría', information.categoriaDocente),
+      this.toChip(
+        'categorizacion',
+        'Categorización',
+        information.estadoCategorizacion,
+      ),
       this.toChip('puntos', 'Puntos', information.puntos),
+      this.toChip(
+        'asignacion',
+        'Asignación salarial',
+        this.displayCurrency(information.asignacionSalarial),
+      ),
+      this.toChip(
+        'valor-hora',
+        'Valor hora',
+        this.displayCurrency(information.valorHora),
+      ),
       this.toDateChip(information.fechaInicio, information.fechaFin),
       this.toChip('direccion', 'Dirección', information.direccionDomicilio),
       this.toChip('correo-personal', 'Personal', information.correoPersonal),
@@ -144,6 +160,19 @@ export class DraftContract {
       label: `${start} — ${end}`,
       icon: 'calendar',
     };
+  }
+
+  private displayCurrency(value: number | null | undefined): string | null {
+    if (value == null || Number.isNaN(value)) {
+      return null;
+    }
+
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   }
 
   private displayText(value: string | number | null | undefined): string {
