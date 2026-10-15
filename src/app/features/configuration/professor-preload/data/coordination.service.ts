@@ -893,39 +893,39 @@ export class CoordinationService {
   /**
    * Consulta las novedades configuradas con acción ACTUALIZAR.
    *
-   * @returns Observable con las novedades de actualización disponibles.
+   * @returns Observable con las novedades de actualización disponibles dependiendo la modalidad de contratación.
   */
 
-  getNoveltiesTypes(): Observable<NoveltiesItem[]> {
+  getNoveltiesTypes(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      {},
+      { idModalidadContratacion },
     );
   }
 
   /**
    * Consulta las novedades configuradas con acción ELIMINAR.
    *
-   * @returns Observable con las novedades de eliminación disponibles.
+   * @returns Observable con las novedades de eliminación disponibles dependiendo la modalidad de contratación.
   */
  
-  getDeleteNovelties(): Observable<NoveltiesItem[]> {
+  getDeleteNovelties(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      { accion: 'ELIMINAR' },
+      { accion: 'ELIMINAR', idModalidadContratacion },
     );
   }
 
   /**
    * Consulta las novedades configuradas con acción GUARDAR.
    *
-   * @returns Observable con las novedades de creación disponibles.
+   * @returns Observable con las novedades de creación disponibles dependiendo la modalidad de contratación.
   */
 
-  getSaveNovelties(): Observable<NoveltiesItem[]> {
+  getSaveNovelties(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      { accion: 'GUARDAR' },
+      { accion: 'GUARDAR', idModalidadContratacion },
     );
   }
 

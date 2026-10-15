@@ -988,14 +988,15 @@ export class AlterationContractModalityDetail {
 
     const professor = this.deleteProfessorTarget();
     const idCargaDocente = professor?.idCargaDocente;
+    const idModalidadContratacion = professor?.idModalidadContratacion;
 
-    if (idCargaDocente == null) {
+    if (idCargaDocente == null || idModalidadContratacion == null) {
       return;
     }
 
     this.isRequestingDeleteProfessor.set(true);
 
-      this.coordinationService.getDeleteNovelties()
+      this.coordinationService.getDeleteNovelties(idModalidadContratacion)
       .pipe(
         map((novelties) =>
           novelties.find(

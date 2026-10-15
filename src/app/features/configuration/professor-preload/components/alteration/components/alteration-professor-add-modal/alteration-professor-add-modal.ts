@@ -680,13 +680,18 @@ export class ProfessorAddModal {
 
     const form = this.professorForm();
     const payload = this.buildPayload();
+    const modalityId = this.contractModality()?.id;
+    if (modalityId == null) {
+      return;
+    }
+
     if (form.invalid || !payload) {
       form.markAllAsTouched();
       return;
     }
 
     this.isSaving.set(true);
-    this.coordinationService.getSaveNovelties()
+    this.coordinationService.getSaveNovelties(modalityId)
       .pipe(
         map((novelties) => novelties.find(
           (novelty) => novelty.componente === 'add-professor')

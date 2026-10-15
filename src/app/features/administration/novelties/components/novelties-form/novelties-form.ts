@@ -22,15 +22,20 @@ import {
 } from '../../../../../shared/components/form/select/select';
 import {
   NOVELTY_ACTION_OPTIONS,
+  NOVELTY_COMPONENT_OPTIONS,
   NoveltyAction,
   NoveltyFormData,
   NoveltyItem,
 } from '../../model/novelties.model';
+import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
+import { NoveltyComponentKey } from '../../../../configuration/professor-preload/model/novelties.model';
 
 type NoveltyFormGroup = FormGroup<{
   tipo: FormControl<string>;
   descripcion: FormControl<string>;
   accion: FormControl<string>;
+  componente: FormControl<NoveltyComponentKey | null>;
+  forPlanta: FormControl<boolean>;
 }>;
 
 @Component({
@@ -41,6 +46,7 @@ type NoveltyFormGroup = FormGroup<{
     InputField,
     Select,
     Button,
+    Checkbox
   ],
   templateUrl: './novelties-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,8 +62,9 @@ export class NoveltiesForm implements OnChanges {
   saveNovelty =
     new EventEmitter<NoveltyFormData>();
 
-  readonly actionOptions: Option[] =
-    NOVELTY_ACTION_OPTIONS;
+  readonly actionOptions: Option[] = NOVELTY_ACTION_OPTIONS;
+
+  readonly componentOptions: Option[] = NOVELTY_COMPONENT_OPTIONS;
 
   readonly form: NoveltyFormGroup =
     new FormGroup({
@@ -80,6 +87,12 @@ export class NoveltiesForm implements OnChanges {
       accion: new FormControl('', {
         nonNullable: true,
         validators: [Validators.required],
+      }),
+
+      componente: new FormControl<NoveltyComponentKey|null>(null),
+
+      forPlanta: new FormControl(false, {
+        nonNullable: true,
       }),
     });
 
@@ -110,6 +123,8 @@ export class NoveltiesForm implements OnChanges {
         raw.descripcion.trim(),
       accion:
         raw.accion as NoveltyAction,
+      componente: raw.componente,
+      forPlanta: raw.forPlanta ? '1' : '0',
     });
   }
 
@@ -125,6 +140,24 @@ export class NoveltiesForm implements OnChanges {
           ? String(item.accion)
               .toUpperCase()
           : '',
+      componente: item?.componente ?? null,
+      forPlanta: this.isPlantaEnabled(item?.forPlanta)
     });
+  }
+
+  private isPlantaEnabled(value: NoveltyItem['forPlanta'] | undefined): boolean {
+    if (value == null || value === '') {
+      return false;
+    }
+
+    const normalized = String(value).trim().toUpperCase();
+
+    return (
+      normalized === '1' ||
+      normalized === 'S' ||
+      normalized === 'SI' ||
+      normalized === 'SÍ' ||
+      normalized === 'TRUE'
+    );
   }
 }
