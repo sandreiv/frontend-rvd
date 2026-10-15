@@ -64,3 +64,33 @@ export interface SummaryPtdActivityDetail {
   esDeNovedad: number | null;
   descripcion: string;
 }
+
+export interface SavePtdPayload {
+  nivel: string | null;
+  ponderado: number;
+  idDetalleCargaDocente: number | null;
+  idDetalleNovedadCargaDocente: number | null;
+  idTipoActividad: number;
+  idPersonaGeneral: number;
+}
+
+export interface ObservacionPtd {
+  descripcion: string,
+  idCargaDocente: number
+}
+
+export interface SavePtdRequest {
+  registros: SavePtdPayload[],
+  observacion: ObservacionPtd
+}
+
+export interface ActivityWeights {
+  nivel: string | null;
+  ponderado: number;
+  idTipoActividad: number;
+}
+
+export interface PdtInfoWithWeights {
+  actividades: ActivityWeights[],
+  observacion: ObservacionPtd
+}

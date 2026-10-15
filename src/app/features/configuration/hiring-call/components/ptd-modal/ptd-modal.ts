@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -9,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -17,10 +18,11 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { mapActivitySummaryTables } from '../../../professor-preload/model/professor-summary.model';
 import { HiringCallService } from '../../data/hiring-call.service';
-import { ProfessorInformationItem, SummaryPtdActivity } from '../../model/hiring-call.model';
+import { ActivityWeights, ObservacionPtd, PdtInfoWithWeights, ProfessorInformationItem, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
 import { Button } from '../../../../../shared/ui/button/button';
 import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
+import { finalize } from 'rxjs';
 
 type PtdSectionId = 'detalle-actividades' | 'observaciones' | 'ptd-actividades';
 type PtdStep = 'resumen' | 'ptd';
@@ -31,6 +33,12 @@ interface PtdSectionConfig {
   icon: AppIconName;
   iconBgClass: string;
   iconColorClass: string;
+}
+
+interface HeaderChip {
+  id: string;
+  label: string;
+  icon?: AppIconName;
 }
 
 const SUMMARY_SECTIONS: PtdSectionConfig[] = [
@@ -68,12 +76,6 @@ function createInitialExpandedSections(): Record<PtdSectionId, boolean> {
   };
 }
 
-interface HeaderChip {
-  id: string;
-  label: string;
-  icon?: AppIconName;
-}
-
 @Component({
   selector: 'app-ptd-modal',
   imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule],
@@ -82,11 +84,13 @@ interface HeaderChip {
 })
 export class PtdModal {
   private readonly hiringCallService = inject(HiringCallService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
   readonly close = output<void>();
 
+  readonly isSaving = signal(false);
   readonly observation = signal('');
   readonly expandedSections = signal(createInitialExpandedSections());
   readonly currentStep = signal<PtdStep>('resumen')
@@ -102,6 +106,7 @@ export class PtdModal {
   ];
   
 
+  // Construir vista de ptd con actividades
   readonly informationResource = rxResource({
     params: () => this.resolveInformationParams(),
     stream: ({ params }) =>
@@ -112,6 +117,25 @@ export class PtdModal {
     params: () => this.resolveInformationParams(),
     stream: ({ params }) => this.hiringCallService.listPtdActivities(params.idCargaDocente),
   });
+
+  // Poblar modal PTD
+  readonly ptdInfoWithWeightsResource = rxResource({
+    params: () => {
+      const idCargaDocente = this.idCargaDocente();
+      const idPersonaGeneral = this.information()?.idPersonaGeneral;
+
+      if (!this.isOpen() || idCargaDocente == null || idPersonaGeneral == null) {
+        return undefined;
+      }
+
+      return { idPersonaGeneral, idCargaDocente };
+    },
+    stream: ({ params }) => this.hiringCallService.getInfoPtdWithWeights(
+      params.idPersonaGeneral,
+      params.idCargaDocente
+    )
+  });
+
 
   readonly information = computed(() => {
     if (!this.isOpen() || !this.informationResource.hasValue()) {
@@ -127,9 +151,22 @@ export class PtdModal {
     return this.ptdActivitiesResource.value();
   });
 
+  readonly ptdInfoWithWeights = computed(() => {
+    if (!this.isOpen() || !this.ptdInfoWithWeightsResource.hasValue()) {
+      return null;
+    }
+    return this.ptdInfoWithWeightsResource.value();
+  });
+
   readonly sections = computed (() => this.currentStep() === 'resumen' ? SUMMARY_SECTIONS : PTD_SECTIONS);
 
   readonly hasObservation = computed(() => this.observation().length !== 0);
+
+  readonly ptdExists = computed(() => this.ptdInfoWithWeights() != null);
+
+  readonly saveButtonDisabled = computed(() => {
+    return !this.hasObservation() || (this.currentStep() === 'ptd' && (!this.ponderacionValida() || this.ptdExists()));
+  })
 
   readonly isLoadingSummary = computed(
     () => this.isOpen() && this.informationResource.isLoading(),
@@ -207,8 +244,11 @@ export class PtdModal {
       if (activities === null) {
         return;
       }
+      if (this.ptdInfoWithWeightsResource.isLoading()) {
+        return;
+      }
 
-      untracked(() => this.initializePtdForm());
+      untracked(() => this.initializePtdForm(activities, this.ptdInfoWithWeights()));
     });
 
     effect(() => {
@@ -261,6 +301,33 @@ export class PtdModal {
     }
 
     return { idCargaDocente };
+  }
+
+  onSave(): void {
+    if (this.isSaving() || this.ptdExists()) {
+      return;
+    }
+
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idCargaDocente = this.idCargaDocente();
+    if (idPersonaGeneral == null || idCargaDocente == null || !this.ponderacionValida()) {
+      return
+    }
+
+    const result = this.buildSavePayload(idPersonaGeneral, idCargaDocente);
+    if (result.registros.length === 0 || result.observacion == null) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.hiringCallService.savePtd(result)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSaving.set(false))
+      )
+      .subscribe({
+        next: () => this.close.emit()
+      });
   }
 
   private buildHeaderChips(
@@ -361,14 +428,36 @@ export class PtdModal {
     return `${match[3]}/${match[2]}/${match[1]}`;
   }
 
-  private initializePtdForm(): void {
-    const activities = this.ptdActivities() ?? [];
+  private initializePtdForm(activities: SummaryPtdActivity[], ptdInfo: PdtInfoWithWeights|null): void {
     const ponderacionesPrecalculadas = this.calculatePonderaciones(activities);
+    const ponderacionesAlmacenadas = new Map<number, number>(
+      (ptdInfo?.actividades ?? []).map(
+        (item: ActivityWeights) => [
+          item.idTipoActividad,
+          item.ponderado,
+        ],
+      ),
+    );
+    const nivelesAlmacenados = new Map<number, string | null>(
+      (ptdInfo?.actividades ?? []).map(
+        (item: ActivityWeights) => [
+          item.idTipoActividad,
+          item.nivel,
+        ],
+      ),
+    );
+
     this.actividadesFormArray.clear();
 
     activities.forEach((activity, index) => {
       const esPtd = activity.codigo === 'PTD';
       const esLenguaExtranjera = this.isSecondLanguage(activity.criterio);
+      const ponderacion = ponderacionesAlmacenadas.has(activity.id)
+        ? ponderacionesAlmacenadas.get(activity.id)
+        : ponderacionesPrecalculadas[index]
+      const nivel = nivelesAlmacenados.has(activity.id)
+        ? nivelesAlmacenados.get(activity.id) ?? null
+        : 'A1';
 
       this.actividadesFormArray.push(
         new FormGroup({
@@ -376,7 +465,7 @@ export class PtdModal {
             nonNullable: true,
           }),
           ponderacion: new FormControl(
-            { value: ponderacionesPrecalculadas[index], disabled: !esPtd},
+            { value: ponderacion, disabled: (!esPtd || this.ptdExists()) },
             {
               nonNullable: true,
               validators: [
@@ -387,7 +476,7 @@ export class PtdModal {
             }
           ),
           nivel: new FormControl<string | null>(
-            { value: 'A1', disabled: !esLenguaExtranjera },
+            { value: nivel, disabled: (!esLenguaExtranjera || this.ptdExists()) },
             {
               validators: esLenguaExtranjera
                 ? [Validators.required]
@@ -397,6 +486,10 @@ export class PtdModal {
         }),
       );
     });
+
+    if (ptdInfo) {
+      this.observation.set(ptdInfo.observacion.descripcion ?? '');
+    }
   }
 
   private calculatePonderaciones(activities: SummaryPtdActivity[]): number[] {
@@ -432,6 +525,53 @@ export class PtdModal {
     });
 
     return ponderaciones;
+  }
+
+  private buildSavePayload(idPersonaGeneral: number, idCargaDocente: number): SavePtdRequest {
+    const activities = this.ptdActivities() ?? [];
+    const formValues = this.ptdForm.getRawValue();
+    
+    const registros: SavePtdPayload[] = [];
+    const observacion: ObservacionPtd = {
+      idCargaDocente,
+      descripcion: this.observation().trim()
+    }
+    
+    activities.forEach((activity, index) => {
+      const formActivity = formValues.actividades[index];
+      if (!formActivity) {
+        return;
+      }
+
+      const base = {
+        nivel: this.isSecondLanguage(activity.criterio) ? formActivity['nivel'] : null,
+        ponderado: Number(formActivity['ponderacion']),
+        idTipoActividad: activity.id,
+        idPersonaGeneral
+      }
+
+      const esPtd = activity.codigo === 'PTD';
+      if (esPtd) {
+        registros.push({
+          ...base,
+          idDetalleCargaDocente: null,
+          idDetalleNovedadCargaDocente: null
+        });
+        return;
+      };
+
+      activity.detalles.forEach((detalle) => {
+        const esDeNovedad = detalle.esDeNovedad === 1;
+
+        registros.push({
+          ...base,
+          idDetalleCargaDocente: esDeNovedad ? null : detalle.id,
+          idDetalleNovedadCargaDocente: esDeNovedad ? detalle.id : null
+        })
+      });
+    });
+
+    return { registros, observacion };
   }
 
   isSecondLanguage(criterio: string): boolean {

@@ -199,6 +199,7 @@
                     maxlength="500"
                     placeholder="Escriba una observación sobre el plan de trabajo"
                     [value]="observation()"
+                    [disabled]="ptdExists()"
                     (input)="onObservationInput($event)"
                     class="w-full resize-y rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm font-normal text-gray-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
                   ></textarea>
@@ -306,6 +307,7 @@
                                       <app-select
                                         [options]="englishLevels"
                                         [value]="actividadesFormArray.at(i).controls['nivel'].value ?? ''"
+                                        [disabled]="actividadesFormArray.at(i).controls['nivel'].disabled"
                                         [enableSearch]="false"
                                         placeholder="Seleccione un nivel"
                                         emptyText="No hay niveles disponibles"
@@ -398,11 +400,8 @@
     
     <app-button
       type="button"
-      [disabled]="
-        !hasObservation() ||
-        (currentStep() === 'ptd' && !ponderacionValida())
-      "
-      (btnClick)="currentStep() === 'resumen' ? continueToPtd() : close.emit()"
+      [disabled]="saveButtonDisabled()"
+      (btnClick)="currentStep() === 'resumen' ? continueToPtd() : onSave()"
     >
       {{ currentStep() === 'resumen' ? 'Continuar al plan de trabajo' : 'Guardar' }}
     </app-button>
