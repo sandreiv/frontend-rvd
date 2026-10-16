@@ -83,4 +83,20 @@ newspaper: `<path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m
 
 };
 
+// -------------------------------------------------------------------------
+//  Glifos del new-modal (path SVG del símbolo adentro del burst).
+//  NO son entradas del catálogo ICONS — son strings `d` que el modal
+//  renderea como un <path> dentro de su propio <svg viewBox="0 0 60 60">.
+//  Mantenerlos acá centraliza el "lenguaje visual" del modal con el
+//  resto de íconos del proyecto.
+// -------------------------------------------------------------------------
+export type NewModalVariantName = 'danger' | 'success' | 'warning' | 'info';
+
+export const MODAL_GLYPHS: Record<NewModalVariantName, string> = {
+  danger: 'M38 22L22 38M22 22L38 38', // X
+  success: 'M18 30.5L26.5 39L43 22.5', // check
+  warning: 'M30 22V32.5M30 41.25V41.375', // signo !
+  info: 'M30 24.5V24.625M30 31V40.5', // letra i
+};
+
 export type AppIconName = keyof typeof ICONS;

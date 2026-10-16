@@ -98,7 +98,7 @@
     [title]="reviewTitle()"
     [message]="reviewMessage()"
     [buttonText]="reviewButtonText()"
-    [iconVariant]="
+    [variant]="
       pendingReview()?.action === 'verify' ? 'warning' : 'danger'
     "
     [showCancelButton]="!isReviewing()"
