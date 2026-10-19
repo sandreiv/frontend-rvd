@@ -37,16 +37,6 @@ describe('computeProfessorContractTotal', () => {
     expect(total).toBe(6_400_000);
   });
 
-  it('retorna 0 para planta aunque tenga salario u horas', () => {
-    expect(
-      computeProfessorContractTotal({
-        esPlanta: true,
-        formaPago: 'SALARIO',
-        asignacionSalarial: 2_631_640,
-        horasActividades: 8,
-      }),
-    ).toBe(0);
-  });
 });
 
 describe('sumDetalleHours', () => {

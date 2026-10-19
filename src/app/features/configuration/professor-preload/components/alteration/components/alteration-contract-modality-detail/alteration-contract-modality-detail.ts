@@ -2,9 +2,10 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
+  CAREER_PROFESSOR_TAB_ID,
+  CAREER_PROFESSOR_TAB_LABEL,
   CoordinationContractModality,
   CoordinationItem,
-  isPlantaModality,
   ModalityProfessor,
 } from '../../../../model/coordination.model';
 import { CoordinationService } from '../../../../data/coordination.service';
@@ -222,6 +223,23 @@ export class AlterationContractModalityDetail {
     this.sortContractModalities(this.contractModalities()),
   );
 
+  readonly careerProfessorsResource = rxResource({
+    params: () => {
+      const idCarga = this.coordination().idCarga;
+      if (idCarga == null) {
+        return undefined;
+      }
+      return { idCarga, refreshKey: this.refreshKey() };
+    },
+    stream: ({ params }) =>
+      this.coordinationService.listCareerAlterationProfessors(params.idCarga),
+    defaultValue: [] as ModalityProfessor[],
+  });
+
+  readonly careerProfessors = computed(() =>
+    this.careerProfessorsResource.value(),
+  );
+
   readonly modalityProfessorsResource = rxResource({
     params: () => this.resolveProfessorsParams(),
     stream: ({ params }) => this.loadProfessorsByModality(params),
@@ -233,6 +251,9 @@ export class AlterationContractModalityDetail {
   );
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
+    if (this.isCareerTabSelected()) {
+      return this.careerProfessors();
+    }
     const selectedId = this.selectedContractModalityId();
     if (selectedId == null) {
       return [];
@@ -265,19 +286,29 @@ export class AlterationContractModalityDetail {
     forNext(this.sortedContractModalities(), (modality) => {
       tabs.push(this.toModalityTabItem(modality, professorsByModality));
     });
+    const careerCount = this.careerProfessors().length;
+    if (careerCount > 0) {
+      tabs.push({
+        id: CAREER_PROFESSOR_TAB_ID,
+        label: CAREER_PROFESSOR_TAB_LABEL,
+        badge: `${careerCount}`,
+      });
+    }
     return tabs;
   });
 
   readonly hasAnyModality = computed(() => this.modalityTabs().length > 0);
 
-  readonly isPlantaModalitySelected = computed(() => {
-    const modality = this.selectedContractModality();
-    return modality != null && isPlantaModality(modality);
-  });
+  readonly isCareerTabSelected = computed(
+    () => this.selectedContractModalityId() === CAREER_PROFESSOR_TAB_ID,
+  );
 
   readonly isCargaEnAvalDesarrollo = computed(() => (this.coordination().estadoCarga === 'AVAL DESARROLLO'));
 
   readonly selectedContractModality = computed(() => {
+    if (this.isCareerTabSelected()) {
+      return null;
+    }
     const selectedId = Number(this.selectedContractModalityId());
     if (!Number.isFinite(selectedId) || selectedId <= 0) {
       return null;
@@ -402,6 +433,7 @@ export class AlterationContractModalityDetail {
     this.closeAddProfessorModal();
 
     this.modalityProfessorsResource.reload();
+    this.careerProfessorsResource.reload();
 
     this.reloadNoveltyHistory();
 
@@ -682,6 +714,7 @@ export class AlterationContractModalityDetail {
 
   onNoveltyReviewChanged(): void {
     this.modalityProfessorsResource.reload();
+    this.careerProfessorsResource.reload();
 
     this.reloadNoveltyHistory();
 
@@ -690,6 +723,7 @@ export class AlterationContractModalityDetail {
 
   onNoveltySaved(): void {
     this.modalityProfessorsResource.reload();
+    this.careerProfessorsResource.reload();
 
     this.reloadNoveltyHistory();
 
@@ -901,10 +935,6 @@ export class AlterationContractModalityDetail {
   private resolveModalitySortOrder(
     modality: CoordinationContractModality,
   ): number {
-    if (isPlantaModality(modality)) {
-      return 2;
-    }
-
     const kind = resolveModalityKind(modality.nombre);
     if (kind === 'tiempoCompletoOcasional') {
       return 0;
@@ -921,15 +951,6 @@ export class AlterationContractModalityDetail {
     professorsByModality: Record<number, ModalityProfessor[]>,
   ): TabBarItem {
     const professors = professorsByModality[modality.id] ?? [];
-
-    if (isPlantaModality(modality)) {
-      return {
-        id: modality.id,
-        label: modality.nombre,
-        badge: `${professors.length}`,
-      };
-    }
-
     const verified = professors.filter(
       (professor) =>
         professor.estado !== CADO_ON_REGISTER_STATE,
@@ -1024,6 +1045,7 @@ export class AlterationContractModalityDetail {
           this.isDeleteProfessorModalOpen.set(false);
           this.deleteProfessorTarget.set(null);
           this.modalityProfessorsResource.reload();
+          this.careerProfessorsResource.reload();
           this.reloadNoveltyHistory();
           void this.refreshBudget();
         },

@@ -26,7 +26,7 @@
           class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            @if (!isPlantaModalitySelected() && permissions.canAddProfessor() && isCargaEnAvalDesarrollo()) {
+            @if (!isCareerTabSelected() && permissions.canAddProfessor() && isCargaEnAvalDesarrollo()) {
               <app-button
                 type="button"
                 size="sm"
@@ -280,6 +280,7 @@
   [professor]="summaryProfessor()"
   [coordination]="coordination()"
   [contractModality]="selectedContractModality()"
+  [isCareerProfessor]="isCareerTabSelected()"
   (close)="closeSummaryModal()"
   (reviewChanged)="onNoveltyReviewChanged()"
 />

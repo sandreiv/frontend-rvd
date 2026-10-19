@@ -17,9 +17,9 @@ import { Icon } from '../../../../../shared/ui/icon/icon';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { CoordinationService } from '../../data/coordination.service';
 import {
+  CAREER_PROFESSOR_TAB_LABEL,
   CoordinationContractModality,
   CoordinationItem,
-  isPlantaModality,
   ModalityProfessor,
 } from '../../model/coordination.model';
 import {
@@ -48,6 +48,7 @@ export class ProfessorSummary {
   professor = input<ModalityProfessor | null>(null);
   coordination = input<CoordinationItem | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
+  isCareerProfessor = input(false);
   summaryFetcher = input<
     ((idCargaDocente: number) => Observable<ProfessorLoadSummaryApi>) | null
   >(null);
@@ -82,16 +83,10 @@ export class ProfessorSummary {
 
   readonly sections = PROFESSOR_SUMMARY_SECTIONS;
 
-  readonly isPlanta = computed(() => {
-    const modality = this.contractModality();
-
-    return modality != null && isPlantaModality(modality);
-  });
-
   readonly visibleSections = computed(() =>
     this.sections.filter(
       (section) =>
-        !(this.isPlanta() && section.id === 'valores-contratacion'),
+        !(this.isCareerProfessor() && section.id === 'valores-contratacion'),
     ),
   );
 
@@ -139,9 +134,12 @@ export class ProfessorSummary {
     return professor.nombreCompleto?.trim() || NN_LABEL;
   });
 
-  readonly modalityLabel = computed(
-    () => this.contractModality()?.nombre ?? '-',
-  );
+  readonly modalityLabel = computed(() => {
+    if (this.isCareerProfessor()) {
+      return CAREER_PROFESSOR_TAB_LABEL;
+    }
+    return this.contractModality()?.nombre ?? '-';
+  });
 
   readonly coordinationLabel = computed(() => {
     const coordination = this.coordination();

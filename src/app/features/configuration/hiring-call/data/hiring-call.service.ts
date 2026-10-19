@@ -92,8 +92,6 @@ export class HiringCallService {
 
   /**
    * Lista los docentes de una carga según la modalidad de contratación.
-   * Para planta utiliza los docentes de la coordinación y para las demás
-   * modalidades los docentes registrados en CARGADOCENTE.
    *
    * @param idCarga Identificador de la carga.
    * @param idModalidadContratacion Identificador de la modalidad de contratación.
@@ -106,6 +104,19 @@ export class HiringCallService {
     return this.webRequestService.get<ModalityProfessor[]>(
       `${this.endpoint}/list-professors-modality`,
       { idCarga, idModalidadContratacion },
+    );
+  }
+
+  /**
+   * Lista el padrón de docentes de planta de la coordinación dueña de la carga.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con los docentes de planta de la coordinación.
+   */
+  listCareerProfessors(idCarga: number): Observable<ModalityProfessor[]> {
+    return this.webRequestService.get<ModalityProfessor[]>(
+      `${this.endpoint}/list-career-professors`,
+      { idCarga },
     );
   }
 

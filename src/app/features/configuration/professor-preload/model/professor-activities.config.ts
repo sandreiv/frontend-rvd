@@ -192,6 +192,31 @@ export function buildVisibleActivityItems(
   return items.sort(compareActivityOrden);
 }
 
+export function buildCareerActivityItems(
+  activityTypes: TipoActividad[],
+): ActivityVisibleItem[] {
+  const items: ActivityVisibleItem[] = [];
+  const seen = new Set<string>();
+
+  for (let index = 0; index < activityTypes.length; index += 1) {
+    const activityType = activityTypes[index];
+    if (!isActivityFormType(activityType.componente)) {
+      continue;
+    }
+    if (seen.has(activityType.codigo)) {
+      continue;
+    }
+    seen.add(activityType.codigo);
+    items.push({
+      codigo: activityType.codigo,
+      ...resolveUiConfig(activityType.componente, activityType.codigo),
+      tipoActividad: activityType,
+    });
+  }
+
+  return items.sort(compareActivityOrden);
+}
+
 export function createBooleanMap(
   codigos: readonly string[],
 ): Record<string, boolean> {

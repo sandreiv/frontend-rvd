@@ -23,9 +23,10 @@ import { PtdModal } from '../ptd-modal/ptd-modal';
 import { formatSentenceValue } from '../../../../../shared/utils/normalized-text.util';
 import { resolveModalityKind } from '../../../professor-preload/model/professor-form.config';
 import {
+  CAREER_PROFESSOR_TAB_ID,
+  CAREER_PROFESSOR_TAB_LABEL,
   CoordinationContractModality,
   CoordinationItem,
-  isPlantaModality,
   ModalityProfessor,
 } from '../../../professor-preload/model/coordination.model';
 import { HiringCallService } from '../../data/hiring-call.service';
@@ -138,6 +139,23 @@ export class HiringContractModalityDetail {
     this.sortContractModalities(this.contractModalities()),
   );
 
+  readonly careerProfessorsResource = rxResource({
+    params: () => {
+      const idCarga = this.coordination().idCarga;
+      if (idCarga == null) {
+        return undefined;
+      }
+      return { idCarga, refreshKey: this.refreshKey() };
+    },
+    stream: ({ params }) =>
+      this.hiringCallService.listCareerProfessors(params.idCarga),
+    defaultValue: [] as ModalityProfessor[],
+  });
+
+  readonly careerProfessors = computed(() =>
+    this.careerProfessorsResource.value(),
+  );
+
   readonly modalityProfessorsResource = rxResource({
     params: () => this.resolveProfessorsParams(),
     stream: ({ params }) => this.loadProfessorsByModality(params),
@@ -149,6 +167,9 @@ export class HiringContractModalityDetail {
   );
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
+    if (this.isCareerTabSelected()) {
+      return this.careerProfessors();
+    }
     const selectedId = this.selectedContractModalityId();
     if (selectedId == null) {
       return [];
@@ -166,6 +187,14 @@ export class HiringContractModalityDetail {
     forNext(this.sortedContractModalities(), (modality) => {
       tabs.push(this.toModalityTabItem(modality, professorsByModality));
     });
+    const careerCount = this.careerProfessors().length;
+    if (careerCount > 0) {
+      tabs.push({
+        id: CAREER_PROFESSOR_TAB_ID,
+        label: CAREER_PROFESSOR_TAB_LABEL,
+        badge: `${careerCount}`,
+      });
+    }
     return tabs;
   });
 
@@ -176,12 +205,19 @@ export class HiringContractModalityDetail {
   );
 
   readonly selectedModalityLabel = computed(() => {
+    if (this.isCareerTabSelected()) {
+      return CAREER_PROFESSOR_TAB_LABEL;
+    }
     const selectedId = this.selectedContractModalityId();
     const modality = this.sortedContractModalities().find(
       (item) => item.id === selectedId,
     );
     return formatSentenceValue(modality?.nombre) || 'esta modalidad';
   });
+
+  readonly isCareerTabSelected = computed(
+    () => this.selectedContractModalityId() === CAREER_PROFESSOR_TAB_ID,
+  );
 
   constructor() {
     effect(() => {
@@ -334,10 +370,6 @@ export class HiringContractModalityDetail {
   private resolveModalitySortOrder(
     modality: CoordinationContractModality,
   ): number {
-    if (isPlantaModality(modality)) {
-      return 2;
-    }
-
     const kind = resolveModalityKind(modality.nombre);
     if (kind === 'tiempoCompletoOcasional') {
       return 0;
@@ -354,15 +386,6 @@ export class HiringContractModalityDetail {
     professorsByModality: Record<number, ModalityProfessor[]>,
   ): TabBarItem {
     const professors = professorsByModality[modality.id] ?? [];
-
-    if (isPlantaModality(modality)) {
-      return {
-        id: modality.id,
-        label: modality.nombre,
-        badge: `${professors.length}`,
-      };
-    }
-
     const verified = professors.filter(
       (professor) => professor.estado !== ON_REGISTER_STATE,
     ).length;

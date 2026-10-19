@@ -188,7 +188,6 @@ export function toContractModality(
   return {
     id: item.idModalidadContratacion,
     nombre: nombre || '-',
-    esPlanta: nombre.toLowerCase() === 'planta',
   };
 }
 

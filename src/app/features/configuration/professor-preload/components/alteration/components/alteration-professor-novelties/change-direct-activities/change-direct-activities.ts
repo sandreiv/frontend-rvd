@@ -14,10 +14,10 @@ import { Icon } from '../../../../../../../../shared/ui/icon/icon';
 import { CollapsibleSection } from '../../../../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { DirectActivityCard } from '../../../../professor-activities-modal/components/direct-activity-card/direct-activity-card';
 import { CoordinationService } from '../../../../../data/coordination.service';
+import { CAREER_PROFESSOR_MAX_ACTIVITY_HOURS } from '../../../../../model/career-professor.config';
 import {
   CoordinationContractModality,
   CoordinationItem,
-  isPlantaModality,
   LoadRestrictionPreview,
   ModalityProfessor,
   WorkDate,
@@ -37,6 +37,7 @@ import {
 } from '../../../../../model/professor-activities-modal.models';
 import { ProfessorProjectRow } from '../../../../../model/professor-projects.model';
 import {
+  buildCareerActivityItems,
   buildComponenteByCodigo,
   buildVisibleActivityItems,
   createInitialAddFormOpen,
@@ -172,12 +173,16 @@ export class ChangeDirectActivities {
     () => this.activitiesModalityResource.isLoading(),
   );
 
-  readonly visibleActivityItems = computed(() =>
-    buildVisibleActivityItems(
+  readonly visibleActivityItems = computed(() => {
+    const activityTypes = this.activityTypesResource.value();
+    if (this.contractModality() == null) {
+      return buildCareerActivityItems(activityTypes);
+    }
+    return buildVisibleActivityItems(
       this.activitiesModalityResource.value().tipoActividades ?? [],
-      this.activityTypesResource.value(),
-    ),
-  );
+      activityTypes,
+    );
+  });
 
   readonly visibleDirectItems = computed(() =>
     this.visibleActivityItems().filter(
@@ -191,12 +196,10 @@ export class ChangeDirectActivities {
 
   readonly directActivityContext = computed(() => {
     const coordination = this.coordination();
-    const modalityId = this.contractModality()?.id;
     if (
       !coordination?.id ||
       coordination.idNivelEducativo == null ||
-      coordination.idPeriodoUniversidad == null ||
-      modalityId == null
+      coordination.idPeriodoUniversidad == null
     ) {
       return null;
     }
@@ -204,7 +207,7 @@ export class ChangeDirectActivities {
       idCoordinacion: coordination.id,
       idNivelEducativo: coordination.idNivelEducativo,
       idPeriodoUniversidad: coordination.idPeriodoUniversidad,
-      idModalidadContratacion: modalityId,
+      idModalidadContratacion: this.contractModality()?.id ?? null,
       idCargaDocente: this.professor()?.idCargaDocente ?? null,
     };
   });
@@ -255,9 +258,12 @@ export class ChangeDirectActivities {
     return this.professorWorkDate()?.rangoHoras ?? '';
   });
 
-  readonly weeklyHoursLimit = computed(() =>
-    parseMaxWeeklyHours(this.weeklyHoursLabel()),
-  );
+  readonly weeklyHoursLimit = computed(() => {
+    if (this.contractModality() == null) {
+      return CAREER_PROFESSOR_MAX_ACTIVITY_HOURS;
+    }
+    return parseMaxWeeklyHours(this.weeklyHoursLabel());
+  });
 
   readonly isLoadingWorkDates = computed(
     () => this.workDatesResource.isLoading(),
@@ -430,9 +436,7 @@ export class ChangeDirectActivities {
       this.budgetStore.clearDraft();
       return;
     }
-    const modality = this.contractModality();
     const totalNuevo = computeProfessorContractTotal({
-      esPlanta: modality != null && isPlantaModality(modality),
       formaPago,
       fechaInicio: professor.fechaInicio,
       fechaFin: professor.fechaFin,

@@ -21,7 +21,7 @@
       class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        @if (!isPlantaSelected() && permissions.canAddProfessor() && isCargaEnRegistro()) {
+        @if (!isCareerTabSelected() && permissions.canAddProfessor() && isCargaEnRegistro()) {
           <span
             [appTooltip]="canEditPreassignment() ? '' : writeBlockReason()"
             tooltipPlacement="right"
@@ -258,6 +258,7 @@
   [isOpen]="isActivitiesModalOpen()"
   [professor]="activitiesProfessor()"
   [contractModality]="activitiesModalContractModality()"
+  [isCareerProfessor]="isCareerTabSelected()"
   [coordination]="activitiesModalCoordination()"
   [readOnly]="!canEditPreassignment()"
   [readOnlyReason]="writeBlockReason()"
@@ -270,5 +271,6 @@
   [professor]="summaryProfessor()"
   [coordination]="coordination()"
   [contractModality]="selectedModalityForModals()"
+  [isCareerProfessor]="isCareerTabSelected()"
   (close)="closeSummaryModal()"
 />
