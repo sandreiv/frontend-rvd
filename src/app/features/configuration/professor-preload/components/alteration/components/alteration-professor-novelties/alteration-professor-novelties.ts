@@ -105,14 +105,12 @@ export class AlterationProfessorNovelties {
       if (!this.isOpen()) {
         return undefined;
       }
-      const modalityId = this.contractModality()?.id;
-      if (modalityId == null) {
-        return undefined;
-      }
-
-      return { modalityId };
+      return {
+        modalityId: this.contractModality()?.id ?? null,
+      };
     },
-    stream: ({ params }) => this.coordinationService.getNoveltiesTypes(params.modalityId),
+    stream: ({ params }) =>
+      this.coordinationService.getNoveltiesTypes(params.modalityId),
     defaultValue: [] as NoveltiesItem[],
   });
 

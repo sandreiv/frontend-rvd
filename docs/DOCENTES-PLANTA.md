@@ -51,6 +51,8 @@ En la pestaña Planta de precarga no aparece **Agregar docente**. Si el docente 
 
 En novedades tampoco aparece **Agregar docente**. Activar carga no existe ahí. Quien no tiene carga no tiene acciones. Quien ya tiene carga usa el menú de novedades.
 
+El combo de tipos de novedad sigue siendo `GET /coordination/list-novelties`. Cátedra y TCO envían `accion` y `idModalidadContratacion`. Planta envía solo `accion=ACTUALIZAR` (o `ELIMINAR` al borrar docente): sin modalidad, el backend devuelve las novedades con `NOVE_FORPLANTA = '1'`. Eso está en `coordination.service.ts` (`getNoveltiesTypes`, `getDeleteNovelties`) y en `alteration-professor-novelties.ts`.
+
 En contratación la pestaña solo lista el padrón. El menú de plan de trabajo y contrato es el de las otras pestañas.
 
 ## Actividades

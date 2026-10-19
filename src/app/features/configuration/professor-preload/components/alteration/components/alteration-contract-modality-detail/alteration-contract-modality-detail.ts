@@ -1009,9 +1009,15 @@ export class AlterationContractModalityDetail {
 
     const professor = this.deleteProfessorTarget();
     const idCargaDocente = professor?.idCargaDocente;
-    const idModalidadContratacion = professor?.idModalidadContratacion;
+    const idModalidadContratacion = this.isCareerTabSelected()
+      ? null
+      : professor?.idModalidadContratacion;
 
-    if (idCargaDocente == null || idModalidadContratacion == null) {
+    if (idCargaDocente == null) {
+      return;
+    }
+
+    if (!this.isCareerTabSelected() && idModalidadContratacion == null) {
       return;
     }
 

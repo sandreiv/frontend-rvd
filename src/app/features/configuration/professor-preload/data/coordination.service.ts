@@ -922,41 +922,59 @@ export class CoordinationService {
 
   /**
    * Consulta las novedades configuradas con acción ACTUALIZAR.
+   * Sin modalidad, el backend devuelve las novedades de planta.
    *
-   * @returns Observable con las novedades de actualización disponibles dependiendo la modalidad de contratación.
+   * @param idModalidadContratacion Identificador de cátedra o TCO. Se omite para planta.
+   * @returns Observable con las novedades de actualización disponibles.
   */
-
-  getNoveltiesTypes(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
+  getNoveltiesTypes(
+    idModalidadContratacion?: number | null,
+  ): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      { idModalidadContratacion },
+      this.buildNoveltiesQuery('ACTUALIZAR', idModalidadContratacion),
     );
   }
 
   /**
    * Consulta las novedades configuradas con acción ELIMINAR.
+   * Sin modalidad, el backend devuelve las novedades de planta.
    *
-   * @returns Observable con las novedades de eliminación disponibles dependiendo la modalidad de contratación.
+   * @param idModalidadContratacion Identificador de cátedra o TCO. Se omite para planta.
+   * @returns Observable con las novedades de eliminación disponibles.
   */
- 
-  getDeleteNovelties(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
+  getDeleteNovelties(
+    idModalidadContratacion?: number | null,
+  ): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      { accion: 'ELIMINAR', idModalidadContratacion },
+      this.buildNoveltiesQuery('ELIMINAR', idModalidadContratacion),
     );
   }
 
   /**
    * Consulta las novedades configuradas con acción GUARDAR.
    *
-   * @returns Observable con las novedades de creación disponibles dependiendo la modalidad de contratación.
+   * @param idModalidadContratacion Identificador de la modalidad.
+   * @returns Observable con las novedades de creación disponibles.
   */
 
   getSaveNovelties(idModalidadContratacion: number): Observable<NoveltiesItem[]> {
     return this.webRequestService.get<NoveltiesItem[]>(
       `${this.endpoint}/list-novelties`,
-      { accion: 'GUARDAR', idModalidadContratacion },
+      this.buildNoveltiesQuery('GUARDAR', idModalidadContratacion),
     );
+  }
+
+  private buildNoveltiesQuery(
+    accion: string,
+    idModalidadContratacion?: number | null,
+  ): Record<string, string> {
+    const params: Record<string, string> = { accion };
+    if (idModalidadContratacion != null) {
+      params['idModalidadContratacion'] = String(idModalidadContratacion);
+    }
+    return params;
   }
 
 
