@@ -24,7 +24,9 @@ import { CriteriaActivityCard } from './components/criteria-activity-card/criter
 import { ProjectActivityCard } from './components/project-activity-card/project-activity-card';
 import { CoordinationService } from '../../data/coordination.service';
 import { PermissionService } from '../../../../../core/service/permission-service';
+import { CAREER_PROFESSOR_MAX_ACTIVITY_HOURS } from '../../model/career-professor.config';
 import {
+  CAREER_PROFESSOR_TAB_LABEL,
   CoordinationContractModality,
   CoordinationItem,
   ModalityProfessor,
@@ -32,6 +34,7 @@ import {
 } from '../../model/coordination.model';
 import {
   buildComponenteByCodigo,
+  buildCareerActivityItems,
   buildVisibleActivityItems,
   createInitialAddFormOpen,
   createInitialExpandedCategories,
@@ -105,6 +108,7 @@ export class ProfessorActivitiesModal {
   isOpen = input(false);
   professor = input<ModalityProfessor | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
+  isCareerProfessor = input(false);
   coordination = input<CoordinationItem | null>(null);
 
   readOnly = input(false);
@@ -293,12 +297,16 @@ export class ProfessorActivitiesModal {
   readonly addFormOpen = signal<Record<string, boolean>>({});
   private readonly expandedCategoriesInitialized = signal(false);
 
-  readonly visibleActivityItems = computed(() =>
-    buildVisibleActivityItems(
+  readonly visibleActivityItems = computed(() => {
+    const activityTypes = this.activityTypesResource.value();
+    if (this.isCareerProfessor()) {
+      return buildCareerActivityItems(activityTypes);
+    }
+    return buildVisibleActivityItems(
       this.activitiesModalityResource.value().tipoActividades ?? [],
-      this.activityTypesResource.value(),
-    ),
-  );
+      activityTypes,
+    );
+  });
 
   readonly projectAssociationDates = computed(() => {
     const fechas = this.preloadCallDetailResource.value()?.fechas ?? [];
@@ -355,9 +363,12 @@ export class ProfessorActivitiesModal {
       : 'Agregar actividades del docente';
   });
 
-  readonly contractModalityLabel = computed(
-    () => this.contractModality()?.nombre?.trim() || '-',
-  );
+  readonly contractModalityLabel = computed(() => {
+    if (this.isCareerProfessor()) {
+      return CAREER_PROFESSOR_TAB_LABEL;
+    }
+    return this.contractModality()?.nombre?.trim() || '-';
+  });
 
   readonly coordinationLabel = computed(() => {
     const item = this.coordination();
@@ -369,12 +380,10 @@ export class ProfessorActivitiesModal {
 
   readonly directActivityContext = computed(() => {
     const coordination = this.coordination();
-    const modalityId = this.contractModality()?.id;
     if (
       !coordination?.id ||
       coordination.idNivelEducativo == null ||
-      coordination.idPeriodoUniversidad == null ||
-      modalityId == null
+      coordination.idPeriodoUniversidad == null
     ) {
       return null;
     }
@@ -382,7 +391,7 @@ export class ProfessorActivitiesModal {
       idCoordinacion: coordination.id,
       idNivelEducativo: coordination.idNivelEducativo,
       idPeriodoUniversidad: coordination.idPeriodoUniversidad,
-      idModalidadContratacion: modalityId,
+      idModalidadContratacion: this.contractModality()?.id ?? null,
       idCargaDocente: this.professor()?.idCargaDocente ?? null,
     };
   });
@@ -464,9 +473,12 @@ export class ProfessorActivitiesModal {
     return this.professorWorkDate()?.rangoHoras ?? '';
   });
 
-  readonly weeklyHoursLimit = computed(() =>
-    parseMaxWeeklyHours(this.weeklyHoursLabel()),
-  );
+  readonly weeklyHoursLimit = computed(() => {
+    if (this.isCareerProfessor()) {
+      return CAREER_PROFESSOR_MAX_ACTIVITY_HOURS;
+    }
+    return parseMaxWeeklyHours(this.weeklyHoursLabel());
+  });
 
   readonly weeklyHoursMinimum = computed(() =>
     parseMinWeeklyHours(
@@ -479,13 +491,12 @@ export class ProfessorActivitiesModal {
   );
 
   readonly exceedsWeeklyLimit = computed(() => {
-      const limit = this.weeklyHoursLimit();
-      if (limit == null) {
-        return false;
-      }
-
-      return this.totalAssignedHours() > limit;
-    });
+    const limit = this.weeklyHoursLimit();
+    if (limit == null) {
+      return false;
+    }
+    return this.totalAssignedHours() > limit;
+  });
     
 
   readonly hasCompletedWeeklyGoal = computed(() => {
@@ -618,6 +629,9 @@ export class ProfessorActivitiesModal {
   });
 
   readonly hasValidWeeklyRange = computed(() => {
+    if (this.isCareerProfessor()) {
+      return !this.exceedsWeeklyLimit();
+    }
     const minimum =
       this.weeklyHoursMinimum();
 

@@ -11,9 +11,10 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { ActividadModalidadDTO, ActivityFormType, TipoActividad } from '../../../../../model/professor-activities.model';
 import { catchError, of } from 'rxjs';
 import { PreloadCallDetailFecha } from '../../../../../../preload-call/model/preload-call.model';
-import { buildComponenteByCodigo, buildVisibleActivityItems, createInitialAddFormOpen, resolveInitialExpandedCategories } from '../../../../../model/professor-activities.config';
+import { buildCareerActivityItems, buildComponenteByCodigo, buildVisibleActivityItems, createInitialAddFormOpen, resolveInitialExpandedCategories } from '../../../../../model/professor-activities.config';
 import { buildProjectHierarchyRows } from '../../../../../model/professor-projects.mapper';
 import { DirectLearningActivity, SimpleActivity } from '../../../../../model/professor-activities-modal.models';
+import { CAREER_PROFESSOR_MAX_ACTIVITY_HOURS } from '../../../../../model/career-professor.config';
 import { parseMaxWeeklyHours } from '../../../../../model/professor-form.config';
 import { mapDetailProfessorPreloadToModalState } from '../../../../../model/professor-activities-load.mapper';
 import { SaveDetailProfessorPreloadInput } from '../../../../../model/professor-activities-save.mapper';
@@ -163,12 +164,16 @@ export class ChangeProjectActivities {
   readonly expandedCategories = signal<Record<string, boolean>>({});
   readonly addFormOpen = signal<Record<string, boolean>>({});
 
-  readonly visibleActivityItems = computed(() =>
-    buildVisibleActivityItems(
+  readonly visibleActivityItems = computed(() => {
+    const activityTypes = this.activityTypesResource.value();
+    if (this.contractModality() == null) {
+      return buildCareerActivityItems(activityTypes);
+    }
+    return buildVisibleActivityItems(
       this.activitiesModalityResource.value().tipoActividades ?? [],
-      this.activityTypesResource.value(),
-    ),
-  );
+      activityTypes,
+    );
+  });
 
   readonly visibleNoveltyItems = computed(() =>
       this.visibleActivityItems().filter(
@@ -333,17 +338,22 @@ export class ChangeProjectActivities {
     return this.professorWorkDate()?.rangoHoras ?? '';
   });
 
-  readonly weeklyHoursLimit = computed(() =>
-    parseMaxWeeklyHours(this.weeklyHoursLabel()),
-  );
+  readonly weeklyHoursLimit = computed(() => {
+    if (this.contractModality() == null) {
+      return CAREER_PROFESSOR_MAX_ACTIVITY_HOURS;
+    }
+    return parseMaxWeeklyHours(this.weeklyHoursLabel());
+  });
 
   readonly isLoadingWorkDates = computed(
     () => this.workDatesResource.isLoading(),
   );
 
-  // Deben cumplir el limite fijo ya que la funcionalidad es para TCO y Planta
   readonly inWeeklyLimit = computed(() => {
     const limit = this.weeklyHoursLimit();
+    if (this.contractModality() == null) {
+      return limit == null || this.totalAssignedHours() <= limit;
+    }
     if (limit == null) {
       return false;
     }

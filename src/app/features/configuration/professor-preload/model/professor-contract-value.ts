@@ -5,7 +5,6 @@ import {
 } from './professor-form.config';
 
 export interface ProfessorContractValueInput {
-  esPlanta?: boolean;
   formaPago?: string | null;
   fechaInicio?: string | null;
   fechaFin?: string | null;
@@ -27,14 +26,12 @@ export function isCatedraFormaPago(
 
 /**
  * Total del contrato alineado con CargaBudgetService:
- * planta 0, CATEDRA horas x valorHora x semanas, resto TCO.
+ * CATEDRA horas x valorHora x semanas, resto TCO.
+ * La carga de planta llega con valor nulo y no entra a este cálculo.
  */
 export function computeProfessorContractTotal(
   input: ProfessorContractValueInput,
 ): number {
-  if (input.esPlanta) {
-    return 0;
-  }
   if (isCatedraFormaPago(input.formaPago)) {
     return computeCatedraTotal(input);
   }

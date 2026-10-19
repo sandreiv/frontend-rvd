@@ -7,7 +7,6 @@ import {
   inject,
   input,
   output,
-  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -64,8 +63,6 @@ export class ModalityFormModal {
     this.isEditMode() ? 'Actualizar' : 'Agregar',
   );
 
-  readonly isPlantSelected = signal(false);
-
   readonly form = this.fb.group({
     tipoModalidad: ['', Validators.required],
     diasVacaciones: [''],
@@ -82,14 +79,14 @@ export class ModalityFormModal {
       if (!open) {
         this.form.reset();
         this.semanasManuallyEdited = false;
-        this.syncPlantModalityState();
+        this.syncDateFieldsState();
         return;
       }
 
       if (!item) {
         this.form.reset();
         this.semanasManuallyEdited = false;
-        this.syncPlantModalityState();
+        this.syncDateFieldsState();
         return;
       }
 
@@ -103,12 +100,12 @@ export class ModalityFormModal {
         semanas: item.semanas != null ? String(item.semanas) : '',
       });
 
-      this.syncPlantModalityState();
+      this.syncDateFieldsState();
     });
 
     this.form.controls.tipoModalidad.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.syncPlantModalityState());
+      .subscribe(() => this.syncDateFieldsState());
 
     merge(
       this.form.controls.fechaInicio.valueChanges,
@@ -138,9 +135,7 @@ export class ModalityFormModal {
     const semanas = semanasRaw === '' || semanasRaw == null ? null : Number(semanasRaw);
 
     const editing = this.editingItem();
-
-    const isPlant = this.isPlantSelected();
-    const skipDateFields = isPlant || this.isHiringCall();
+    const skipDateFields = this.isHiringCall();
 
     this.saved.emit({
       id: editing?.id ?? '',
@@ -162,7 +157,7 @@ export class ModalityFormModal {
   }
 
   private syncSemanasFromDates(): void {
-    if (this.isPlantSelected() || this.isHiringCall()) {
+    if (this.isHiringCall()) {
       return;
     }
 
@@ -203,11 +198,8 @@ export class ModalityFormModal {
     return fraction >= 0.5 ? whole + 1 : whole;
   }
 
-  private syncPlantModalityState(): void {
-    const isPlant = this.isPlantModality(this.form.controls.tipoModalidad.value);
-    const skipDateFields = isPlant || this.isHiringCall();
-
-    this.isPlantSelected.set(isPlant);
+  private syncDateFieldsState(): void {
+    const skipDateFields = this.isHiringCall();
 
     const fechaInicio = this.form.controls.fechaInicio;
     const fechaFin = this.form.controls.fechaFin;
@@ -244,24 +236,4 @@ export class ModalityFormModal {
     fechaFin.updateValueAndValidity({ emitEvent: false });
     semanas.updateValueAndValidity({ emitEvent: false });
   }
-
-  private isPlantModality(value: string | null | undefined): boolean {
-    const selectedOption = this.modalityOptions().find(
-      (option) => option.value === value,
-    );
-
-    const label = selectedOption?.label ?? '';
-    return this.normalizeText(label).includes('planta');
-  }
-
-  private normalizeText(value: string): string {
-    return value
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim();
-  }
-
-
-
 }

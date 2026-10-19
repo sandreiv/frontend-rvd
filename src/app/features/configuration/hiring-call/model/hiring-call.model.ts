@@ -27,6 +27,10 @@ export interface ProfessorInformationItem {
   fechaFin: string | null;
   categoriaDocente: string | null;
   puntos: string | null;
+  horasTrabajo: string | null;
+  estadoCategorizacion: string | null;
+  asignacionSalarial: number | null;
+  valorHora: number | null;
   horasActividades: ActividadPtd[];
 }
 

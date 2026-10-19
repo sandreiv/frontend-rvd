@@ -15,5 +15,8 @@ export const environment = {
   sidebarTheme: {
     color: '#00482B',
   },
+  careerProfessor: {
+    maxActivityHours: 40,
+  },
   recaptcha: {},
 };

@@ -284,6 +284,35 @@ export class CoordinationService {
   }
 
   /**
+   * Lista  docentes de planta de la coordinación dueña de la carga.
+   * La fila de CARGADOCENTE, si existe, no tiene modalidad de contratación.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con los docentes de planta de la coordinación.
+   */
+  listCareerProfessorLoads(idCarga: number): Observable<ModalityProfessor[]> {
+    return this.webRequestService.get<ModalityProfessor[]>(
+      `${this.endpoint}/list-career-professor-loads`,
+      { idCarga },
+    );
+  }
+
+  /**
+   * Lista  docentes de planta para el módulo de novedades.
+   *
+   * @param idCarga Identificador de la carga.
+   * @returns Observable con los docentes de planta disponibles para novedades.
+   */
+  listCareerAlterationProfessors(
+    idCarga: number,
+  ): Observable<ModalityProfessor[]> {
+    return this.webRequestService.get<ModalityProfessor[]>(
+      `${this.endpoint}/list-career-alteration-professors`,
+      { idCarga },
+    );
+  }
+
+  /**
    * Obtiene el historial general de novedades de una carga.
    *
    * @param idCarga Identificador de la carga.
@@ -631,9 +660,10 @@ export class CoordinationService {
   }
 
   /**
-   * Activa o guarda la precarga correspondiente a un docente de planta.
+   * Activa la carga de un docente que está en el padrón de planta de la coordinación.
+   * No envía modalidad ni fechas.
    *
-   * @param request Información de la carga docente de planta.
+   * @param request Identificadores de la carga, la convocatoria y la persona.
    * @returns Observable sin contenido cuando la operación finaliza correctamente.
   */
 

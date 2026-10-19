@@ -18,9 +18,9 @@ import { CollapsibleSection } from '../../../../../../../shared/components/form/
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { CoordinationService } from '../../../../data/coordination.service';
 import {
+  CAREER_PROFESSOR_TAB_LABEL,
   CoordinationContractModality,
   CoordinationItem,
-  isPlantaModality,
   ModalityProfessor,
   RejectProfessorNoveltyRequest,
 } from '../../../../model/coordination.model';
@@ -60,6 +60,7 @@ export class NoveltySummary {
   professor = input<ModalityProfessor | null>(null);
   coordination = input<CoordinationItem | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
+  isCareerProfessor = input(false);
   close = output<void>();
   reviewChanged = output<void>();
 
@@ -78,15 +79,13 @@ export class NoveltySummary {
 
   readonly sections = NOVELTY_SUMMARY_SECTIONS;
 
-  readonly isPlanta = computed(() => {
-    const modality = this.contractModality();
-    return modality != null && isPlantaModality(modality);
-  });
-
   readonly visibleSections = computed(() =>
     this.sections.filter(
       (section) =>
-        !(this.isPlanta() && section.id === 'valores-contratacion'),
+        !(
+          this.isCareerProfessor() &&
+          section.id === 'valores-contratacion'
+        ),
     ),
   );
 
@@ -117,9 +116,12 @@ export class NoveltySummary {
     return professor.nombreCompleto?.trim() || NN_LABEL;
   });
 
-  readonly modalityLabel = computed(
-    () => this.contractModality()?.nombre ?? '-',
-  );
+  readonly modalityLabel = computed(() => {
+    if (this.isCareerProfessor()) {
+      return CAREER_PROFESSOR_TAB_LABEL;
+    }
+    return this.contractModality()?.nombre ?? '-';
+  });
 
   readonly coordinationLabel = computed(() => {
     const coordination = this.coordination();

@@ -67,7 +67,7 @@ export class DirectActivityCard {
   idCoordinacion = input.required<number>();
   idNivelEducativo = input.required<number>();
   idPeriodoUniversidad = input.required<number>();
-  idModalidadContratacion = input.required<number>();
+  idModalidadContratacion = input<number | null>(null);
   idCargaDocente = input<number | null>(null);
   allDirectActivities = input<DirectLearningActivity[]>([]);
   addFormOpen = input(false);

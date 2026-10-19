@@ -13,11 +13,9 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { Label } from '../../../../../../../../shared/components/form/label/label';
 import { Select } from '../../../../../../../../shared/components/form/select/select';
 import { CoordinationService } from '../../../../../data/coordination.service';
-import { forNext } from '../../../../../../../../core/utils/for-next.function';
 import {
   ContractModalityItem,
   CoordinationItem,
-  isPlantaModality,
   ModalityProfessor,
 } from '../../../../../model/coordination.model';
 import { SaveNovedadCargaDocenteRequest } from '../../../../../model/novelty-carga-docente.model';
@@ -171,7 +169,6 @@ export class ChangeContractModality {
       return;
     }
 
-    const esPlanta = this.isSelectedPlanta();
     const formaPago = form.formaPago();
     const isCatedra = isCatedraFormaPago(formaPago);
     const activities = this.activitiesPanel()?.activitySnapshot();
@@ -182,7 +179,6 @@ export class ChangeContractModality {
     const hours = this.resolveDraftHours(isCatedra, activities ?? null);
     const workDate = form.selectedWorkDate();
     const totalNuevo = computeProfessorContractTotal({
-      esPlanta,
       formaPago,
       fechaInicio: workDate?.fechaInicio,
       fechaFin: workDate?.fechaFin,
@@ -197,20 +193,6 @@ export class ChangeContractModality {
       totalAnterior: this.budgetStore.totalAnteriorOf(idCargaDocente),
       totalNuevo,
     });
-  }
-
-  private isSelectedPlanta(): boolean {
-    const selectedId = Number(this.selectedModalityId());
-    let esPlanta = false;
-    forNext(
-      this.coordination()?.modalidadesContratacion,
-      (modality) => {
-        if (modality.id === selectedId) {
-          esPlanta = isPlantaModality(modality);
-        }
-      },
-    );
-    return esPlanta;
   }
 
   private resolveDraftHours(

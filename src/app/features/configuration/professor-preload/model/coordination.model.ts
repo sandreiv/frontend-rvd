@@ -13,6 +13,10 @@ export interface CoordinationUniversityPeriod {
   periodo: string;
 }
 
+export const CAREER_PROFESSOR_TAB_ID = 'career-professors';
+
+export const CAREER_PROFESSOR_TAB_LABEL = 'Planta';
+
 export interface CoordinationContractModality {
   id: number;
   nombre: string;
@@ -28,12 +32,6 @@ export interface ContractModalityItem {
   sigla: string | null;
 }
 
-export function isPlantaModality(
-  modality: CoordinationContractModality,
-): boolean {
-  return modality.esPlanta === true;
-}
-
 export const AVAL_DESARROLLO_ESTADO = 'AVAL DESARROLLO';
 
 export function isAvalDesarrolloCarga(
@@ -41,12 +39,6 @@ export function isAvalDesarrolloCarga(
 ): boolean {
   const value = estadoCarga?.trim().toLocaleUpperCase('es-CO') ?? '';
   return value === AVAL_DESARROLLO_ESTADO;
-}
-
-export function getAssignableModalities(
-  modalities: CoordinationContractModality[],
-): CoordinationContractModality[] {
-  return modalities.filter((item) => !isPlantaModality(item));
 }
 
 export interface CoordinationCentroCosto {
