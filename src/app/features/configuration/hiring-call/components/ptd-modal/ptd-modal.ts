@@ -23,6 +23,7 @@ import { Button } from '../../../../../shared/ui/button/button';
 import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
 import { finalize } from 'rxjs';
+import { InputField } from '../../../../../shared/components/form/input/input-field';
 
 type PtdSectionId = 'detalle-actividades' | 'observaciones' | 'ptd-actividades';
 type PtdStep = 'resumen' | 'ptd';
@@ -78,7 +79,7 @@ function createInitialExpandedSections(): Record<PtdSectionId, boolean> {
 
 @Component({
   selector: 'app-ptd-modal',
-  imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule],
+  imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule, InputField],
   templateUrl: './ptd-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
