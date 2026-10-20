@@ -157,8 +157,12 @@ export class HiringContractModalityDetail {
 
   readonly ptdStatesByProfessorMap = computed(() => {
     const states = this.ptdStatesProfessorsResource.value();
+    const result: Record<number, string> = {};
 
-    return new Map(states.map((item) => [item.idPersonaGeneral, item.estado]));
+    forNext(states, (item) => {
+      result[item.idPersonaGeneral] = item.estado;
+    });
+    return result;
   });
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
@@ -252,7 +256,7 @@ export class HiringContractModalityDetail {
       return null;
     }
 
-    const estadoPTD = this.ptdStatesByProfessorMap().get(professor.idPersonaGeneral);
+    const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
     switch (estadoPTD) {
       case STIPULATED_PTD_STATE:
         return this.buildStatusBadge('Estipulado', 'warning');
