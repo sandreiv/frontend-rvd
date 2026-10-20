@@ -60,10 +60,10 @@ interface ModalityProfessorsEntry {
 
 const NN_LABEL = 'NN';
 const ON_REGISTER_STATE = '0';
-const PENDING_VERIFY_STATE = '1';
-const VERIFIED_STATE = '2';
-const RETURNED_STATE = '3';
-const APPROVED_STATE = '4';
+
+const STIPULATED_PTD_STATE = '0';
+const ACCEPTED_PTD_STATE = '1';
+const REJECTED_PTD_STATE = '2';
 
 const BADGE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 ' +
@@ -137,9 +137,29 @@ export class HiringContractModalityDetail {
     defaultValue: {} as Record<number, ModalityProfessor[]>,
   });
 
+  readonly ptdStatesProfessorsResource = rxResource({
+    params: () => {
+      const idPeriodoUniversitario = this.coordination().idPeriodoUniversidad;
+
+      if (idPeriodoUniversitario == null) {
+        return undefined;
+      }
+
+      return { idPeriodoUniversitario };
+    },
+    stream: ({ params }) => this.hiringCallService.getPtdStatesProfessors(params.idPeriodoUniversitario),
+    defaultValue: []
+  });
+
   readonly modalityProfessorsMap = computed(() =>
     this.modalityProfessorsResource.value(),
   );
+
+  readonly ptdStatesByProfessorMap = computed(() => {
+    const states = this.ptdStatesProfessorsResource.value();
+
+    return new Map(states.map((item) => [item.idPersonaGeneral, item.estado]));
+  });
 
   readonly modalityProfessors = computed<ModalityProfessor[]>(() => {
     const selectedId = this.selectedContractModalityId();
@@ -228,23 +248,20 @@ export class HiringContractModalityDetail {
   }
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
-    if (!professor.estado) {
+    if (!professor.idPersonaGeneral) {
       return null;
     }
 
-    switch (professor.estado) {
-      case ON_REGISTER_STATE:
-        return this.buildStatusBadge('En registro', 'gray');
-      case PENDING_VERIFY_STATE:
-        return this.buildStatusBadge('Enviado para verificar', 'warning');
-      case VERIFIED_STATE:
-        return this.buildStatusBadge('Verificado', 'brand');
-      case RETURNED_STATE:
-        return this.buildStatusBadge('Devuelto', 'error');
-      case APPROVED_STATE:
-        return this.buildStatusBadge('Aprobada', 'success');
+    const estadoPTD = this.ptdStatesByProfessorMap().get(professor.idPersonaGeneral);
+    switch (estadoPTD) {
+      case STIPULATED_PTD_STATE:
+        return this.buildStatusBadge('Estipulado', 'warning');
+      case ACCEPTED_PTD_STATE:
+        return this.buildStatusBadge('Aceptado', 'success');
+      case REJECTED_PTD_STATE:
+        return this.buildStatusBadge('Rechazado', 'error');
       default:
-        return this.buildStatusBadge('Estado desconocido', 'gray');
+        return this.buildStatusBadge('Sin definir', 'gray');
     }
   }
 

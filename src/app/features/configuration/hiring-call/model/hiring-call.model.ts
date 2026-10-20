@@ -91,3 +91,8 @@ export interface PdtInfoWithWeights {
   actividades: ActivityWeights[],
   observacion: ObservacionPtd
 }
+
+export interface PtdStatesProfessors {
+  idPersonaGeneral: number;
+  estado: string;
+}
