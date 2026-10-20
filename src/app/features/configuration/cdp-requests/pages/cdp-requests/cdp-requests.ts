@@ -12,7 +12,7 @@ import {
 import { NotificationService } from '../../../../../core/service/notification-service';
 
 import { CdpService } from '../../data/cdp.service';
-import { CdpContext, FacultyCoordinationItem } from '../../model/cdp-context.model';
+import { CdpContext, CdpSearchResult, FacultyCoordinationItem } from '../../model/cdp-context.model';
 import {
   CdpAttachment,
   CdpRequest,
@@ -47,6 +47,7 @@ import {
 } from '../../../professor-preload/model/coordination.model';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { AuthService } from '../../../../../core/service/auth-service';
+import { CdpSearchModal } from '../../components/cdp-search-modal/cdp-search-modal';
 
 @Component({
   selector: 'app-cdp-requests',
@@ -59,6 +60,7 @@ import { AuthService } from '../../../../../core/service/auth-service';
     Tooltip,
     NewModal,
     DocumentPreview,
+    CdpSearchModal,
   ],
   templateUrl: './cdp-requests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -92,7 +94,9 @@ export class CdpRequests implements OnInit {
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
   readonly isSendingCdp = signal(false);
-  readonly isGeneratingCdpCode = signal(false);
+
+  readonly showCdpSearchModal = signal(false);
+  readonly selectedCdpTesoreria = signal<CdpSearchResult | null>(null);
 
   readonly showDocumentPreview = signal(false);
   readonly selectedDocument = signal<DocumentRequest | null>(null);
@@ -1022,27 +1026,21 @@ export class CdpRequests implements OnInit {
     });
   }
 
-  generateCdpCode(): void {
-    const idSolicitud = this.selectedFaculty()?.solicitud.id
-    if (!idSolicitud) return;
-
-    if (this.isGeneratingCdpCode() || !this.isCdpOnViceAcademic()) {
+  openCdpSearchModal(): void {
+    if (!this.isCdpOnViceAcademic()) {
       return;
     }
 
-    this.isGeneratingCdpCode.set(true);
-    this.cdpService
-      .approveCdpRequest(idSolicitud)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.isGeneratingCdpCode.set(false)),
-      )
-    .subscribe({
-      next: () => {
-        this.resetSelectedFaculty();
-        this.cdpRequestsForAcademicsResource.reload();
-      }
-    })
+    this.showCdpSearchModal.set(true);
+  }
+
+  closeCdpSearchModal(): void {
+    this.showCdpSearchModal.set(false);
+  }
+
+  selectCdpFromPresupuesto(cdp: CdpSearchResult): void {
+    this.selectedCdpTesoreria.set(cdp);
+    this.closeCdpSearchModal();
   }
 
   openAttachmentPreview(

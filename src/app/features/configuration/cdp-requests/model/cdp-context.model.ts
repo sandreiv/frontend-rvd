@@ -27,6 +27,16 @@ export interface FacultyCoordinationItem extends CoordinationItem {
   solicitud: CdpRequest
 }
 
+export interface CdpSearchResult {
+  idRubro: number;
+  idCdp: number;
+  numero: string;
+  fecha: string;
+  vigencia: string;
+  articulo: string;
+  descripcion: string;
+}
+
 
 export function normalizeFacultyRequestCdpItem(item: FacultyRequestCdpApiItem): FacultyCoordinationItem {
   return {
@@ -43,6 +53,7 @@ export function normalizeFacultyRequestCdpItem(item: FacultyRequestCdpApiItem): 
     periodoUniversidad: formatUniversityPeriod(item.periodoUniversidad),
     idPeriodoUniversidad: item.periodoUniversidad.id ?? null,
     anioUniversidad: item.periodoUniversidad.anio ?? null,
+    idUnidadRegional: item.unidadRegional.id ?? null,
     solicitud: item.solicitud,
 
     nivelEducativo: '',
