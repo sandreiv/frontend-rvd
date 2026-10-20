@@ -113,6 +113,7 @@ export class HiringContractModalityDetail {
   readonly openMenuKey = signal<string | null>(null);
   readonly isPtdModalOpen = signal(false);
   readonly ptdProfessorId = signal<number | null>(null);
+  readonly ptdPeriodId = signal<number | null>(null);
 
   readonly professorMenuActions: ProfessorMenuAction[] = [
     {
@@ -215,6 +216,7 @@ export class HiringContractModalityDetail {
 
     if (actionId === 'plan-trabajo') {
       this.ptdProfessorId.set(professor.idCargaDocente);
+      this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
       this.isPtdModalOpen.set(true);
     }
   }
@@ -222,6 +224,7 @@ export class HiringContractModalityDetail {
   closePtdModal(): void {
     this.isPtdModalOpen.set(false);
     this.ptdProfessorId.set(null);
+    this.ptdPeriodId.set(null);
   }
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {

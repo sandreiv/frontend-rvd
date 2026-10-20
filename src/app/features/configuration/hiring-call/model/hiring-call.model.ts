@@ -68,6 +68,7 @@ export interface SavePtdPayload {
   idDetalleNovedadCargaDocente: number | null;
   idTipoActividad: number;
   idPersonaGeneral: number;
+  idPeriodoUniversitario: number;
 }
 
 export interface ObservacionPtd {

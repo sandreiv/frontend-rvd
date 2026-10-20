@@ -160,10 +160,10 @@ export class HiringCallService {
    * @param idCargaDocente Identificador de la carga docente.
    * @returns Observable con la información del ptd y la especificación de la ponderación por actividades
    */
-  getInfoPtdWithWeights(idPersonaGeneral: number, idCargaDocente: number): Observable<PdtInfoWithWeights> {
+  getInfoPtdWithWeights(idPersonaGeneral: number, idCargaDocente: number, idPeriodoUniversitario: number): Observable<PdtInfoWithWeights> {
     return this.webRequestService.get<PdtInfoWithWeights>(
       `${this.endpoint}/get-ptd-with-weights`,
-      { idPersonaGeneral, idCargaDocente }
+      { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario }
     );
   }
 }
