@@ -490,7 +490,7 @@ export class AlterationContractModalityDetail {
       });
     }
 
-    if (this.permissions.canDeleteProfessor()) {
+    if (!this.isCareerTabSelected() && this.permissions.canDeleteProfessor()) {
       actions.push({
         id: 'eliminar',
         label: 'Eliminar',

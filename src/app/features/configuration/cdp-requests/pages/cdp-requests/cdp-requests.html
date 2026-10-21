@@ -234,9 +234,9 @@
 
     <!-- SOLICITAR CDP -->
     @if (canShowCdpSection()) {
-      <div class="mt-4 w-full lg:w-1/2">
+      <div class="mt-4 grid grid-cols-1 items-stretch gap-4 lg:grid-cols-8">
         <section
-          class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:p-6"
+          class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:col-span-3 lg:p-6"
         >
 
           <!-- TÍTULO -->
@@ -553,21 +553,104 @@
                 </app-button>
               </div>
             }
-            @if (canApproveCdpRequest()) {
-              <div class="mt-4 flex justify-end">
-                <app-button
-                  type="button"
-                  size="sm"
-                  [disabled]="!isCdpOnViceAcademic()"
-                  (btnClick)="generateCdpCode()"
-                >
-                  Generar código CDP
-                </app-button>
-              </div>
-            }
           </div>
         </div>
       </section>
+
+      @if (canApproveCdpRequest() && isCdpOnViceAcademic()) {
+        <section class="flex min-w-0 flex-col gap-4 self-stretch rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 lg:col-span-5 lg:p-6">
+          <div class="flex shrink-0 items-center gap-3">
+            <div class="min-w-0 flex-1">
+              <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
+                Buscar CDP
+              </h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Busca o gestiona los CDPs disponibles desde presupuesto.
+              </p>
+            </div>
+
+            <app-button
+              type="button"
+              size="sm"
+              [disabled]="!!selectedCdpTesoreria()"
+              (btnClick)="openCdpSearchModal()"
+            >
+              <app-icon
+                name="plus"
+                size="sm"
+              />
+            </app-button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
+            <table class="w-full min-w-[900px] table-fixed text-left text-sm">
+              <colgroup>
+                <col class="w-[10%]" />
+                <col class="w-[12%]" />
+                <col class="w-[10%]" />
+                <col class="w-[12%]" />
+                <col class="w-[41%]" />
+                <col class="w-[15%]" />
+              </colgroup>
+
+              <thead class="bg-gray-50 dark:bg-white/5">
+                <tr>
+                  <th class="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Número</th>
+                  <th class="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Fecha</th>
+                  <th class="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Vigencia</th>
+                  <th class="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Artículo</th>
+                  <th class="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Descripción</th>
+                  <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">Acción</th>
+                </tr>
+              </thead>
+
+              <tbody class="divide-y divide-gray-200 dark:divide-white/10">
+                @if (selectedCdpTesoreria(); as cdp) {
+                  <tr>
+                    <td class="break-words px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {{ cdp.numero }}
+                    </td>
+
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {{ cdp.fecha }}
+                    </td>
+
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {{ cdp.vigencia }}
+                    </td>
+
+                    <td class="break-words px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {{ cdp.articulo }}
+                    </td>
+
+                    <td class="whitespace-normal break-words px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {{ cdp.descripcion }}
+                    </td>
+
+                    <td class="px-4 py-3 text-center">
+                      <div class="flex justify-center">
+                        <app-button
+                          type="button"
+                          size="sm"
+                          variant="error"
+                        >
+                          Desrelacionar
+                        </app-button>
+                      </div>
+                    </td>
+                  </tr>
+                } @else {
+                  <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                      No hay ningún CDP asignado.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
     </div>
   }
     @if (canCreateCdpRequest()) {
@@ -595,3 +678,11 @@
     />
   </div>
 </div>
+
+<app-cdp-search-modal
+  [isOpen]="showCdpSearchModal()"
+  [idUnidad]="selectedFaculty()?.idUnidadRegional ?? null"
+  [anioVigencia]="selectedFaculty()?.anioUniversidad ?? null"
+  (select)="selectCdpFromPresupuesto($event)"
+  (close)="closeCdpSearchModal()"
+/>

@@ -17,6 +17,7 @@ import {
   HiringCallItem,
   PdtInfoWithWeights,
   ProfessorInformationItem,
+  PtdStatesProfessors,
   SavePtdRequest,
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
@@ -169,12 +170,26 @@ export class HiringCallService {
    * 
    * @param idPersonaGeneral Identificador del docente.
    * @param idCargaDocente Identificador de la carga docente.
+   * @param idPeriodoUniversitario Identificador del periodo universitario.
    * @returns Observable con la información del ptd y la especificación de la ponderación por actividades
    */
-  getInfoPtdWithWeights(idPersonaGeneral: number, idCargaDocente: number): Observable<PdtInfoWithWeights> {
+  getInfoPtdWithWeights(idPersonaGeneral: number, idCargaDocente: number, idPeriodoUniversitario: number): Observable<PdtInfoWithWeights> {
     return this.webRequestService.get<PdtInfoWithWeights>(
       `${this.endpoint}/get-ptd-with-weights`,
-      { idPersonaGeneral, idCargaDocente }
+      { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario }
+    );
+  }
+
+  /**
+   * Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado
+   * 
+   * @param idPeriodoUniversitario Identificador del periodo universitario.
+   * @returns Observable con los estados del ptd por persona
+   */
+  getPtdStatesProfessors(idPeriodoUniversitario: number): Observable<PtdStatesProfessors[]> {
+    return this.webRequestService.get<PtdStatesProfessors[]>(
+      `${this.endpoint}/get-ptd-states-professors`,
+      { idPeriodoUniversitario }
     );
   }
 }

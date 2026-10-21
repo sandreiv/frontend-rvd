@@ -23,6 +23,7 @@ import { Button } from '../../../../../shared/ui/button/button';
 import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
 import { finalize } from 'rxjs';
+import { InputField } from '../../../../../shared/components/form/input/input-field';
 
 type PtdSectionId = 'detalle-actividades' | 'observaciones' | 'ptd-actividades';
 type PtdStep = 'resumen' | 'ptd';
@@ -78,7 +79,7 @@ function createInitialExpandedSections(): Record<PtdSectionId, boolean> {
 
 @Component({
   selector: 'app-ptd-modal',
-  imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule],
+  imports: [Modal, Icon, CollapsibleSection, Button, Select, ReactiveFormsModule, InputField],
   templateUrl: './ptd-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -88,6 +89,7 @@ export class PtdModal {
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
+  readonly idPeriodoUniversitario = input<number | null>(null);
   readonly close = output<void>();
 
   readonly isSaving = signal(false);
@@ -123,16 +125,18 @@ export class PtdModal {
     params: () => {
       const idCargaDocente = this.idCargaDocente();
       const idPersonaGeneral = this.information()?.idPersonaGeneral;
+      const idPeriodoUniversitario = this.idPeriodoUniversitario();
 
-      if (!this.isOpen() || idCargaDocente == null || idPersonaGeneral == null) {
+      if (!this.isOpen() || idCargaDocente == null || idPersonaGeneral == null || idPeriodoUniversitario == null) {
         return undefined;
       }
 
-      return { idPersonaGeneral, idCargaDocente };
+      return { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario };
     },
     stream: ({ params }) => this.hiringCallService.getInfoPtdWithWeights(
       params.idPersonaGeneral,
-      params.idCargaDocente
+      params.idCargaDocente,
+      params.idPeriodoUniversitario
     )
   });
 
@@ -310,11 +314,12 @@ export class PtdModal {
 
     const idPersonaGeneral = this.information()?.idPersonaGeneral;
     const idCargaDocente = this.idCargaDocente();
-    if (idPersonaGeneral == null || idCargaDocente == null || !this.ponderacionValida()) {
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+    if (idPersonaGeneral == null || idCargaDocente == null || idPeriodoUniversitario == null || !this.ponderacionValida()) {
       return
     }
 
-    const result = this.buildSavePayload(idPersonaGeneral, idCargaDocente);
+    const result = this.buildSavePayload(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario);
     if (result.registros.length === 0 || result.observacion == null) {
       return;
     }
@@ -527,7 +532,7 @@ export class PtdModal {
     return ponderaciones;
   }
 
-  private buildSavePayload(idPersonaGeneral: number, idCargaDocente: number): SavePtdRequest {
+  private buildSavePayload(idPersonaGeneral: number, idCargaDocente: number, idPeriodoUniversitario: number): SavePtdRequest {
     const activities = this.ptdActivities() ?? [];
     const formValues = this.ptdForm.getRawValue();
     
@@ -547,7 +552,8 @@ export class PtdModal {
         nivel: this.isSecondLanguage(activity.criterio) ? formActivity['nivel'] : null,
         ponderado: Number(formActivity['ponderacion']),
         idTipoActividad: activity.id,
-        idPersonaGeneral
+        idPersonaGeneral,
+        idPeriodoUniversitario
       }
 
       const esPtd = activity.codigo === 'PTD';
