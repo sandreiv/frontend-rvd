@@ -4,4 +4,200 @@
   iconName="briefcase"
   iconVariant="brand"
 >
+  <app-public-hiring-table
+    [records]="hiringRecords()"
+    [emptyMessage]="emptyMessage()"
+    (refreshRecords)="onRefreshRecords()"
+    (startProcess)="onStartProcess($event)"
+  />
 </app-section-frame>
+
+@if (selectedHiringRecord()) {
+  <div class="mt-5">
+
+    @if (isLoadingBasicInformation()) {
+      <div
+        class="rounded-2xl border border-dashed border-gray-200
+               bg-white px-5 py-8 text-center text-sm text-gray-500
+               dark:border-gray-800 dark:bg-white/3 dark:text-gray-400"
+      >
+        Cargando información básica...
+      </div>
+
+    } @else if (basicInformationError()) {
+      <div
+        class="rounded-2xl border border-error-200 bg-error-50
+               px-5 py-6 text-sm text-error-600
+               dark:border-error-500/30 dark:bg-error-500/10"
+      >
+        No fue posible cargar la información básica del docente.
+      </div>
+
+    } @else if (basicInformation(); as information) {
+
+      <div
+        class="grid grid-cols-1 items-start gap-5
+               xl:grid-cols-[37%_minmax(0,1fr)]"
+      >
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="min-w-0 flex flex-col gap-5">
+
+          <!-- INFORMACIÓN BÁSICA -->
+          <app-public-basic-information
+            [information]="information"
+          />
+
+          <!-- FORMACIÓN ACADÉMICA -->
+          <app-public-academic-training
+            [academicLevels]="academicLevels()"
+            [academicTitles]="academicTitles()"
+            [countries]="countries()"
+            [titlesLoading]="titlesLoading()"
+            [saving]="savingAcademicTraining()"
+
+            [latestTraining]="latestAcademicTraining()"
+            [loadingLatest]="academicTrainingLoading()"
+            [latestLoadError]="academicTrainingLoadError()"
+
+            (academicLevelChange)="onAcademicLevelChange($event)"
+            (titleQueryChange)="onTitleQueryChange($event)"
+            (saveTraining)="onSaveAcademicTraining($event)"
+          />
+
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="min-w-0 space-y-4">
+
+          <!-- ACTIVIDADES -->
+          <app-public-activities
+            [activities]="activities()"
+            [observation]="activityObservation()"
+            [loading]="activitiesLoading()"
+            [error]="activitiesLoadError()"
+            [expanded]="activitiesExpanded()"
+            (expandedChange)="
+              onActivitiesExpandedChange(
+                $event
+              )
+            "
+          />
+
+          <!-- PLAN DE TRABAJO DIGITAL -->
+          <app-public-digital-work-plan
+            [plan]="digitalWorkPlan()"
+            [loading]="digitalWorkPlanLoading()"
+            [error]="digitalWorkPlanLoadError()"
+            [expanded]="digitalWorkPlanExpanded()"
+
+            (expandedChange)="
+              onDigitalWorkPlanExpandedChange(
+                $event
+              )
+            "
+          />
+
+          <!-- DOCUMENTOS DE SOPORTE -->
+          <app-public-support-documents
+            [categories]="supportDocumentCategories()"
+            [documents]="supportDocuments()"
+
+            [loading]="supportDocumentsLoading()"
+            [error]="supportDocumentsLoadError()"
+
+            [expanded]="supportDocumentsExpanded()"
+
+            [uploading]="supportDocumentsUploading()"
+            [uploadProgress]="supportDocumentsUploadProgress()"
+
+            [downloadingFileId]="supportDocumentDownloadingFileId()"
+
+            [deleting]="supportDocumentDeletingFileId() !== null"
+
+            (expandedChange)="
+              onSupportDocumentsExpandedChange(
+                $event
+              )
+            "
+
+            (uploadRequested)="
+              onUploadSupportDocuments(
+                $event
+              )
+            "
+
+            (viewRequested)="
+              onViewSupportDocument(
+                $event
+              )
+            "
+
+            (downloadRequested)="
+              onDownloadSupportDocument(
+                $event
+              )
+            "
+
+            (deleteRequested)="
+              onRequestDeleteSupportDocument($event)
+            "
+
+          />
+
+        </div>
+
+      </div>
+    }
+
+  </div>
+
+}
+
+<!-- VISOR DE DOCUMENTOS PTD -->
+<app-document-preview
+  [isOpen]="supportDocumentPreviewOpen()"
+  [autoLoad]="false"
+  [isLoading]="supportDocumentPreviewLoading()"
+  [error]="supportDocumentPreviewError()"
+  [fileName]="supportDocumentPreviewFileName()"
+  [previewUrl]="supportDocumentPreviewUrl()"
+  [downloadDisabled]="supportDocumentPreviewLoading()"
+  (close)="closeSupportDocumentPreview()"
+  (download)="downloadSupportDocumentPreview()"
+/>
+
+<!-- CONFIRMACIÓN DE ELIMINACIÓN DOCUMENTAL PTD -->
+<app-new-modal
+  [isOpen]="
+    supportDocumentPendingDeletion() !== null
+  "
+
+  title="Eliminar documento"
+
+  [message]="
+    '¿Estás seguro de que deseas eliminar el documento «' +
+    (supportDocumentPendingDeletion()?.archivo?.nombre ?? '') +
+    '»? Esta acción no se puede deshacer.'
+  "
+
+  variant="danger"
+
+  [buttonText]="
+    supportDocumentDeletingFileId() !== null
+      ? 'Eliminando...'
+      : 'Sí, eliminar'
+  "
+
+  [showCancelButton]="true"
+
+  cancelButtonText="No, cancelar"
+
+  (confirm)="
+    confirmDeleteSupportDocument()
+  "
+
+  (close)="
+    closeSupportDocumentDeleteModal()
+  "
+/>
