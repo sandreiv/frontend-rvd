@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { WebRequestService } from '../../../../core/service/web-request-service';
-import { CdpContext } from '../model/cdp-context.model';
+import { CdpContext, CdpSearchResult } from '../model/cdp-context.model';
 import { CdpRequest } from '../model/cdp-request.model';
 
 @Injectable({
@@ -203,6 +203,21 @@ export class CdpService {
   sendCdpToVice(idSolicitud: number): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/send-request-to-vice/${idSolicitud}`, {}
+    );
+  }
+  
+  /**
+   * Busca información relacionada al CDP generado por presupuesto de un numero de CDP especifico
+   * 
+   * @param numeroCdp Numero del CDP a buscar
+   * @param idUnidad Identificador de la unidad regional
+   * @param anioVigencia Año de vigencia de la solicitud generada en la facultad
+   * @returns Observable con la lista de los CDPs encontrados
+   */
+  searchCdpResults(numeroCdp: string, idUnidad: number, anioVigencia: number): Observable<CdpSearchResult[]> {
+    return this.webRequestService.get<CdpSearchResult[]>(
+      `${this.endpoint}/search-cdps`,
+      { numeroCdp, idUnidad, anioVigencia }
     );
   }
 

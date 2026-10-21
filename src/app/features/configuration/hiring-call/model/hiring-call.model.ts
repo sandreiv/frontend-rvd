@@ -72,6 +72,7 @@ export interface SavePtdPayload {
   idDetalleNovedadCargaDocente: number | null;
   idTipoActividad: number;
   idPersonaGeneral: number;
+  idPeriodoUniversitario: number;
 }
 
 export interface ObservacionPtd {
@@ -93,4 +94,9 @@ export interface ActivityWeights {
 export interface PdtInfoWithWeights {
   actividades: ActivityWeights[],
   observacion: ObservacionPtd
+}
+
+export interface PtdStatesProfessors {
+  idPersonaGeneral: number;
+  estado: string;
 }
