@@ -89,6 +89,7 @@ export class ProfessorAddModal {
   isOpen = input(false);
   embedded = input(false);
   idCarga = input<number | null>(null);
+  idConvocatoria = input<number | null>(null);
   anioUniversidad = input<number | null>(null);
   periodoUniversidad = input<string | null>(null);
   contractModality = input<CoordinationContractModality | null>(null);
@@ -1115,10 +1116,11 @@ export class ProfessorAddModal {
   private buildSearchParams(term: string): SearchGeneralPersonParams {
     const value = term.trim();
     const idModalidadContratacion = this.contractModality()?.id;
+    const idConvocatoria = this.idConvocatoria() ?? undefined;
     if (/^\d+$/.test(value)) {
-      return { documento: value, idModalidadContratacion };
+      return { documento: value, idModalidadContratacion, idConvocatoria };
     }
 
-    return { nombre: value, idModalidadContratacion };
+    return { nombre: value, idModalidadContratacion, idConvocatoria };
   }
 }
