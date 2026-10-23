@@ -109,8 +109,17 @@ export class TypeaheadSelect implements ControlValueAccessor {
     this.syncLabelFromValue();
   }
 
-  writeValue(value: string | null | undefined): void {
+  writeValue(
+    value: string | null | undefined,
+  ): void {
     this.value = value ?? '';
+
+    if (!this.value) {
+      this.searchText = '';
+      this.isOpen = false;
+      return;
+    }
+
     this.syncLabelFromValue();
   }
 
