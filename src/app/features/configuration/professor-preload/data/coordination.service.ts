@@ -203,6 +203,9 @@ export class CoordinationService {
     if (params.idModalidadContratacion != null) {
       query['idModalidadContratacion'] = params.idModalidadContratacion;
     }
+    if (params.idConvocatoria != null) {
+      query['idConvocatoria'] = params.idConvocatoria;
+    }
 
     return this.webRequestService.get<ProfessorSearchResult[]>(
       `${this.endpoint}/search-professor`,
