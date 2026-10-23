@@ -29,6 +29,29 @@ import { resolveModalityKind } from '../../../professor-preload/model/professor-
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+/**
+ * Semanas equivalentes a 4 meses (4 * 52 / 12 ≈ 17.3).
+ * Coincide con el rango de 4 meses registrado en las convocatorias.
+ */
+const SEMANAS_CUATRO_MESES = 17;
+
+/**
+ * Semanas equivalentes a 11 meses (11 * 52 / 12 ≈ 47.67).
+ * Mismo criterio que FechasConvocatoriaCalculator.SEMANAS_ONCE_MESES del backend.
+ */
+const SEMANAS_ONCE_MESES = 48;
+
+/**
+ * Tolerancia de 4 semanas por encima y por debajo del valor de referencia,
+ * para admitir rangos cercanos a los 4 y 11 meses.
+ */
+const MARGEN_SEMANAS = 4;
+
+const SEMANAS_MIN_CUATRO_MESES = SEMANAS_CUATRO_MESES - MARGEN_SEMANAS;
+const SEMANAS_MAX_CUATRO_MESES = SEMANAS_CUATRO_MESES + MARGEN_SEMANAS;
+const SEMANAS_MIN_ONCE_MESES = SEMANAS_ONCE_MESES - MARGEN_SEMANAS;
+const SEMANAS_MAX_ONCE_MESES = SEMANAS_ONCE_MESES + MARGEN_SEMANAS;
+
 @Component({
   selector: 'app-modality-form-modal',
   imports: [
@@ -64,6 +87,16 @@ export class ModalityFormModal {
     this.isEditMode() ? 'Actualizar' : 'Agregar',
   );
 
+  readonly isTiempoCompletoOcasionalSelected = computed(() => {
+    const tipoModalidad = this.tipoModalidadValue();
+    const label =
+      this.modalityOptions().find((opt) => opt.value === tipoModalidad)?.label ??
+      tipoModalidad ??
+      null;
+
+    return resolveModalityKind(label) === 'tiempoCompletoOcasional';
+  });
+
   /**
    * La modalidad cátedra no maneja días de vacaciones: el campo queda
    * deshabilitado y no se envía valor al guardar.
@@ -90,6 +123,43 @@ export class ModalityFormModal {
     this.form.controls.tipoModalidad.valueChanges,
     { initialValue: this.form.controls.tipoModalidad.value },
   );
+
+  private readonly fechaInicioValue = toSignal(
+    this.form.controls.fechaInicio.valueChanges,
+    { initialValue: this.form.controls.fechaInicio.value },
+  );
+
+  private readonly fechaFinValue = toSignal(
+    this.form.controls.fechaFin.valueChanges,
+    { initialValue: this.form.controls.fechaFin.value },
+  );
+
+  /**
+   * Modalidad de tiempo completo ocasional con rango de 4 o 11 meses
+   * (con 4 semanas de tolerancia por encima y por debajo):
+   * las semanas quedan bloqueadas y se toman del rango de fechas.
+   */
+  readonly isSemanasBloqueadas = computed(() => {
+    if (!this.isTiempoCompletoOcasionalSelected()) {
+      return false;
+    }
+
+    const semanas = this.calculateWeeks(
+      this.fechaInicioValue() ?? '',
+      this.fechaFinValue() ?? '',
+    );
+
+    if (semanas == null) {
+      return false;
+    }
+
+    const enRangoCuatroMeses =
+      semanas >= SEMANAS_MIN_CUATRO_MESES && semanas <= SEMANAS_MAX_CUATRO_MESES;
+    const enRangoOnceMeses =
+      semanas >= SEMANAS_MIN_ONCE_MESES && semanas <= SEMANAS_MAX_ONCE_MESES;
+
+    return enRangoCuatroMeses || enRangoOnceMeses;
+  });
 
   constructor() {
     effect(() => {
@@ -125,14 +195,20 @@ export class ModalityFormModal {
 
     this.form.controls.tipoModalidad.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.syncDateFieldsState());
+      .subscribe(() => {
+        this.syncSemanasFromDates();
+        this.syncDateFieldsState();
+      });
 
     merge(
       this.form.controls.fechaInicio.valueChanges,
       this.form.controls.fechaFin.valueChanges,
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.syncSemanasFromDates());
+      .subscribe(() => {
+        this.syncSemanasFromDates();
+        this.syncDateFieldsState();
+      });
   }
 
   onSemanasManualEdit(): void {
@@ -149,14 +225,26 @@ export class ModalityFormModal {
     const label =
       this.modalityOptions().find((opt) => opt.value === tipoModalidad)
         ?.label ?? tipoModalidad;
-    const diasRaw = this.form.controls.diasVacaciones.value;
-    const semanasRaw = this.form.controls.semanas.value;
+    const rawValues = this.form.getRawValue();
+    const diasRaw = rawValues.diasVacaciones;
+    const semanasRaw = rawValues.semanas;
     const diasVacaciones = diasRaw === '' || diasRaw == null ? null : Number(diasRaw);
-    const semanas = semanasRaw === '' || semanasRaw == null ? null : Number(semanasRaw);
 
     const editing = this.editingItem();
     const skipDateFields = this.isHiringCall();
     const skipVacaciones = this.isCatedraSelected();
+
+    // Con las semanas bloqueadas el valor es el calculado desde el rango de fechas.
+    const semanasCalculadas = this.calculateWeeks(
+      rawValues.fechaInicio ?? '',
+      rawValues.fechaFin ?? '',
+    );
+    const semanas =
+      this.isSemanasBloqueadas() && semanasCalculadas != null
+        ? semanasCalculadas
+        : semanasRaw === '' || semanasRaw == null
+          ? null
+          : Number(semanasRaw);
 
     this.saved.emit({
       id: editing?.id ?? '',
@@ -183,7 +271,8 @@ export class ModalityFormModal {
       return;
     }
 
-    if (this.semanasManuallyEdited) {
+    // Con las semanas bloqueadas el valor siempre proviene del rango de fechas.
+    if (this.semanasManuallyEdited && !this.isSemanasBloqueadas()) {
       return;
     }
 
@@ -222,6 +311,7 @@ export class ModalityFormModal {
 
   private syncDateFieldsState(): void {
     const skipDateFields = this.isHiringCall();
+    const lockSemanas = this.isSemanasBloqueadas();
 
     const fechaInicio = this.form.controls.fechaInicio;
     const fechaFin = this.form.controls.fechaFin;
@@ -248,14 +338,22 @@ export class ModalityFormModal {
 
     fechaInicio.enable({ emitEvent: false });
     fechaFin.enable({ emitEvent: false });
-    semanas.enable({ emitEvent: false });
 
     fechaInicio.setValidators(Validators.required);
     fechaFin.setValidators(Validators.required);
-    semanas.setValidators(Validators.required);
 
     fechaInicio.updateValueAndValidity({ emitEvent: false });
     fechaFin.updateValueAndValidity({ emitEvent: false });
+
+    if (lockSemanas) {
+      semanas.disable({ emitEvent: false });
+      semanas.setValidators([]);
+      semanas.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    semanas.enable({ emitEvent: false });
+    semanas.setValidators(Validators.required);
     semanas.updateValueAndValidity({ emitEvent: false });
   }
 }

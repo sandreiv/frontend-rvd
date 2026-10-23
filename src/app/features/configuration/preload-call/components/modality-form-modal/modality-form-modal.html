@@ -70,6 +70,12 @@
             placeholder="Se calcula automáticamente"
             [step]="1"
             [min]="'1'"
+            [disabled]="isSemanasBloqueadas()"
+            [hint]="
+              isSemanasBloqueadas()
+                ? 'Calculado a partir de la fecha de inicio y fin'
+                : ''
+            "
             (valueChange)="onSemanasManualEdit()"
           />
         </div>
