@@ -31,6 +31,7 @@ import {
 } from '../../../professor-preload/model/coordination.model';
 import { HiringCallService } from '../../data/hiring-call.service';
 import { DraftContract } from '../draft-contract/draft-contract';
+import { PermissionService } from '../../../../../core/service/permission-service';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -107,6 +108,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 })
 export class HiringContractModalityDetail {
   private readonly hiringCallService = inject(HiringCallService);
+  private readonly permissions = inject(PermissionService);
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
@@ -118,19 +120,6 @@ export class HiringContractModalityDetail {
   readonly ptdPeriodId = signal<number | null>(null);
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly isDraftContractModalOpen = signal(false);
-
-  readonly professorMenuActions: ProfessorMenuAction[] = [
-    {
-      id: 'plan-trabajo',
-      label: 'Plan de trabajo',
-      icon: 'file',
-    },
-    {
-      id: 'diligenciar-contrato',
-      label: 'Diligenciar contrato',
-      icon: 'file',
-    }
-  ];
 
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
@@ -244,6 +233,8 @@ export class HiringContractModalityDetail {
     () => this.selectedContractModalityId() === CAREER_PROFESSOR_TAB_ID,
   );
 
+  readonly isCargaEnAvalDesarrollo = computed(() => (this.coordination().estadoCarga === 'AVAL DESARROLLO'));
+
   constructor() {
     effect(() => {
       const tabs = this.modalityTabs();
@@ -276,6 +267,39 @@ export class HiringContractModalityDetail {
     this.openMenuKey.set(null);
   }
 
+  resolveProfessorMenuAction(professor: ModalityProfessor): ProfessorMenuAction[] {
+    const hasLoad = professor.tieneCarga === true;
+
+    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
+
+    const actions: ProfessorMenuAction[] = [];
+    if (this.permissions.canSavePtd()) {
+      actions.push({
+        id: 'plan-trabajo',
+        label: 'Plan de trabajo',
+        icon: 'file',
+      });
+    }
+
+    if (this.permissions.canSaveContract()) {
+      actions.push({
+        id: 'diligenciar-contrato',
+        label: 'Diligenciar contrato',
+        icon: 'file',
+      });
+    }
+
+    if (this.permissions.canReviewPtd()) {
+      actions.push({
+        id: 'revisar-ptd',
+        label: 'Revisar plan de trabajo',
+        icon: 'eye',
+      });
+    }
+
+    return actions;
+  }
+
   onProfessorMenuAction(
     actionId: string,
     professor: ModalityProfessor,
@@ -290,6 +314,9 @@ export class HiringContractModalityDetail {
     if (actionId === 'diligenciar-contrato') {
       this.draftContractProfessorId.set(professor.idCargaDocente);
       this.isDraftContractModalOpen.set(true);
+    }
+    if (actionId === 'revisar-ptd') {
+      
     }
   }
 
@@ -312,11 +339,11 @@ export class HiringContractModalityDetail {
     const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
     switch (estadoPTD) {
       case STIPULATED_PTD_STATE:
-        return this.buildStatusBadge('Estipulado', 'warning');
+        return this.buildStatusBadge('Plan estipulado', 'warning');
       case ACCEPTED_PTD_STATE:
-        return this.buildStatusBadge('Aceptado', 'success');
+        return this.buildStatusBadge('Plan aceptado', 'success');
       case REJECTED_PTD_STATE:
-        return this.buildStatusBadge('Rechazado', 'error');
+        return this.buildStatusBadge('Plan rechazado', 'error');
       default:
         return this.buildStatusBadge('Sin definir', 'gray');
     }

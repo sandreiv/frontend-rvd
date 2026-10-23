@@ -77,6 +77,15 @@ export const VERIFY_PROFESSORS_FUNC = {
   DECLINE: '05_02',
 } as const;
 
+export const HIRING_FUNC = {
+  SAVE_PTD: '06_01',
+  SAVE_CONTRACT: '06_02',
+  REVIEW_PTD: '06_03',
+  APPROVE_PTD_TH: '06_04',
+  DECLINE_PTD_TH: '06_05',
+  PARENT: '06',
+} as const;
+
 export function resolveFuncCodigoFromUrl(url: string): string | null {
   const path = url.split('?')[0].split('#')[0];
   const entries = Object.entries(FUNC_ROUTE_MAP);

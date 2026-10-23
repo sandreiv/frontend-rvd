@@ -70,7 +70,7 @@
                 className="w-56 p-2"
                 (close)="closeProfessorMenu()"
               >
-                @for (action of professorMenuActions; track action.id) {
+                @for (action of resolveProfessorMenuAction(professor); track action.id) {
                   <app-item
                     (itemClick)="onProfessorMenuAction(action.id, professor)"
                   >

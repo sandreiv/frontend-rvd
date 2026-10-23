@@ -1,5 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
-import {CDP_FUNC, PRELOAD_FUNC, VERIFY_PROFESSORS_FUNC, VERIFY_FUNC } from '../config/func-route.map';
+import {CDP_FUNC, PRELOAD_FUNC, VERIFY_PROFESSORS_FUNC, VERIFY_FUNC, HIRING_FUNC } from '../config/func-route.map';
 import { FuncionalidadNodo } from '../model/funcionalidad.model';
 import { forNext } from '../utils/for-next.function';
 import { MenuService } from './menu-service';
@@ -145,6 +145,26 @@ export class PermissionService {
 
   canDownloadProfessorNoveltyPdf(): boolean {
     return this.can(PRELOAD_FUNC.DOWNLOAD_PROFESSOR_NOVELTY_PDF);
+  }
+
+  canSavePtd(): boolean {
+    return this.can(HIRING_FUNC.SAVE_PTD);
+  }
+
+  canSaveContract(): boolean {
+    return this.can(HIRING_FUNC.SAVE_CONTRACT);
+  }
+
+  canReviewPtd(): boolean {
+    return this.can(HIRING_FUNC.REVIEW_PTD);
+  }
+
+  canApprovePtdTh(): boolean {
+    return this.can(HIRING_FUNC.APPROVE_PTD_TH);
+  }
+
+  canDeclinePtdTh(): boolean {
+    return this.can(HIRING_FUNC.DECLINE_PTD_TH);
   }
 
 }
