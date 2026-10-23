@@ -159,6 +159,7 @@ export interface SearchGeneralPersonParams {
   nombre?: string;
   documento?: string;
   idModalidadContratacion?: number;
+  idConvocatoria?: number;
 }
 
 export interface ModalityFormItem {
