@@ -39,6 +39,7 @@
             placeholder="Ingrese los días de vacaciones"
             [step]="1"
             [min]="'0'"
+            [disabled]="isCatedraSelected()"
           />
         </div>
       }

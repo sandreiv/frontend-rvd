@@ -8,7 +8,7 @@ import {
   input,
   output,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -25,6 +25,7 @@ import {
 import { Button } from '../../../../../shared/ui/button/button';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { ModalityFormItem } from '../../model/preload-call.model';
+import { resolveModalityKind } from '../../../professor-preload/model/professor-form.config';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -63,6 +64,20 @@ export class ModalityFormModal {
     this.isEditMode() ? 'Actualizar' : 'Agregar',
   );
 
+  /**
+   * La modalidad cátedra no maneja días de vacaciones: el campo queda
+   * deshabilitado y no se envía valor al guardar.
+   */
+  readonly isCatedraSelected = computed(() => {
+    const tipoModalidad = this.tipoModalidadValue();
+    const label =
+      this.modalityOptions().find((opt) => opt.value === tipoModalidad)?.label ??
+      tipoModalidad ??
+      null;
+
+    return resolveModalityKind(label) === 'catedra';
+  });
+
   readonly form = this.fb.group({
     tipoModalidad: ['', Validators.required],
     diasVacaciones: [''],
@@ -70,6 +85,11 @@ export class ModalityFormModal {
     fechaFin: ['', Validators.required],
     semanas: ['', Validators.required],
   });
+
+  private readonly tipoModalidadValue = toSignal(
+    this.form.controls.tipoModalidad.valueChanges,
+    { initialValue: this.form.controls.tipoModalidad.value },
+  );
 
   constructor() {
     effect(() => {
@@ -136,6 +156,7 @@ export class ModalityFormModal {
 
     const editing = this.editingItem();
     const skipDateFields = this.isHiringCall();
+    const skipVacaciones = this.isCatedraSelected();
 
     this.saved.emit({
       id: editing?.id ?? '',
@@ -143,7 +164,8 @@ export class ModalityFormModal {
       fechaId: editing?.fechaId,
       tipoModalidad,
       tipoModalidadLabel: label,
-      diasVacaciones: this.isHiringCall() ? null : diasVacaciones,
+      diasVacaciones:
+        this.isHiringCall() || skipVacaciones ? null : diasVacaciones,
       fechaInicio: skipDateFields
         ? null
         : this.form.controls.fechaInicio.value ?? '',
