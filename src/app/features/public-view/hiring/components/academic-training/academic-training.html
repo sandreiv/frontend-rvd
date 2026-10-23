@@ -55,19 +55,24 @@
   as latest
 ) {
 
-  @if (!creating()) {
+  @if (!creating() || readOnly()) {
 
     <!-- PREVISUALIZACIÓN -->
     <button
       type="button"
       class="w-full rounded-2xl border border-gray-200
-             bg-white p-4 text-left
-             transition hover:border-brand-300
-             hover:shadow-theme-sm
-             focus:outline-none focus:ring-2
-             focus:ring-brand-500/20
-             dark:border-gray-800 dark:bg-white/3
-             dark:hover:border-brand-500/40"
+            bg-white p-4 text-left
+            transition hover:border-brand-300
+            hover:shadow-theme-sm
+            focus:outline-none focus:ring-2
+            focus:ring-brand-500/20
+            dark:border-gray-800 dark:bg-white/3
+            dark:hover:border-brand-500/40
+            disabled:cursor-default
+            disabled:hover:border-gray-200
+            disabled:hover:shadow-none
+            dark:disabled:hover:border-gray-800"
+      [disabled]="readOnly()"
       (click)="startNewTraining()"
     >
 
@@ -109,10 +114,14 @@
 
         <span
           class="shrink-0 text-xs
-                 font-medium text-brand-600
-                 dark:text-brand-400"
+                font-medium text-brand-600
+                dark:text-brand-400"
         >
-          Registrar nuevo
+          {{
+            readOnly()
+              ? 'Solo lectura'
+              : 'Registrar nuevo'
+          }}
         </span>
       </div>
 
@@ -218,8 +227,16 @@
         <span
           class="text-xs text-gray-400"
         >
-          Haz clic sobre el card para registrar
-          una nueva formación académica.
+          @if (readOnly()) {
+
+            La formación académica es solo de consulta.
+
+          } @else {
+
+            Haz clic sobre el card para registrar
+            una nueva formación académica.
+
+          }
         </span>
       </div>
 
@@ -325,9 +342,22 @@
       </div>
     </div>
 
-    <ng-container
-      *ngTemplateOutlet="academicTrainingForm"
-    />
+    @if (readOnly()) {
+
+      <p
+        class="text-sm text-gray-500
+              dark:text-gray-400"
+      >
+        No hay formación académica registrada.
+      </p>
+
+    } @else {
+
+      <ng-container
+        *ngTemplateOutlet="academicTrainingForm"
+      />
+
+    }
 
   </section>
 }

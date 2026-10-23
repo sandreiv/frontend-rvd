@@ -112,6 +112,17 @@ export class HiringService {
     );
    }
 
+  decideDigitalWorkPlan(
+    idCargaDocente: number,
+    nuevoEstado: '1' | '2',
+  ): Observable<void> {
+
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/hiring-records/${idCargaDocente}/digital-work-plan/status/${nuevoEstado}`,
+      null,
+    );
+  }
+
    getDigitalWorkPlan(
     idCargaDocente: number,
     ): Observable<PublicDigitalWorkPlan | null> {

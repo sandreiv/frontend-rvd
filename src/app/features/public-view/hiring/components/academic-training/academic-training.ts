@@ -71,6 +71,9 @@ export class AcademicTraining {
     readonly saving =
         input(false);
 
+    readonly readOnly=
+        input(false);    
+
     readonly academicLevelChange =
         output<number>();
 
@@ -179,6 +182,11 @@ export class AcademicTraining {
     }
 
     onSubmit(): void {
+
+        if (this.readOnly()) {
+            return;
+        }
+
         if (
             this.form.invalid ||
             this.saving()
@@ -209,6 +217,11 @@ export class AcademicTraining {
     }
 
     startNewTraining(): void {
+
+        if (this.readOnly()) {
+            return;
+        }
+
         this.resetForm();
         this.creating.set(true);
     }

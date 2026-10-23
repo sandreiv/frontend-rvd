@@ -68,7 +68,10 @@ export class SupportDocuments {
         input(false);
 
     readonly deleting =
-    input(false);    
+        input(false); 
+    
+    readonly readOnly =
+        input(false);
 
     readonly uploadProgress =
         input<string | null>(null);
@@ -224,11 +227,12 @@ export class SupportDocuments {
         input.value = '';
 
         if (
-        archivos.length === 0 ||
-        this.uploading() ||
-        this.deleting()
+            archivos.length === 0 ||
+            this.readOnly() ||
+            this.uploading() ||
+            this.deleting()
         ) {
-        return;
+            return;
         }
 
         const categoriaHabilitada =

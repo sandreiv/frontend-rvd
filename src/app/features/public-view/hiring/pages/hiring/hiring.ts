@@ -25,6 +25,7 @@ import {
 import {DomSanitizer,SafeResourceUrl,} from '@angular/platform-browser';
 import {DocumentPreview,} from '../../../../../shared/components/form/document-preview/document-preview';
 import { SectionFrame } from '../../../../../shared/ui/section-frame/section-frame';
+import { Button } from '../../../../../shared/ui/button/button';
 import {NewModal,} from '../../../../../shared/ui/new-modal/new-modal';
 import { HiringTable } from '../../components/hiring-table/hiring-table';
 import { BasicInformation } from '../../components/basic-information/basic-information';
@@ -58,6 +59,7 @@ interface AcademicTitleSearch {
   selector: 'app-hiring',
   imports: [
     SectionFrame,
+    Button,
     HiringTable,
     BasicInformation,
     AcademicTraining,
@@ -89,6 +91,40 @@ export class Hiring {
 
   readonly selectedHiringRecord =
     signal<PublicHiringRecord | null>(null);
+
+  readonly ptdDecisionPending = signal<{
+    idCargaDocente: number;
+    nuevoEstado: '1' | '2';
+  } | null>(null);
+
+  readonly ptdDecisionSaving =
+    signal(false);
+
+  readonly ptdEstado = computed(() =>
+    (
+      this.selectedHiringRecord()
+        ?.estadoPlanTrabajo ?? ''
+    )
+      .trim()
+      .toLowerCase(),
+  );
+
+  readonly ptdCanDecide = computed(() =>
+    this.ptdEstado() === 'estipulado' ||
+    this.ptdEstado() === '0',
+  );  
+
+  readonly ptdReadOnly = computed(() =>
+    ['aceptado', 'rechazado', '1', '2']
+      .includes(this.ptdEstado()),
+  );
+
+  readonly ptdEditsBlocked = computed(() =>
+    this.ptdReadOnly() ||
+    this.ptdDecisionSaving(),
+  );
+
+  private hiringSelectionRequestId = 0;  
 
   readonly basicInformation =
     signal<PublicBasicInformation | null>(null);
@@ -348,6 +384,141 @@ export class Hiring {
       );
   }
 
+  onRequestPtdDecision(
+    nuevoEstado: '1' | '2',
+  ): void {
+
+    const record =
+      this.selectedHiringRecord();
+
+    if (
+      !record ||
+      !this.ptdCanDecide() ||
+      this.ptdDecisionSaving() ||
+      this.savingAcademicTraining() ||
+      this.supportDocumentsUploading() ||
+      this.supportDocumentDeletingFileId() !== null
+    ) {
+      return;
+    }
+
+    this.ptdDecisionPending.set({
+      idCargaDocente:
+        record.idCargaDocente,
+
+      nuevoEstado,
+    });
+  }
+
+  closePtdDecisionModal(): void {
+
+    if (this.ptdDecisionSaving()) {
+      return;
+    }
+
+    this.ptdDecisionPending.set(
+      null,
+    );
+  }
+
+  async confirmPtdDecision(): Promise<void> {
+
+    const pending =
+      this.ptdDecisionPending();
+
+    const record =
+      this.selectedHiringRecord();
+
+    if (this.ptdDecisionSaving()) {
+      return;
+    }
+
+    if (
+      !pending ||
+      !record ||
+      pending.idCargaDocente !== record.idCargaDocente ||
+      !this.ptdCanDecide() ||
+      this.savingAcademicTraining() ||
+      this.supportDocumentsUploading() ||
+      this.supportDocumentDeletingFileId() !== null
+    ) {
+      this.ptdDecisionPending.set(null);
+      return;
+    }
+
+    this.ptdDecisionSaving.set(
+      true,
+    );
+
+    try {
+
+      await firstValueFrom(
+        this.hiringService
+          .decideDigitalWorkPlan(
+            pending.idCargaDocente,
+            pending.nuevoEstado,
+          ),
+      );
+
+      const estado =
+        pending.nuevoEstado === '1'
+          ? 'Aceptado'
+          : 'Rechazado';
+
+      const selected =
+        this.selectedHiringRecord();
+
+      if (
+        selected?.idCargaDocente ===
+        pending.idCargaDocente
+      ) {
+
+        this.selectedHiringRecord.set({
+          ...selected,
+
+          estadoPlanTrabajo:
+            estado,
+        });
+      }
+
+      this.ptdDecisionPending.set(null);
+
+      this.supportDocumentPendingDeletion.set(null);
+
+      this.hiringRecordsResource.reload();
+
+      this.notificationService.success(
+        `El Plan de Trabajo Digital fue ${
+          pending.nuevoEstado === '1'
+            ? 'aprobado'
+            : 'rechazado'
+        } correctamente.`,
+
+        'Plan de trabajo digital',
+      );
+
+    } catch {
+
+      this.ptdDecisionPending.set(
+        null,
+      );
+
+      this.hiringRecordsResource.reload();
+
+      this.notificationService.error(
+        'No fue posible registrar la decisión. Verifica el estado actual del PTD antes de intentarlo nuevamente.',
+
+        'Plan de trabajo digital',
+      );
+
+    } finally {
+
+      this.ptdDecisionSaving.set(
+        false,
+      );
+    }
+  }
+
   onRefreshRecords(): void {
     this.hiringRecordsResource.reload();
   }
@@ -355,6 +526,14 @@ export class Hiring {
   async onStartProcess(
     record: PublicHiringRecord,
   ): Promise<void> {
+
+    const requestId =
+      ++this.hiringSelectionRequestId;
+
+    this.ptdDecisionPending.set(
+      null,
+    );
+
     this.selectedHiringRecord.set(
       record,
     );
@@ -454,6 +633,7 @@ export class Hiring {
 
     void this.loadLatestAcademicTraining(
       record.idCargaDocente,
+      requestId,
     );
 
     this.basicInformation.set(null);
@@ -476,18 +656,34 @@ export class Hiring {
               record.idCargaDocente,
             ),
         );
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.basicInformation.set(
+          information,
+        );
+      }
 
-      this.basicInformation.set(
-        information,
-      );
     } catch {
-      this.basicInformationError.set(
-        true,
-      );
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.basicInformationError.set(
+          true,
+        );
+      }
+
     } finally {
-      this.isLoadingBasicInformation.set(
-        false,
-      );
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.isLoadingBasicInformation.set(
+          false,
+        );
+      }
     }
   }
 
@@ -531,7 +727,10 @@ export class Hiring {
     const record =
       this.selectedHiringRecord();
 
-    if (!record) {
+    if (
+      !record ||
+      this.ptdEditsBlocked()
+    ) {
       return;
     }
 
@@ -579,15 +778,27 @@ export class Hiring {
     }
   }
 
+
   private async loadLatestAcademicTraining(
     idCargaDocente: number,
+    requestId: number,
   ): Promise<void> {
 
-    this.academicTrainingLoading.set(true);
-    this.academicTrainingLoadError.set(false);
-    this.latestAcademicTraining.set(null);
+  
+    this.academicTrainingLoading.set(
+      true,
+    );
+
+    this.academicTrainingLoadError.set(
+      false,
+    );
+
+    this.latestAcademicTraining.set(
+      null,
+    );
 
     try {
+
       const latest =
         await firstValueFrom(
           this.hiringService
@@ -596,19 +807,38 @@ export class Hiring {
             ),
         );
 
-      this.latestAcademicTraining.set(
-        latest ?? null,
-      );
+
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.latestAcademicTraining.set(
+          latest ?? null,
+        );
+      }
 
     } catch {
-      this.academicTrainingLoadError.set(
-        true,
-      );
+
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.academicTrainingLoadError.set(
+          true,
+        );
+      }
 
     } finally {
-      this.academicTrainingLoading.set(
-        false,
-      );
+
+
+      if (
+        requestId ===
+        this.hiringSelectionRequestId
+      ) {
+        this.academicTrainingLoading.set(
+          false,
+        );
+      }
     }
   }
 
@@ -982,6 +1212,7 @@ export class Hiring {
 
     if (
       !record ||
+      this.ptdEditsBlocked() ||
       this.supportDocumentsUploading() ||
       this.supportDocumentDeletingFileId() !== null ||
       request.archivos.length === 0
@@ -1446,6 +1677,7 @@ export class Hiring {
 
     if (
       !record ||
+      this.ptdEditsBlocked() ||
       this.supportDocumentsUploading() ||
       this.supportDocumentDeletingFileId() !== null
     ) {
@@ -1497,6 +1729,7 @@ export class Hiring {
     if (
       !pending ||
       !record ||
+      this.ptdEditsBlocked() ||
       this.supportDocumentsUploading() ||
       this.supportDocumentDeletingFileId() !== null ||
       record.idCargaDocente !== pending.idCargaDocente

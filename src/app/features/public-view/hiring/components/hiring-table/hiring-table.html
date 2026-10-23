@@ -12,21 +12,3 @@
   (searchChange)="onSearchRecords($event)"
   (selectedRowKeysChange)="onSelectedHiringKeysChange($event)"
 />
-
-<div class="mt-4 flex justify-end">
-  <app-button
-    type="button"
-    size="sm"
-    [disabled]="
-      selectedHiringKeys().length === 0 ||
-      isStartingProcess()
-    "
-    (btnClick)="onStartProcess()"
-  >
-    {{
-      isStartingProcess()
-        ? 'Iniciando...'
-        : 'Iniciar proceso'
-    }}
-  </app-button>
-</div>

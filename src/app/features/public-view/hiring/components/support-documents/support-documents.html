@@ -331,25 +331,29 @@
                                 }}
                             </button>
 
-                            <!-- ELIMINAR -->
-                            <button
-                            type="button"
-                            class="text-xs font-medium
-                                    text-error-600
-                                    hover:underline
-                                    disabled:cursor-not-allowed
-                                    disabled:opacity-50
-                                    dark:text-error-400"
-                            [disabled]="
-                                uploading() ||
-                                deleting()
-                            "
-                            (click)="
-                                deleteRequested.emit(archivo)
-                            "
-                            >
-                            Eliminar
-                            </button>
+                              @if (!readOnly()) {
+
+                                <!-- ELIMINAR -->
+                                <button
+                                type="button"
+                                class="text-xs font-medium
+                                        text-error-600
+                                        hover:underline
+                                        disabled:cursor-not-allowed
+                                        disabled:opacity-50
+                                        dark:text-error-400"
+                                [disabled]="
+                                    uploading() ||
+                                    deleting()
+                                "
+                                (click)="
+                                    deleteRequested.emit(archivo)
+                                "
+                                >
+                                Eliminar
+                                </button>
+
+                              }
 
                             </div>
 
@@ -402,7 +406,7 @@
                 class="px-4 py-4 text-center"
                 >
 
-                @if (categoria.habilitada) {
+                @if (categoria.habilitada && !readOnly()) {
 
                     <!-- Selector múltiple -->
                     <input

@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 
 import { DataTable } from '../../../../../shared/ui/data-table/data-table';
-import { Button } from '../../../../../shared/ui/button/button';
 import {
   DataTableColumn,
   DataTableSearchEvent,
@@ -17,7 +16,7 @@ import { PublicHiringRecord } from '../../model/hiring.model';
 
 @Component({
   selector: 'app-public-hiring-table',
-  imports: [Button, DataTable],
+  imports: [DataTable],
   templateUrl: './hiring-table.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,9 +32,6 @@ export class HiringTable {
 
   readonly selectedHiringKeys =
   model<string[]>([]);
-
-  readonly isStartingProcess =
-  input(false);
 
   readonly startProcess =
   output<PublicHiringRecord>();
@@ -138,38 +134,38 @@ export class HiringTable {
     >,
   ): void {}
 
+ 
   onSelectedHiringKeysChange(
     keys: Array<string | number>,
-    ): void {
-    const nextKeys = keys.length
-        ? [String(keys[keys.length - 1])]
-        : [];
+  ): void {
 
-    this.selectedHiringKeys.set(nextKeys);
-    }
+   
+    const previousKey =
+      this.selectedHiringKeys()[0];
 
-    onStartProcess(): void {
-    const selectedKey =
-        this.selectedHiringKeys()[0];
+    const selectedKey = keys.length
+      ? String(keys[keys.length - 1])
+      : null;
 
-    if (!selectedKey) {
-        return;
-    }
-
-    const selectedRecord =
-        this.records().find(
-        (record) =>
-            this.rowIdentity(record) ===
-            selectedKey,
-        );
-
-    if (!selectedRecord) {
-        return;
-    }
-
-    this.startProcess.emit(
-        selectedRecord,
+    this.selectedHiringKeys.set(
+      selectedKey ? [selectedKey] : [],
     );
+
+    if (
+      !selectedKey ||
+      selectedKey === previousKey
+    ) {
+      return;
     }
+
+    const record = this.records().find(
+      (item) =>
+        this.rowIdentity(item) === selectedKey,
+    );
+
+    if (record) {
+      this.startProcess.emit(record);
+    }
+  }
 
 }
