@@ -82,6 +82,7 @@
                     <app-button
                       type="button"
                       size="sm"
+                      [disabled]="isApprovingCdp()"
                       (btnClick)="selectCdp(cdp)"
                     >
                       Asignar
