@@ -97,6 +97,11 @@ export class AcademicTraining {
     readonly creating =
         signal(false);
 
+    private ultimoNivelSeleccionado = '';
+
+    readonly tituloPrecargado =
+        signal<TypeaheadOption | null>(null);    
+
     readonly academicLevelOptions =
         computed<SelectOption[]>(() =>
             this.academicLevels().map(
@@ -118,15 +123,62 @@ export class AcademicTraining {
         );
 
     readonly titleOptions =
-        computed<TypeaheadOption[]>(() =>
-            this.academicTitles().map(
-                (item) => ({
-                    value: String(item.id),
-                    label: item.nombre,
-                    data: item,
-                }),
-            ),
-        );
+        computed<TypeaheadOption[]>(() => {
+
+            /*
+            * Opciones obtenidas mediante
+            * la búsqueda normal del backend.
+            */
+            const options =
+                this.academicTitles().map(
+                    (item) => ({
+                        value: String(item.id),
+                        label: item.nombre,
+                        data: item,
+                    }),
+                );
+
+            /*
+            * Título precargado desde el
+            * último estudio académico.
+            */
+            const precargado =
+                this.tituloPrecargado();
+
+            /*
+            * Si no hay título precargado,
+            * mantenemos el comportamiento
+            * habitual del selector.
+            */
+            if (!precargado) {
+                return options;
+            }
+
+            /*
+            * Evitamos duplicar el título
+            * si ya aparece en los resultados.
+            */
+            const existe =
+                options.some(
+                    (option) =>
+                        option.value ===
+                        precargado.value,
+                );
+
+            if (existe) {
+                return options;
+            }
+
+            /*
+            * Incorporamos el último título
+            * para que el TypeaheadSelect
+            * pueda mostrar su nombre.
+            */
+            return [
+                precargado,
+                ...options,
+            ];
+        });
 
     readonly form =
         this.fb.nonNullable.group({
@@ -162,11 +214,27 @@ export class AcademicTraining {
     onAcademicLevelChange(
         value: string,
     ): void {
+
+        if (
+            value ===
+            this.ultimoNivelSeleccionado
+        ) {
+            return;
+        }
+
+        this.ultimoNivelSeleccionado =
+            value;
+
+        this.tituloPrecargado.set(null);
+
         this.form.controls.idTitulo.setValue('');
 
         const id = Number(value);
 
-        if (!Number.isFinite(id)) {
+        if (
+            !value ||
+            !Number.isFinite(id)
+        ) {
             return;
         }
 
@@ -176,8 +244,16 @@ export class AcademicTraining {
     onTitleQueryChange(
         query: string,
     ): void {
+
+        const normalizedQuery =
+            query.trim();
+
+        if (normalizedQuery) {
+            this.tituloPrecargado.set(null);
+        }
+
         this.titleQueryChange.emit(
-            query.trim(),
+            normalizedQuery,
         );
     }
 
@@ -222,8 +298,65 @@ export class AcademicTraining {
             return;
         }
 
+        const latest =
+            this.latestTraining();
+
         this.resetForm();
+
+        if (latest) {
+
+            this.ultimoNivelSeleccionado =
+                String(latest.idNivelAcademico);
+
+            this.tituloPrecargado.set({
+
+                value:
+                    String(latest.idTitulo),
+
+                label:
+                    latest.titulo,
+
+                data: {
+                    id:
+                        latest.idTitulo,
+
+                    idNivelAcademico:
+                        latest.idNivelAcademico,
+
+                    nombre:
+                        latest.titulo,
+                },
+            });
+
+            this.form.patchValue({
+
+                idNivelAcademico:
+                    String(latest.idNivelAcademico),
+
+                idTitulo:
+                    String(latest.idTitulo),
+
+                institucion:
+                    latest.institucion ?? '',
+
+                fechaGrado:
+                    latest.fechaGrado
+                        ?.slice(0, 10) ?? '',
+
+                idPais:
+                    latest.idPais ?? '',
+
+            });
+        }
+
         this.creating.set(true);
+
+        if (latest) {
+
+            this.academicLevelChange.emit(
+                latest.idNivelAcademico,
+            );
+        }
     }
 
     cancelNewTraining(): void {
@@ -242,6 +375,11 @@ export class AcademicTraining {
     }
 
     resetForm(): void {
+
+        this.ultimoNivelSeleccionado = '';
+
+        this.tituloPrecargado.set(null);
+
         this.form.reset({
             idNivelAcademico: '',
             idTitulo: '',
