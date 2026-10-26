@@ -32,6 +32,7 @@ import {
 import { HiringCallService } from '../../data/hiring-call.service';
 import { DraftContract } from '../draft-contract/draft-contract';
 import { PermissionService } from '../../../../../core/service/permission-service';
+import { AuthService } from '../../../../../core/service/auth-service';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -109,6 +110,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 export class HiringContractModalityDetail {
   private readonly hiringCallService = inject(HiringCallService);
   private readonly permissions = inject(PermissionService);
+  private readonly authService = inject(AuthService);
 
   readonly coordination = input.required<CoordinationItem>();
   readonly refreshKey = input(0);
@@ -121,6 +123,12 @@ export class HiringContractModalityDetail {
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly isDraftContractModalOpen = signal(false);
 
+  readonly isTH = computed(() => {
+    const rolesUsuario = this.authService.getRoles();
+
+    return rolesUsuario.includes('Talento humano');
+  });
+  
   readonly contractModalities = computed(
     () => this.coordination().modalidadesContratacion,
   );
@@ -318,6 +326,19 @@ export class HiringContractModalityDetail {
     if (actionId === 'revisar-ptd') {
       
     }
+  }
+
+  // Deshabilitar el menu. Coordinador siempre habilitado, TH cuando el PTD esta aceptado
+  isMenuEnabled(professor: ModalityProfessor): boolean {
+    if (!this.isTH()) {
+      return true;
+    }
+    if (!professor.idPersonaGeneral) {
+      return false;
+    }
+
+    const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
+    return estadoPTD === ACCEPTED_PTD_STATE;
   }
 
   closePtdModal(): void {

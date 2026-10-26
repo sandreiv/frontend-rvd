@@ -59,6 +59,7 @@
                 [class.dark:bg-white/10]="openMenuKey() === row.menuKey"
                 [attr.aria-label]="'Acciones para ' + row.displayName"
                 [attr.aria-expanded]="openMenuKey() === row.menuKey"
+                [disabled]="!isMenuEnabled(professor)"
                 (click)="toggleProfessorMenu(row.menuKey)"
               >
                 <app-icon name="ellipsisVertical" size="sm" />
