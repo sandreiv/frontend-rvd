@@ -112,3 +112,10 @@
   [idCargaDocente]="draftContractProfessorId()"
   (close)="closeDraftContractModal()"
 />
+
+<app-review-ptd-modal
+  [isOpen]="isReviewPtdModalOpen()"
+  [idCargaDocente]="ptdProfessorId()"
+  [idPeriodoUniversitario]="ptdPeriodId()"
+  (close)="closeReviewPtdModal()"
+/>

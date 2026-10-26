@@ -33,6 +33,7 @@ import { HiringCallService } from '../../data/hiring-call.service';
 import { DraftContract } from '../draft-contract/draft-contract';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { AuthService } from '../../../../../core/service/auth-service';
+import { ReviewPtdModal } from '../review-ptd-modal/review-ptd-modal';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -103,7 +104,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 
 @Component({
   selector: 'app-hiring-contract-modality-detail',
-  imports: [TabBar, Dropdown, Item, Icon, PtdModal, DraftContract],
+  imports: [TabBar, Dropdown, Item, Icon, PtdModal, DraftContract, ReviewPtdModal],
   templateUrl: './hiring-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -122,6 +123,7 @@ export class HiringContractModalityDetail {
   readonly ptdPeriodId = signal<number | null>(null);
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly isDraftContractModalOpen = signal(false);
+  readonly isReviewPtdModalOpen = signal(false);
 
   readonly isTH = computed(() => {
     const rolesUsuario = this.authService.getRoles();
@@ -324,7 +326,9 @@ export class HiringContractModalityDetail {
       this.isDraftContractModalOpen.set(true);
     }
     if (actionId === 'revisar-ptd') {
-      
+      this.ptdProfessorId.set(professor.idCargaDocente);
+      this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
+      this.isReviewPtdModalOpen.set(true);
     }
   }
 
@@ -350,6 +354,12 @@ export class HiringContractModalityDetail {
   closeDraftContractModal(): void {
     this.isDraftContractModalOpen.set(false);
     this.draftContractProfessorId.set(null);
+  }
+
+  closeReviewPtdModal(): void {
+    this.isReviewPtdModalOpen.set(false);
+    this.ptdProfessorId.set(null);
+    this.ptdPeriodId.set(null);
   }
 
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {

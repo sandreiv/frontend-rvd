@@ -62,10 +62,10 @@ const SUMMARY_SECTIONS: PtdSectionConfig[] = [
 const PTD_SECTIONS: PtdSectionConfig[] = [
   {
     id: 'ptd-actividades',
-    title: 'Detalle actividades',
-    icon: 'academicCap',
-    iconBgClass: 'bg-brand-50 dark:bg-brand-500/10',
-    iconColorClass: 'text-brand-600 dark:text-brand-400',
+    title: 'Detalle actividades PTD',
+    icon: 'clipboardDocumentList',
+    iconBgClass: 'bg-warning-50 dark:bg-warning-500/15',
+    iconColorClass: 'text-warning-700 dark:text-warning-400',
   },
 ];
 
