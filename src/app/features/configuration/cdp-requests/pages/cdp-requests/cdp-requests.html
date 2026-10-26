@@ -572,7 +572,7 @@
             <app-button
               type="button"
               size="sm"
-              [disabled]="!!selectedCdpTesoreria()"
+              [disabled]="!!assignedCdp()"
               (btnClick)="openCdpSearchModal()"
             >
               <app-icon
@@ -605,7 +605,7 @@
               </thead>
 
               <tbody class="divide-y divide-gray-200 dark:divide-white/10">
-                @if (selectedCdpTesoreria(); as cdp) {
+                @if (assignedCdp(); as cdp) {
                   <tr>
                     <td class="break-words px-4 py-3 text-gray-600 dark:text-gray-300">
                       {{ cdp.numero }}
@@ -633,6 +633,7 @@
                           type="button"
                           size="sm"
                           variant="error"
+                          (btnClick)="onDisassociate()"
                         >
                           Desrelacionar
                         </app-button>
@@ -682,7 +683,8 @@
 <app-cdp-search-modal
   [isOpen]="showCdpSearchModal()"
   [idUnidad]="selectedFaculty()?.idUnidadRegional ?? null"
+  [idSolicitud]="selectedFaculty()?.solicitud?.id ?? null"
   [anioVigencia]="selectedFaculty()?.anioUniversidad ?? null"
-  (select)="selectCdpFromPresupuesto($event)"
+  (approved)="onCdpApproved()"
   (close)="closeCdpSearchModal()"
 />

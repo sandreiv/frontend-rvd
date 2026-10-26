@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { WebRequestService } from '../../../../core/service/web-request-service';
-import { CdpContext, CdpSearchResult } from '../model/cdp-context.model';
+import { ApproveCdpRequest, CdpContext, CdpSearchResult } from '../model/cdp-context.model';
 import { CdpRequest } from '../model/cdp-request.model';
 
 @Injectable({
@@ -222,18 +222,31 @@ export class CdpService {
   }
 
   /**
-   * Genera un codigo para el CDP y actualiza el estado de la solicitud, pasando de Vice academica
+   * Guarda el numero de CDP de TESORERIAV3 y actualiza el estado de la solicitud, pasando de Vice academica
    * a CDP aprobado
    * 
-   * @param idSolicitud Identificador de la solicitud CDP.
+   * @param body Cuerpo con la información del CDP seleccionado
    * @returns Observable sin contenido cuando la operación finaliza correctamente.
    */
-  approveCdpRequest(idSolicitud: number): Observable<void> {
-      return this.webRequestService.put<void>(
-        `${this.endpoint}/approve-cdp-request/${idSolicitud}`, {}
-      );
-    }
+  approveCdpRequest(body: ApproveCdpRequest): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-cdp-request`, body
+    );
   }
+
+  /**
+   * Limpia el numero de CDP de TESORERIAV3 y actualiza el estado de la solicitud, pasando de CDP aprobado
+   * a Vice academica
+   * 
+   * @param idSolicitud Identificador de la solicitud CDP
+   * @returns Observable sin contenido cuando la operacion finaliza correctamente.
+   */
+  disapproveCdpRequest(idSolicitud: number): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/disapprove-cdp-request/${idSolicitud}`, {}
+    );
+  }
+}
 
   /**
    * Resuelve el nombre de archivo sugerido por el encabezado Content-Disposition.

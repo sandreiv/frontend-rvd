@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   OnInit,
   signal,
@@ -94,15 +95,15 @@ export class CdpRequests implements OnInit {
   readonly cdpAttachments = signal<File[]>([]);
   readonly isRequestingCdp = signal(false);
   readonly isSendingCdp = signal(false);
+  readonly isDisassociatingCdp = signal(false);
 
   readonly showCdpSearchModal = signal(false);
-  readonly selectedCdpTesoreria = signal<CdpSearchResult | null>(null);
 
   readonly showDocumentPreview = signal(false);
   readonly selectedDocument = signal<DocumentRequest | null>(null);
 
   readonly isCdpOnAcademicDevelopment = computed(() => this.selectedFaculty()?.solicitud.estado === 'DESARROLLO ACADEMICO');
-  readonly isCdpOnViceAcademic = computed(() => this.selectedFaculty()?.solicitud.estado === 'VICERRECTORIA ACADEMICA');
+  readonly isCdpOnViceAcademic = computed(() => ['VICERRECTORIA ACADEMICA', 'CDP APROBADO'].includes(this.selectedFaculty()?.solicitud.estado ?? ''));
 
   readonly showRequestCdpModal = signal(false);
 
@@ -275,7 +276,9 @@ export class CdpRequests implements OnInit {
 
   readonly hasCdpRequest = computed(
     () => this.currentCdpRequest() != null,
-  );  
+  );
+
+  readonly assignedCdp = computed(() => this.selectedFaculty()?.cdpTesoreria ?? null);
 
 
   readonly cdpObservationRemaining = computed(
@@ -568,6 +571,24 @@ export class CdpRequests implements OnInit {
 
     return this.cdpRequestsForDeanResource.value().length > 0;
   });
+
+  constructor() {
+    effect(() => {
+      const faculty = this.selectedFaculty();
+      const isLoading = this.cdpRequestsForAcademicsResource.isLoading();
+      if (!faculty || isLoading) {
+        return;
+      }
+
+      const refreshedFaculty = this.cdpRequestsForAcademicsResource.value()
+        .find((item) => item.solicitud.id === faculty.solicitud.id);
+
+      // Actualizar el objeto en memoria de la facultad seleccionada despues de asignar un CDP
+      if (refreshedFaculty) {
+        this.selectedFaculty.set(refreshedFaculty);
+      }
+    });
+  }
 
   ngOnInit(): void {
     void this.loadUniversityPeriods();
@@ -1038,9 +1059,31 @@ export class CdpRequests implements OnInit {
     this.showCdpSearchModal.set(false);
   }
 
-  selectCdpFromPresupuesto(cdp: CdpSearchResult): void {
-    this.selectedCdpTesoreria.set(cdp);
+  async onCdpApproved(): Promise<void> {
     this.closeCdpSearchModal();
+    this.cdpRequestsForAcademicsResource.reload()
+  }
+
+  onDisassociate(): void {
+    const idSolicitud = this.selectedFaculty()?.solicitud.id
+    if (!idSolicitud) return;
+
+    if (this.isDisassociatingCdp() || !this.isCdpOnViceAcademic()) {
+      return;
+    }
+
+    this.isDisassociatingCdp.set(true);
+    this.cdpService
+      .disapproveCdpRequest(idSolicitud)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isDisassociatingCdp.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.cdpRequestsForAcademicsResource.reload();
+        }
+      });
   }
 
   openAttachmentPreview(
