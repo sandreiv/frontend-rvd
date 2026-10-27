@@ -117,5 +117,6 @@
   [isOpen]="isReviewPtdModalOpen()"
   [idCargaDocente]="ptdProfessorId()"
   [idPeriodoUniversitario]="ptdPeriodId()"
+  (successRequest)="onSuccessReview()"
   (close)="closeReviewPtdModal()"
 />

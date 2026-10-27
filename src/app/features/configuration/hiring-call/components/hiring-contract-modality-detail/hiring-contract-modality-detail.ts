@@ -69,6 +69,7 @@ const ON_REGISTER_STATE = '0';
 const STIPULATED_PTD_STATE = '0';
 const ACCEPTED_PTD_STATE = '1';
 const REJECTED_PTD_STATE = '2';
+const APPROVED_PTD_STATE = '3';
 
 const BADGE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 ' +
@@ -362,6 +363,10 @@ export class HiringContractModalityDetail {
     this.ptdPeriodId.set(null);
   }
 
+  async onSuccessReview(): Promise<void> {
+    this.ptdStatesProfessorsResource.reload();
+  }
+
   professorStatusBadge(professor: ModalityProfessor): StatusBadge | null {
     if (!professor.idPersonaGeneral) {
       return null;
@@ -372,9 +377,11 @@ export class HiringContractModalityDetail {
       case STIPULATED_PTD_STATE:
         return this.buildStatusBadge('Plan estipulado', 'warning');
       case ACCEPTED_PTD_STATE:
-        return this.buildStatusBadge('Plan aceptado', 'success');
+        return this.buildStatusBadge('Plan aceptado', 'brand');
       case REJECTED_PTD_STATE:
         return this.buildStatusBadge('Plan rechazado', 'error');
+      case APPROVED_PTD_STATE:
+        return this.buildStatusBadge('Plan aprobado', 'success');
       default:
         return this.buildStatusBadge('Sin definir', 'gray');
     }

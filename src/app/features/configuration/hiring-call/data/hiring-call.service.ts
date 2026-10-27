@@ -14,10 +14,12 @@ import {
   normalizeCoordinationItem,
 } from '../../professor-preload/model/coordination.model';
 import {
+  ApprovePtdRequest,
   HiringCallItem,
   PdtInfoWithWeights,
   ProfessorInformationItem,
   PtdStatesProfessors,
+  RejectPtdRequest,
   SavePtdRequest,
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
@@ -190,6 +192,33 @@ export class HiringCallService {
     return this.webRequestService.get<PtdStatesProfessors[]>(
       `${this.endpoint}/get-ptd-states-professors`,
       { idPeriodoUniversitario }
+    );
+  }
+
+  /**
+   * Actualiza el estado del PTD a 'Aprobado por Talento' y marca los documentos adjuntos enviados como validos
+   * 
+   * @param payload Objeto con la información para aprobar el PTD
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
+  approvePtdByTh(payload: ApprovePtdRequest): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/approve-ptd-th`,
+      payload
+    );
+  }
+
+  /**
+   * Actualiza el estado del PTD a 'Estipulado', marca los documentos adjuntos enviados como validos y registra
+   * la observación para corregir los adjuntos invalidos
+   * 
+   * @param payload Objeto con la información para rechazar el PTD
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
+  declinePtdByTh(payload: RejectPtdRequest): Observable<void> {
+    return this.webRequestService.put<void>(
+      `${this.endpoint}/decline-ptd-th`,
+      payload
     );
   }
 }

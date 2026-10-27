@@ -18,12 +18,14 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { mapActivitySummaryTables } from '../../../professor-preload/model/professor-summary.model';
 import { HiringCallService } from '../../data/hiring-call.service';
-import { ActivityWeights, ObservacionPtd, PdtInfoWithWeights, ProfessorInformationItem, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
+import { ActivityWeights, ApprovePtdRequest, ObservacionPtd, PdtInfoWithWeights, ProfessorInformationItem, RejectPtdRequest, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
 import { Button } from '../../../../../shared/ui/button/button';
-import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
-import { finalize } from 'rxjs';
+import { finalize, firstValueFrom } from 'rxjs';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
+import { PermissionService } from '../../../../../core/service/permission-service';
+import { NotificationService } from '../../../../../core/service/notification-service';
 
 type PtdReviewSectionId = 'detalle-actividades' | 'ptd-actividades' | 'attachments';
 
@@ -75,18 +77,29 @@ function createInitialExpandedSections(): Record<PtdReviewSectionId, boolean> {
 
 @Component({
   selector: 'app-review-ptd-modal',
-  imports: [Modal, Icon, CollapsibleSection],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule],
   templateUrl: './review-ptd-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewPtdModal {
   private readonly hiringCallService = inject(HiringCallService);
+  private readonly permissions = inject(PermissionService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly fb = inject(FormBuilder);
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
   readonly idPeriodoUniversitario = input<number | null>(null);
+
+  readonly successRequest = output<void>();
   readonly close = output<void>();
 
+  readonly isSavingPtd = signal(false);
+  readonly savingAction = signal<'approve' | 'reject' | null>(null);
+  readonly ptdObservationError = signal(false);
+  readonly observationForm = this.fb.group({
+    observacion: [''],
+  });
   readonly expandedSections = signal(createInitialExpandedSections());
 
   readonly englishLevels: Option[] = [
@@ -187,6 +200,10 @@ export class ReviewPtdModal {
   readonly sections = computed (() => REVIEW_SECTIONS);
   readonly observacion = computed(() => this.ptdInfoWithWeights()?.observacion?.descripcion ?? '');
   
+  readonly canApprovePtd = computed(() => this.permissions.canApprovePtdTh());
+  readonly canRejectPtd = computed(() => this.permissions.canDeclinePtdTh());
+  readonly canSubmitReview = computed(() => this.permissions.canReviewPtd());
+  readonly showPtdObservationError = computed(() => this.canRejectPtd() && this.ptdObservationError());
 
   constructor() {
     effect(() => {
@@ -197,6 +214,7 @@ export class ReviewPtdModal {
 
       untracked(() => {
         this.expandedSections.set(createInitialExpandedSections());
+        this.resetPtdObservation();
       });
     });
   }
@@ -233,6 +251,97 @@ export class ReviewPtdModal {
     return this.englishLevels.find(level =>
       level.value === activity?.nivel
     )?.label ?? null;
+  }
+
+  closeModal(): void {
+    if (this.isSavingPtd()) {
+      return;
+    }
+
+    this.resetPtdObservation();
+    this.close.emit();
+  }
+
+  async onApprove(): Promise<void> {
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idCargaDocente = this.idCargaDocente();
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+
+    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canApprovePtd()) {
+      return;
+    }
+
+    const request: ApprovePtdRequest = {
+      idPersonaGeneral,
+      idPeriodoUniversitario,
+      idCargaDocente,
+      idsDocumentosAdjuntos: ['71e566b0-2937-4841-8772-fd940d034cc2']
+    }
+
+    this.savingAction.set('approve');
+    this.isSavingPtd.set(true);
+
+    try {
+      await firstValueFrom(this.hiringCallService.approvePtdByTh(request));
+
+      this.notificationService.success(
+        'El plan de trabajo fue aprobado correctamente.',
+        'PTD aprobado',
+      );
+      this.finishPtdReview();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isSavingPtd.set(false);
+      this.savingAction.set(null);
+    }
+  }
+
+  async onReject(): Promise<void> {
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idCargaDocente = this.idCargaDocente();
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+
+    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canApprovePtd()) {
+      return;
+    }
+
+    if (this.observationForm.invalid) {
+      this.observationForm.markAllAsTouched();
+      return;
+    }
+
+    const observacion = this.observationForm.controls.observacion.value?.trim();
+    if (!observacion) {
+      this.ptdObservationError.set(true);
+      return;
+    }
+
+    const request: RejectPtdRequest = {
+      idPersonaGeneral,
+      idPeriodoUniversitario,
+      idCargaDocente,
+      idsDocumentosAdjuntos: [],
+      observacion
+    }
+
+    this.savingAction.set('reject');
+    this.isSavingPtd.set(true);
+
+    try {
+      await firstValueFrom(this.hiringCallService.declinePtdByTh(request));
+
+      this.notificationService.success(
+        'El plan de trabajo fue rechazado correctamente.',
+        'PTD rechazado',
+      );
+      this.finishPtdReview();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      this.isSavingPtd.set(false);
+      this.savingAction.set(null);
+    }
   }
 
   private resolveInformationParams(): { idCargaDocente: number } | undefined {
@@ -350,5 +459,16 @@ export class ReviewPtdModal {
     return (this.ptdInfoWithWeights()?.actividades
       .find((activity: ActivityWeights) => activity.idTipoActividad === idTipoActividad)
     );
+  }
+
+  private finishPtdReview(): void {
+    this.resetPtdObservation();
+    this.successRequest.emit();
+    this.close.emit();
+  }
+
+  private resetPtdObservation(): void {
+    this.observationForm.reset({ observacion: '' });
+    this.ptdObservationError.set(false);
   }
 }

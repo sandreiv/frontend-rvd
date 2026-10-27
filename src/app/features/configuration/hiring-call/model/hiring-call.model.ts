@@ -100,3 +100,18 @@ export interface PtdStatesProfessors {
   idPersonaGeneral: number;
   estado: string;
 }
+
+export interface ApprovePtdRequest {
+  idPersonaGeneral: number;
+  idPeriodoUniversitario: number;
+  idCargaDocente: number;
+  idsDocumentosAdjuntos: string[];
+}
+
+export interface RejectPtdRequest {
+  idPersonaGeneral: number;
+  idPeriodoUniversitario: number;
+  idCargaDocente: number;
+  idsDocumentosAdjuntos: string[];
+  observacion: string
+}
