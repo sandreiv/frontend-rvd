@@ -19,6 +19,10 @@ export interface PublicHiringRecord {
 
   estadoCategorizacion: string | null;
   estadoPlanTrabajo: string | null;
+
+  periodoUniversidad: string | null;
+
+  onceMeses: string | null;
 }
 
 export interface PublicBasicInformation {

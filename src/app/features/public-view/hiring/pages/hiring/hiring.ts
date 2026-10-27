@@ -92,6 +92,17 @@ export class Hiring {
   readonly selectedHiringRecord =
     signal<PublicHiringRecord | null>(null);
 
+  readonly supportDocumentsExempt = computed(() => {
+
+    const record = this.selectedHiringRecord();
+
+    return (
+      record?.onceMeses?.trim() === '1' &&
+      record?.periodoUniversidad?.trim() === '2'
+    );
+
+  });  
+
   readonly ptdDecisionPending = signal<{
     idCargaDocente: number;
     nuevoEstado: '1' | '2';
@@ -403,6 +414,20 @@ export class Hiring {
       this.supportDocumentsUploading() ||
       this.supportDocumentDeletingFileId() !== null
     ) {
+      return;
+    }
+
+    if (this.supportDocumentsExempt()) {
+
+      this.ptdDecisionPending.set({
+
+        idCargaDocente:
+          record.idCargaDocente,
+
+        nuevoEstado,
+
+      });
+
       return;
     }
 
