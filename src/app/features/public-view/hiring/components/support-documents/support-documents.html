@@ -112,6 +112,104 @@
 
   } @else if (rows().length) {
 
+    <!-- ALERTA DE DOCUMENTOS OBLIGATORIOS PENDIENTES -->
+    @if (mandatoryDocumentsMissing().length > 0) {
+
+      <div
+        role="alert"
+        class="mb-4 rounded-xl
+              border border-amber-200
+              bg-amber-50
+              px-4 py-3
+              dark:border-amber-500/30
+              dark:bg-amber-500/10"
+      >
+
+        <!-- Encabezado -->
+        <div class="flex items-start gap-3">
+
+          <span
+            class="mt-0.5 shrink-0
+                  text-amber-600
+                  dark:text-amber-400"
+          >
+            ⚠️
+          </span>
+
+          <div class="min-w-0 flex-1">
+
+            <p
+              class="text-sm font-semibold
+                    text-amber-800
+                    dark:text-amber-300"
+            >
+              Documentación obligatoria pendiente
+            </p>
+
+            <!-- Cantidad de requisitos pendientes -->
+            <p
+              class="mt-1 text-xs
+                    leading-relaxed
+                    text-amber-700
+                    dark:text-amber-400"
+            >
+              Tienes
+              <strong>
+                {{ mandatoryDocumentsMissing().length }}
+                {{
+                  mandatoryDocumentsMissing().length === 1
+                    ? 'tipo documental obligatorio pendiente.'
+                    : 'tipos documentales obligatorios pendientes.'
+                }}
+              </strong>
+
+              @if (!readOnly()) {
+                Debes adjuntar al menos un archivo en cada uno
+                antes de aprobar o rechazar tu Plan de Trabajo Digital.
+              }
+            </p>
+
+            <!-- Listado de documentos pendientes -->
+            <div class="mt-2">
+
+              <p
+                class="text-xs font-semibold
+                      text-amber-800
+                      dark:text-amber-300"
+              >
+                Documentos pendientes:
+              </p>
+
+              <ul
+                class="mt-1 list-disc space-y-1
+                      pl-4 text-xs
+                      text-amber-700
+                      dark:text-amber-400"
+              >
+
+                @for (
+                  nombre of mandatoryDocumentsMissing();
+                  track nombre
+                ) {
+
+                  <li>
+                    {{ nombre }}
+                  </li>
+
+                }
+
+              </ul>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    }
+
     <!-- TABLA DE DOCUMENTOS -->
     <div
       class="max-w-full overflow-x-auto
