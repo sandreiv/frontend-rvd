@@ -199,24 +199,84 @@
                 class="min-w-0 px-4 py-4"
               >
 
+                <!-- Nombre del documento -->
                 <p
                   class="text-sm font-semibold
-                         text-gray-900
-                         break-words
-                         [overflow-wrap:anywhere]
-                         dark:text-white/90"
+                        text-gray-900
+                        break-words
+                        [overflow-wrap:anywhere]
+                        dark:text-white/90"
                 >
                   {{ categoria.nombre }}
                 </p>
 
-                <p
-                  class="mt-1 text-xs
-                         text-gray-400
-                         break-words
-                         [overflow-wrap:anywhere]"
+                <!-- OBLIGATORIEDAD DEL DOCUMENTO -->
+                <div
+                  class="mt-2 flex flex-wrap
+                        items-center gap-2"
+                >
+
+                  @if (categoria.obligatorio === true) {
+
+                    <!-- Documento obligatorio -->
+                    <span
+                      class="inline-flex items-center
+                            rounded-full
+                            bg-error-50
+                            px-2.5 py-1
+                            text-xs font-medium
+                            text-error-600
+                            dark:bg-error-500/10
+                            dark:text-error-400"
+                    >
+                      Obligatorio
+                    </span>
+
+                  } @else if (categoria.obligatorio === false) {
+
+                    <!-- Documento opcional -->
+                    <span
+                      class="inline-flex items-center
+                            rounded-full
+                            bg-success-50
+                            px-2.5 py-1
+                            text-xs font-medium
+                            text-success-600
+                            dark:bg-success-500/10
+                            dark:text-success-400"
+                    >
+                      Opcional
+                    </span>
+
+                  } @else {
+
+                    <!-- Sin clasificación en el catálogo -->
+                    <span
+                      class="inline-flex items-center
+                            rounded-full
+                            bg-gray-100
+                            px-2.5 py-1
+                            text-xs font-medium
+                            text-gray-500
+                            dark:bg-gray-800
+                            dark:text-gray-400"
+                    >
+                      Sin clasificación
+                    </span>
+
+                  }
+
+                </div>
+
+                <!-- Código documental de compatibilidad -->
+                <!--<p
+                  class="mt-2 text-xs
+                        text-gray-400
+                        break-words
+                        [overflow-wrap:anywhere]"
                 >
                   {{ categoria.codigo }}
-                </p>
+                </p>-->
 
               </td>
 
@@ -282,6 +342,45 @@
                             }}
                           </p>
 
+                          <!-- ESTADO INDIVIDUAL DEL DOCUMENTO -->
+                          <div class="mt-2">
+
+                            @if (archivo.estado?.trim(); as estadoDocumento) {
+
+                              <!-- Estado registrado en Oracle -->
+                              <span
+                                class="inline-flex items-center
+                                      rounded-full
+                                      bg-brand-50
+                                      px-2.5 py-1
+                                      text-xs font-medium
+                                      text-brand-600
+                                      dark:bg-brand-500/10
+                                      dark:text-brand-400"
+                              >
+                                Estado: {{ estadoDocumento }}
+                              </span>
+
+                            } @else {
+
+                              <!-- Documento sin estado individual -->
+                              <span
+                                class="inline-flex items-center
+                                      rounded-full
+                                      bg-gray-100
+                                      px-2.5 py-1
+                                      text-xs font-medium
+                                      text-gray-500
+                                      dark:bg-gray-800
+                                      dark:text-gray-400"
+                              >
+                                Para revisión
+                              </span>
+
+                            }
+
+                          </div>
+
                           <!-- ACCIONES DEL ARCHIVO -->
                             <div
                             class="mt-2 flex flex-wrap
@@ -331,7 +430,7 @@
                                 }}
                             </button>
 
-                              @if (!readOnly()) {
+                              @if (!readOnly() && !archivo.estado?.trim()) {
 
                                 <!-- ELIMINAR -->
                                 <button
