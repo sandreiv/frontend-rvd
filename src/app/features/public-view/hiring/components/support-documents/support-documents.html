@@ -331,25 +331,18 @@
                             {{ archivo.nombre }}
                           </p>
 
-                          <p
-                            class="mt-0.5 text-xs
-                                   text-gray-400"
+                          <!-- ESTADO Y ACCIONES DEL ARCHIVO -->
+                          <div
+                            class="mt-2 flex flex-nowrap
+                                  items-center gap-3
+                                  whitespace-nowrap"
                           >
-                            {{
-                              formatFileSize(
-                                archivo.tamano
-                              )
-                            }}
-                          </p>
 
-                          <!-- ESTADO INDIVIDUAL DEL DOCUMENTO -->
-                          <div class="mt-2">
-
+                            <!-- ESTADO DEL DOCUMENTO -->
                             @if (archivo.estado?.trim(); as estadoDocumento) {
 
-                              <!-- Estado registrado en Oracle -->
                               <span
-                                class="inline-flex items-center
+                                class="inline-flex shrink-0 items-center
                                       rounded-full
                                       bg-brand-50
                                       px-2.5 py-1
@@ -358,14 +351,13 @@
                                       dark:bg-brand-500/10
                                       dark:text-brand-400"
                               >
-                                Estado: {{ estadoDocumento }}
+                                {{ estadoDocumento }}
                               </span>
 
                             } @else {
 
-                              <!-- Documento sin estado individual -->
                               <span
-                                class="inline-flex items-center
+                                class="inline-flex shrink-0 items-center
                                       rounded-full
                                       bg-gray-100
                                       px-2.5 py-1
@@ -379,82 +371,68 @@
 
                             }
 
-                          </div>
-
-                          <!-- ACCIONES DEL ARCHIVO -->
-                            <div
-                            class="mt-2 flex flex-wrap
-                                    items-center gap-3"
-                            >
-
                             <!-- VISUALIZAR -->
                             @if (canPreview(archivo)) {
 
-                                <button
+                              <button
                                 type="button"
-                                class="text-xs font-medium
-                                        text-brand-600
-                                        hover:underline
-                                        disabled:opacity-50
-                                        dark:text-brand-400"
+                                class="shrink-0 text-xs font-medium
+                                      text-brand-600
+                                      hover:underline
+                                      disabled:opacity-50
+                                      dark:text-brand-400"
                                 [disabled]="uploading()"
-                                (click)="
-                                    viewRequested.emit(archivo)
-                                "
-                                >
+                                (click)="viewRequested.emit(archivo)"
+                              >
                                 Ver
-                                </button>
+                              </button>
 
                             }
 
                             <!-- DESCARGAR -->
                             <button
-                                type="button"
-                                class="text-xs font-medium
+                              type="button"
+                              class="shrink-0 text-xs font-medium
                                     text-gray-600
                                     hover:underline
                                     disabled:opacity-50
                                     dark:text-gray-300"
-                                [disabled]="
+                              [disabled]="
                                 uploading() ||
                                 downloadingFileId() !== null
-                                "
-                                (click)="
-                                downloadRequested.emit(archivo)
-                                "
+                              "
+                              (click)="downloadRequested.emit(archivo)"
                             >
-                                {{
+                              {{
                                 downloadingFileId() === archivo.id
-                                    ? 'Descargando...'
-                                    : 'Descargar'
-                                }}
+                                  ? 'Descargando...'
+                                  : 'Descargar'
+                              }}
                             </button>
 
-                              @if (!readOnly() && !archivo.estado?.trim()) {
+                            <!-- ELIMINAR -->
+                            @if (!readOnly() && !archivo.estado?.trim()) {
 
-                                <!-- ELIMINAR -->
-                                <button
+                              <button
                                 type="button"
-                                class="text-xs font-medium
-                                        text-error-600
-                                        hover:underline
-                                        disabled:cursor-not-allowed
-                                        disabled:opacity-50
-                                        dark:text-error-400"
+                                class="shrink-0 text-xs font-medium
+                                      text-error-600
+                                      hover:underline
+                                      disabled:cursor-not-allowed
+                                      disabled:opacity-50
+                                      dark:text-error-400"
                                 [disabled]="
-                                    uploading() ||
-                                    deleting()
+                                  uploading() ||
+                                  deleting()
                                 "
-                                (click)="
-                                    deleteRequested.emit(archivo)
-                                "
-                                >
+                                (click)="deleteRequested.emit(archivo)"
+                              >
                                 Eliminar
-                                </button>
+                              </button>
 
-                              }
+                            }
 
-                            </div>
+                          </div>
 
                         </div>
 
