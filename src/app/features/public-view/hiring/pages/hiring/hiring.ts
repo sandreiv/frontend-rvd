@@ -1227,7 +1227,7 @@ export class Hiring {
       this.supportDocumentsRequestSequence;
 
     const {
-      codigoCategoria,
+      idTipoDocumento,
       archivos,
     } = request;
 
@@ -1267,9 +1267,9 @@ export class Hiring {
         const resultado =
           await firstValueFrom(
             this.hiringService
-              .uploadSupportDocuments(
+              .uploadSupportDocumentsByType(
                 idCargaDocente,
-                codigoCategoria,
+                idTipoDocumento,
                 lote,
               ),
           );

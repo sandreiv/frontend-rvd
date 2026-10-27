@@ -185,6 +185,38 @@ export class HiringService {
         );
     }
 
+
+    uploadSupportDocumentsByType(
+      idCargaDocente: number,
+      idTipoDocumento: number,
+      archivos: File[],
+    ): Observable<PublicSupportDocuments> {
+
+      const formData = new FormData();
+
+      formData.append(
+        'idTipoDocumento',
+        String(idTipoDocumento),
+      );
+
+      for (const archivo of archivos) {
+
+        formData.append(
+          'archivos',
+          archivo,
+          archivo.name,
+        );
+
+      }
+
+      return this.webRequestService
+        .postFormData<PublicSupportDocuments>(
+          `${this.endpoint}/hiring-records/${idCargaDocente}/support-documents/by-type`,
+          formData,
+        );
+    }
+
+
     getSupportDocumentFile(
     idCargaDocente: number,
     fileId: string,

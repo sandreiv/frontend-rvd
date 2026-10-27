@@ -22,14 +22,26 @@ import {
 
 
 interface SupportDocumentRow {
-    codigo: string;
-    nombre: string;
-    archivos: PublicSupportDocumentFile[];
-    habilitada: boolean;
-}
 
+    codigo: string;
+
+    nombre: string;
+
+    archivos: PublicSupportDocumentFile[];
+
+    habilitada: boolean;
+
+    idTipoDocumento: number | null;
+
+    obligatorio: boolean | null;
+
+}
 export interface SupportDocumentsUploadRequest {
+
     codigoCategoria: string;
+
+    idTipoDocumento: number;
+
     archivos: File[];
 }
 
@@ -124,28 +136,43 @@ export class SupportDocuments {
 
 
         const filasOficiales =
-            categorias.map(
-                categoria => {
+        categorias.map(
+            categoria => {
 
-                    const registrada =
-                        documentosPorCategoria.get(
-                            categoria.codigo,
-                        );
+                const registrada =
+                    documentosPorCategoria.get(
+                        categoria.codigo,
+                    );
 
-                    return {
-                        codigo:
-                            categoria.codigo,
+                const idTipoDocumento =
+                    categoria.idTipoDocumento ?? null;
 
-                        nombre:
-                            categoria.nombre,
+                return {
 
-                        archivos:
-                            registrada?.archivos ?? [],
+                    codigo:
+                        categoria.codigo,
 
-                        habilitada: true,
-                    };
-                },
-            );
+                    nombre:
+                        categoria.nombre,
+
+                    archivos:
+                        registrada?.archivos ?? [],
+
+                    habilitada:
+                        idTipoDocumento !== null &&
+                        Number.isSafeInteger(
+                            idTipoDocumento,
+                        ) &&
+                        idTipoDocumento > 0,
+
+                    idTipoDocumento,
+
+                    obligatorio:
+                        categoria.obligatorio ?? null,
+
+                };
+            },
+        );
 
         const codigosOficiales =
             new Set(
@@ -156,27 +183,40 @@ export class SupportDocuments {
             );
 
         const filasHistoricas =
-            registradas
-                .filter(
-                    categoria =>
-                        !codigosOficiales.has(
-                            categoria.codigo,
-                        ),
-                )
-                .map(
-                    categoria => ({
-                        codigo:
-                            categoria.codigo,
+        registradas
+            .filter(
+                categoria =>
+                    !codigosOficiales.has(
+                        categoria.codigo,
+                    ),
+            )
+            .map(
+                categoria => ({
 
-                        nombre:
-                            categoria.nombre,
+                    codigo:
+                        categoria.codigo,
 
-                        archivos:
-                            categoria.archivos ?? [],
+                    nombre:
+                        categoria.nombre,
 
-                        habilitada: false,
-                    }),
-                );
+                    archivos:
+                        categoria.archivos ?? [],
+
+                    /**
+                     * Las categorías históricas
+                     * que no pertenecen al catálogo
+                     * vigente son de consulta.
+                     */
+                    habilitada: false,
+
+                    idTipoDocumento:
+                        categoria.idTipoDocumento ?? null,
+
+                    obligatorio:
+                        categoria.obligatorio ?? null,
+
+                }),
+            );
 
         return [
             ...filasOficiales,
@@ -235,28 +275,37 @@ export class SupportDocuments {
             return;
         }
 
-        const categoriaHabilitada =
-            this.categories().some(
-                categoria =>
-                    categoria.codigo ===
+        const categoria =
+            this.categories().find(
+                item =>
+                    item.codigo ===
                     codigoCategoria,
             );
 
-        if (!categoriaHabilitada) {
+        const idTipoDocumento =
+            categoria?.idTipoDocumento;
+
+        if (
+            idTipoDocumento == null ||
+            !Number.isSafeInteger(
+                idTipoDocumento,
+            ) ||
+            idTipoDocumento <= 0
+        ) {
             return;
         }
 
         this.uploadRequested.emit({
+
             codigoCategoria,
+
+            idTipoDocumento,
+
             archivos,
+
         });
     }
 
-
-    /*
-     * Convierte el tamaño del archivo
-     * a una representación legible.
-     */
     formatFileSize(
         bytes: number,
     ): string {
@@ -288,18 +337,18 @@ export class SupportDocuments {
     archivo: PublicSupportDocumentFile,
     ): boolean {
 
-    const extension =
-        (archivo.extension ?? '')
-        .replace('.', '')
-        .trim()
-        .toLowerCase();
+        const extension =
+            (archivo.extension ?? '')
+            .replace('.', '')
+            .trim()
+            .toLowerCase();
 
-    return [
-        'pdf',
-        'jpg',
-        'jpeg',
-        'png',
-    ].includes(extension);
+        return [
+            'pdf',
+            'jpg',
+            'jpeg',
+            'png',
+        ].includes(extension);
     }
 
 }
