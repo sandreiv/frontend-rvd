@@ -293,7 +293,157 @@
             }
 
             @case ('attachments') {
-              
+              @if (attachmentCategories().length) {
+                <div class="max-w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
+                  <table class="w-full min-w-[800px] table-fixed text-left text-sm">
+                    <thead class="bg-gray-50 dark:bg-white/5">
+                      <tr>
+                        <th
+                          scope="col"
+                          class="w-[40%] px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                        >
+                          Documento de soporte
+                        </th>
+
+                        <th
+                          scope="col"
+                          class="w-[40%] px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                        >
+                          Archivos registrados
+                        </th>
+
+                        <th
+                          scope="col"
+                          class="w-[10%] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-widetext-gray-500 dark:text-gray-400"
+                        >
+                          Cantidad
+                        </th>
+
+                        <th
+                          scope="col"
+                          class="w-[10%] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-widetext-gray-500 dark:text-gray-400"
+                        >
+                          Aprobar
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      @for (categoria of attachmentCategories(); track categoria.codigo) {
+                        <tr class="border-t border-gray-100 align-top dark:border-white/5">
+                          <td class="min-w-0 px-4 py-4">
+                            <p class="break-words text-sm font-semibold text-gray-900 [overflow-wrap:anywhere] dark:text-white/90">
+                              {{ categoria.nombre }}
+                            </p>
+
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                              @if (categoria.obligatorio === true) {
+                                <span class="inline-flex items-center rounded-full bg-warning-50 px-2.5 py-1 text-xs font-medium text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
+                                  Obligatorio
+                                </span>
+                              } @else {
+                                <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-500/10 dark:text-gray-400">
+                                  Opcional
+                                </span>
+                              }
+                            </div>
+                          </td>
+
+                          <td class="min-w-0 px-4 py-4">
+                            @if (categoria.archivos.length > 0) {
+                              <ul class="flex min-w-0 flex-col gap-3">
+                                @for (archivo of categoria.archivos; track archivo.id) {
+                                  <li class="flex min-w-0 items-start gap-2">
+                                    <span class="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400">
+                                      <app-icon name="file" size="xs" />
+                                    </span>
+
+                                    <div class="min-w-0 flex-1">
+                                      <p class="break-words whitespace-pre-wrap text-sm text-gray-700 [overflow-wrap:anywhere] dark:text-gray-300">
+                                        {{ archivo.nombre }}
+                                      </p>
+
+                                      <p class="mt-0.5 text-xs text-gray-400">
+                                        {{ formatFileSize(archivo.tamano) }}
+                                      </p>
+
+                                      <!--
+                                      <div class="mt-2 flex flex-wrap items-center gap-3">
+                                        @if (canPreview(archivo)) {
+                                          <button
+                                            type="button"
+                                            class="text-xs font-medium text-brand-600 hover:underline disabled:opacity-50 dark:text-brand-400"
+                                            (click)="viewFile(archivo)"
+                                          >
+                                            Ver
+                                          </button>
+                                        }
+
+                                        <button
+                                          type="button"
+                                          class="text-xs font-medium text-gray-600 hover:underline disabled:opacity-50 dark:text-gray-300"
+                                          [disabled]="downloadingFileId() !== null"
+                                          (click)="downloadFile(archivo)"
+                                        >
+                                          {{
+                                            downloadingFileId() === archivo.id
+                                              ? 'Descargando...'
+                                              : 'Descargar'
+                                          }}
+                                        </button>
+                                      </div>
+                                      -->
+                                    </div>
+                                  </li>
+                                }
+                              </ul>
+                            } @else {
+                              <span class="text-sm text-gray-400 dark:text-gray-500">
+                                Sin documentos registrados
+                              </span>
+                            }
+                          </td>
+
+                          <td class="px-4 py-4 text-center">
+                            <span
+                              class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                              [class]="categoria.archivos.length > 0
+                                ? 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400'
+                                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                              "
+                            >
+                              {{ categoria.archivos.length }}
+                            </span>
+                          </td>
+
+                          <td class="px-4 py-4">
+                            @if (categoria.archivos.length > 0) {
+                              <div class="flex flex-col gap-3">
+                                @for (archivo of categoria.archivos; track archivo.id) {
+                                  <div class="flex items-start justify-center">
+                                    <app-checkbox
+                                      [id]="'attachment-' + archivo.id"
+                                      [disabled]="!!archivo.estado"
+                                      [checked]="isAttachmentSelected(archivo.id)"
+                                      (checkedChange)="onAttachmentSelectionChange(archivo.id, $event)"
+                                    />
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <p class="text-center text-xs text-gray-400">—</p>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+                  No hay documentos adjuntos para mostrar.
+                </p>
+              }
             }
           }
         </app-collapsible-section>
@@ -350,18 +500,27 @@
           }
 
           @if (canApprovePtd()) {
-            <app-button
-              type="button"
-              [disabled]="isSavingPtd()"
-              (btnClick)="onApprove()"
+            <span
+              class="inline-flex"
+              [appTooltip]="!hasAttachmentsInRequiredCategories()
+                ? 'Todas las categorías obligatorias deben tener archivos adjuntos para aprobar el PTD'
+                : ''
+              "
+              tooltipPlacement="top"
             >
-              <app-icon name="check" size="xs" />
-              {{
-                savingAction() === 'approve'
-                  ? 'Aprobando...'
-                  : 'Aprobar PTD'
-              }}
-            </app-button>
+              <app-button
+                type="button"
+                [disabled]="isSavingPtd() || !hasAttachmentsInRequiredCategories()"
+                (btnClick)="onApprove()"
+              >
+                <app-icon name="check" size="xs" />
+                {{
+                  savingAction() === 'approve'
+                    ? 'Aprobando...'
+                    : 'Aprobar PTD'
+                }}
+              </app-button>
+            </span>
           }
         </div>
       </div>

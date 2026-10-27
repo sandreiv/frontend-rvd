@@ -26,6 +26,9 @@ import { finalize, firstValueFrom } from 'rxjs';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { NotificationService } from '../../../../../core/service/notification-service';
+import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
+import { PublicSupportDocumentFile } from '../../../../public-view/hiring/model/hiring.model';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 type PtdReviewSectionId = 'detalle-actividades' | 'ptd-actividades' | 'attachments';
 
@@ -77,7 +80,7 @@ function createInitialExpandedSections(): Record<PtdReviewSectionId, boolean> {
 
 @Component({
   selector: 'app-review-ptd-modal',
-  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, Checkbox, Tooltip],
   templateUrl: './review-ptd-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -100,6 +103,7 @@ export class ReviewPtdModal {
   readonly observationForm = this.fb.group({
     observacion: [''],
   });
+  readonly selectedAttachmentIds = signal<ReadonlySet<string>>(new Set());
   readonly expandedSections = signal(createInitialExpandedSections());
 
   readonly englishLevels: Option[] = [
@@ -144,6 +148,31 @@ export class ReviewPtdModal {
     )
   });
 
+  // Obtener adjuntos de un PTD
+  readonly ptdAttachmentsResource = rxResource({
+    params: () => {
+      const idCargaDocente = this.idCargaDocente();
+      const idPersonaGeneral = this.information()?.idPersonaGeneral;
+      const idPeriodoUniversitario = this.idPeriodoUniversitario();
+
+      if (!this.isOpen() || idCargaDocente == null || idPersonaGeneral == null || idPeriodoUniversitario == null) {
+        return undefined;
+      }
+
+      return { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario };
+    },
+    stream: ({ params }) => this.hiringCallService.getAttachments(
+      params.idPersonaGeneral,
+      params.idCargaDocente,
+      params.idPeriodoUniversitario
+    )
+  });
+
+  // Obtener tipos de adjuntos
+  readonly supportDocumentCategoriesResource = rxResource({
+    stream: () => this.hiringCallService.getAttachmentCategories()
+  });
+
 
   readonly information = computed(() => {
     if (!this.isOpen() || !this.informationResource.hasValue()) {
@@ -167,7 +196,12 @@ export class ReviewPtdModal {
   });
 
   readonly isLoadingReview = computed(
-    () => this.isOpen() && (this.informationResource.isLoading() || this.ptdActivitiesResource.isLoading()),
+    () => this.isOpen() && (
+      this.informationResource.isLoading() ||
+      this.ptdActivitiesResource.isLoading() ||
+      this.ptdInfoWithWeightsResource.isLoading() ||
+      this.ptdAttachmentsResource.isLoading()
+    ),
   );
 
   readonly summaryActivityTables = computed(() => {
@@ -197,6 +231,32 @@ export class ReviewPtdModal {
     this.buildHeaderChips(this.information()),
   );
 
+  readonly attachmentCategories = computed(() => {
+    const availableCategories = this.supportDocumentCategoriesResource.value() ?? [];
+    const ptdDocuments = this.ptdAttachmentsResource.value();
+
+    const filesByCategory = new Map(
+      (ptdDocuments?.categorias ?? []).map((category) => [
+        category.codigo,
+        category.archivos ?? [],
+      ]),
+    );
+
+    return availableCategories.map((category) => ({
+      ...category,
+      archivos: filesByCategory.get(category.codigo) ?? [],
+    }));
+  });
+
+  // Verifica que las categorias obligatorias tengan adjuntos para aprobar el PTD
+  readonly hasAttachmentsInRequiredCategories = computed(() => {
+    return this.attachmentCategories()
+      .filter(category => category.obligatorio)
+      .every(category => (category.archivos ?? []).length > 0);
+  })
+
+  readonly selectedAttachmentCount = computed(() => this.selectedAttachmentIds().size);
+
   readonly sections = computed (() => REVIEW_SECTIONS);
   readonly observacion = computed(() => this.ptdInfoWithWeights()?.observacion?.descripcion ?? '');
   
@@ -215,6 +275,7 @@ export class ReviewPtdModal {
       untracked(() => {
         this.expandedSections.set(createInitialExpandedSections());
         this.resetPtdObservation();
+        this.selectedAttachmentIds.set(new Set());
       });
     });
   }
@@ -230,6 +291,40 @@ export class ReviewPtdModal {
     }));
   }
 
+  isAttachmentSelected(id: string): boolean {
+    return this.selectedAttachmentIds().has(id);
+  }
+
+  onAttachmentSelectionChange(id: string, checked: boolean): void {
+    this.selectedAttachmentIds.update((current) => {
+      const updated = new Set(current);
+
+      if (checked) {
+        updated.add(id);
+      } else {
+        updated.delete(id);
+      }
+
+      return updated;
+    });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes < 0) {
+      return '—';
+    }
+
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  
   hoursLabel(hours: number): string {
     return `${hours ?? 0}h`;
   }
@@ -262,6 +357,18 @@ export class ReviewPtdModal {
     this.close.emit();
   }
 
+  /*
+  canPreview(archivo: PublicSupportDocumentFile): boolean {
+    const extension =
+      (archivo.extension ?? '')
+      .replace('.', '')
+      .trim()
+      .toLowerCase();
+
+      return ['pdf', 'jpg', 'jpeg', 'png'].includes(extension);
+  }
+  */
+
   async onApprove(): Promise<void> {
     const idPersonaGeneral = this.information()?.idPersonaGeneral;
     const idCargaDocente = this.idCargaDocente();
@@ -271,11 +378,20 @@ export class ReviewPtdModal {
       return;
     }
 
+    if (!this.hasAllAttachmentsSelected()) {
+      this.notificationService.error(
+        'Debe seleccionar todos los archivos adjuntos para aprobar el PTD.',
+        'Adjuntos pendientes',
+      );
+      return;
+    }
+
+
     const request: ApprovePtdRequest = {
       idPersonaGeneral,
       idPeriodoUniversitario,
       idCargaDocente,
-      idsDocumentosAdjuntos: ['71e566b0-2937-4841-8772-fd940d034cc2']
+      idsDocumentosAdjuntos: this.getSelectedAttachmentIds()
     }
 
     this.savingAction.set('approve');
@@ -302,7 +418,7 @@ export class ReviewPtdModal {
     const idCargaDocente = this.idCargaDocente();
     const idPeriodoUniversitario = this.idPeriodoUniversitario();
 
-    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canApprovePtd()) {
+    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canRejectPtd()) {
       return;
     }
 
@@ -321,7 +437,7 @@ export class ReviewPtdModal {
       idPersonaGeneral,
       idPeriodoUniversitario,
       idCargaDocente,
-      idsDocumentosAdjuntos: [],
+      idsDocumentosAdjuntos: this.getSelectedAttachmentIds(),
       observacion
     }
 
@@ -470,5 +586,24 @@ export class ReviewPtdModal {
   private resetPtdObservation(): void {
     this.observationForm.reset({ observacion: '' });
     this.ptdObservationError.set(false);
+  }
+
+  private getSelectedAttachmentIds(): string[] {
+    return [...this.selectedAttachmentIds()];
+  }
+
+  // Verifica que los adjuntos sin estados sean todos los documentos seleccionados para aprobar
+  private hasAllAttachmentsSelected(): boolean {
+    const allAttachmentIds = this.attachmentCategories()
+      .flatMap(category => category.archivos ?? [])
+      .filter(archivo => archivo.estado == null)
+      .map(archivo => String(archivo.id));
+
+    const selectedIds = this.selectedAttachmentIds();
+
+    return (
+      allAttachmentIds.length === selectedIds.size &&
+      allAttachmentIds.every(id => selectedIds.has(id))
+    );
   }
 }

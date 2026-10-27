@@ -23,6 +23,7 @@ import {
   SavePtdRequest,
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
+import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../public-view/hiring/model/hiring.model';
 
 @Injectable({ providedIn: 'root' })
 export class HiringCallService {
@@ -192,6 +193,32 @@ export class HiringCallService {
     return this.webRequestService.get<PtdStatesProfessors[]>(
       `${this.endpoint}/get-ptd-states-professors`,
       { idPeriodoUniversitario }
+    );
+  }
+
+  /**
+   * Objeto con los adjuntos pertenecientes al PTD
+   * 
+   * @param idPersonaGeneral Identificador del docente.
+   * @param idCargaDocente Identificador de la carga docente.
+   * @param idPeriodoUniversitario Identificador del periodo universitario.
+   * @returns Observable con los adjuntos cargados por el docente para el PTD
+   */
+  getAttachments(idPersonaGeneral: number, idCargaDocente: number, idPeriodoUniversitario: number): Observable<PublicSupportDocuments> {
+    return this.webRequestService.get<PublicSupportDocuments>(
+      `${this.endpoint}/get-ptd-attachments`,
+      { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario }
+    );
+  }
+
+  /**
+   * Obtiene las categorias de los adjuntos que se pueden relacionar al PTD
+   * 
+   * @returns Observable con las categorias generales
+   */
+  getAttachmentCategories(): Observable<PublicSupportDocumentCategory[]> {
+    return this.webRequestService.get<PublicSupportDocumentCategory[]>(
+      `${this.endpoint}/get-ptd-attachment-categories`, {}
     );
   }
 
