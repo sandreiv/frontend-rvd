@@ -223,6 +223,22 @@ export class HiringCallService {
   }
 
   /**
+   * Consulta el archivo adjunto de un PTD para su visualizacion fuera de la vista pública
+   * 
+   * @param idPersonaGeneral Identificador del docente.
+   * @param idCargaDocente Identificador de la carga docente.
+   * @param idPeriodoUniversitario Identificador del periodo universitario.
+   * @param fileId Identificador del archivo.
+   * @returns Archivo del documento PTD solicitado
+   */
+  getPtdDocumentFile(idPersonaGeneral: number, idCargaDocente: number, idPeriodoUniversitario: number, fileId: string): Observable<Blob> {
+    return this.webRequestService.getBlob(
+      `${this.endpoint}/get-ptd-document-file/${encodeURIComponent(fileId)}/file`,
+      { idPersonaGeneral, idCargaDocente, idPeriodoUniversitario }
+    );
+    }
+
+  /**
    * Actualiza el estado del PTD a 'Aprobado por Talento' y marca los documentos adjuntos enviados como validos
    * 
    * @param payload Objeto con la información para aprobar el PTD

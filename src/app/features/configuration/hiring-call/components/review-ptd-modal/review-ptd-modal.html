@@ -367,12 +367,12 @@
                                         {{ formatFileSize(archivo.tamano) }}
                                       </p>
 
-                                      <!--
                                       <div class="mt-2 flex flex-wrap items-center gap-3">
                                         @if (canPreview(archivo)) {
                                           <button
                                             type="button"
                                             class="text-xs font-medium text-brand-600 hover:underline disabled:opacity-50 dark:text-brand-400"
+                                            [disabled]="filePreviewLoading()"
                                             (click)="viewFile(archivo)"
                                           >
                                             Ver
@@ -392,7 +392,6 @@
                                           }}
                                         </button>
                                       </div>
-                                      -->
                                     </div>
                                   </li>
                                 }
@@ -527,3 +526,15 @@
     </footer>
   }
 </app-modal>
+
+<app-document-preview
+  [isOpen]="filePreviewOpen()"
+  [autoLoad]="false"
+  [isLoading]="filePreviewLoading()"
+  [error]="filePreviewError()"
+  [fileName]="filePreviewFileName()"
+  [previewUrl]="filePreviewUrl()"
+  [downloadDisabled]="filePreviewLoading() || !filePreviewUrl()"
+  (close)="closeFilePreview()"
+  (download)="downloadPreviewFile()"
+/>

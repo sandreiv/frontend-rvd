@@ -10,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -18,17 +18,18 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { mapActivitySummaryTables } from '../../../professor-preload/model/professor-summary.model';
 import { HiringCallService } from '../../data/hiring-call.service';
-import { ActivityWeights, ApprovePtdRequest, ObservacionPtd, PdtInfoWithWeights, ProfessorInformationItem, RejectPtdRequest, SavePtdPayload, SavePtdRequest, SummaryPtdActivity } from '../../model/hiring-call.model';
+import { ActivityWeights, ApprovePtdRequest, ProfessorInformationItem, RejectPtdRequest } from '../../model/hiring-call.model';
 import { Button } from '../../../../../shared/ui/button/button';
-import { FormArray, FormControl, FormGroup, Validators, ReactiveFormsModule, FormBuilder } from '@angular/forms';
-import { Option, Select } from '../../../../../shared/components/form/select/select';
-import { finalize, firstValueFrom } from 'rxjs';
-import { InputField } from '../../../../../shared/components/form/input/input-field';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { Option } from '../../../../../shared/components/form/select/select';
+import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { NotificationService } from '../../../../../core/service/notification-service';
 import { Checkbox } from '../../../../../shared/components/form/input/checkbox';
 import { PublicSupportDocumentFile } from '../../../../public-view/hiring/model/hiring.model';
 import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
+import { DocumentPreview } from '../../../../../shared/components/form/document-preview/document-preview';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 type PtdReviewSectionId = 'detalle-actividades' | 'ptd-actividades' | 'attachments';
 
@@ -80,7 +81,7 @@ function createInitialExpandedSections(): Record<PtdReviewSectionId, boolean> {
 
 @Component({
   selector: 'app-review-ptd-modal',
-  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, Checkbox, Tooltip],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, Checkbox, Tooltip, DocumentPreview],
   templateUrl: './review-ptd-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -105,6 +106,20 @@ export class ReviewPtdModal {
   });
   readonly selectedAttachmentIds = signal<ReadonlySet<string>>(new Set());
   readonly expandedSections = signal(createInitialExpandedSections());
+
+  // Señales para visualización de adjuntos
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly destroyRef = inject(DestroyRef);
+  private filePreviewObjectUrl: string | null = null;
+  private filePreviewRequestId = 0;
+  private fileDownloadRequestId  = 0;
+
+  readonly filePreviewOpen = signal(false);
+  readonly filePreviewLoading = signal(false);
+  readonly filePreviewError = signal<string | null>(null);
+  readonly filePreviewUrl = signal<SafeResourceUrl | null>(null);
+  readonly filePreviewFileName = signal('Documento');
+  readonly downloadingFileId = signal<string | null>(null);
 
   readonly englishLevels: Option[] = [
     { value: 'A1', label: 'A1 (Principiante)' },
@@ -269,6 +284,8 @@ export class ReviewPtdModal {
     effect(() => {
       const isOpen = this.isOpen();
       if (!isOpen) {
+        this.fileDownloadRequestId++;
+        this.downloadingFileId.set(null);
         return;
       }
 
@@ -277,6 +294,11 @@ export class ReviewPtdModal {
         this.resetPtdObservation();
         this.selectedAttachmentIds.set(new Set());
       });
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.filePreviewRequestId++;
+      this.revokeFilePreviewUrl();
     });
   }
 
@@ -353,21 +375,13 @@ export class ReviewPtdModal {
       return;
     }
 
+    this.fileDownloadRequestId++;
+    this.downloadingFileId.set(null);
+    this.closeFilePreview();
     this.resetPtdObservation();
     this.close.emit();
   }
 
-  /*
-  canPreview(archivo: PublicSupportDocumentFile): boolean {
-    const extension =
-      (archivo.extension ?? '')
-      .replace('.', '')
-      .trim()
-      .toLowerCase();
-
-      return ['pdf', 'jpg', 'jpeg', 'png'].includes(extension);
-  }
-  */
 
   async onApprove(): Promise<void> {
     const idPersonaGeneral = this.information()?.idPersonaGeneral;
@@ -605,5 +619,177 @@ export class ReviewPtdModal {
       allAttachmentIds.length === selectedIds.size &&
       allAttachmentIds.every(id => selectedIds.has(id))
     );
+  }
+
+
+  // SECCION DE VISUALIZACION DE DOCUMENTOS
+  async viewFile(archivo: PublicSupportDocumentFile): Promise<void> {
+    const idCargaDocente = this.idCargaDocente();
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+    if (idCargaDocente == null || idPersonaGeneral == null || idPeriodoUniversitario == null || !this.canPreview(archivo)) {
+      return;
+    }
+
+    this.closeFilePreview();
+    const requestId = ++this.filePreviewRequestId;
+
+    this.filePreviewFileName.set(archivo.nombre);
+    this.filePreviewError.set(null);
+    this.filePreviewUrl.set(null);
+    this.filePreviewLoading.set(true);
+    this.filePreviewOpen.set(true);
+
+    const isCurrentRequest = () => (requestId === this.filePreviewRequestId && this.isOpen());
+    
+    const extension = (archivo.extension ?? '')
+      .replace('.', '')
+      .trim()
+      .toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      pdf: 'application/pdf',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+    };
+    const expectedMimeType = mimeTypes[extension];
+    if (!expectedMimeType) {
+      return;
+    }
+
+    try {
+      const blob = await firstValueFrom(
+        this.hiringCallService.getPtdDocumentFile(
+          idPersonaGeneral,
+          idCargaDocente,
+          idPeriodoUniversitario,
+          archivo.id,
+        )
+      );
+
+      if (!isCurrentRequest()) {
+        return;
+      }
+
+      const responseMimeType = blob.type
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
+      
+      if (responseMimeType !== expectedMimeType) {
+        this.filePreviewError.set('El formato del documento no permite su previsualización.');
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      this.filePreviewObjectUrl = objectUrl;
+      this.filePreviewUrl.set(
+        this.sanitizer.bypassSecurityTrustResourceUrl(objectUrl),
+      );
+    } catch {
+      if (isCurrentRequest()) {
+        this.filePreviewError.set('No fue posible recuperar el documento solicitado.');
+      }
+    } finally {
+      if (isCurrentRequest()) {
+        this.filePreviewLoading.set(false);
+      }
+    }
+  }
+
+  async downloadFile(archivo: PublicSupportDocumentFile): Promise<void> {
+    const idCargaDocente = this.idCargaDocente();
+    const idPersonaGeneral = this.information()?.idPersonaGeneral;
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+    if (idCargaDocente == null || idPersonaGeneral == null || idPeriodoUniversitario == null || this.downloadingFileId() !== null) {
+      return;
+    }
+
+    const requestId = ++this.fileDownloadRequestId;
+    this.downloadingFileId.set(archivo.id);
+
+    const isCurrentRequest = () => (requestId === this.fileDownloadRequestId && this.isOpen() && this.downloadingFileId() === archivo.id);
+
+    try {
+      const blob = await firstValueFrom(
+        this.hiringCallService.getPtdDocumentFile(
+          idPersonaGeneral,
+          idCargaDocente,
+          idPeriodoUniversitario,
+          archivo.id,
+        )
+      );
+
+      if (!isCurrentRequest()) {
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+
+      anchor.href = objectUrl;
+      anchor.download = archivo.nombre;
+
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+    } catch {
+      if (isCurrentRequest()) {
+        this.notificationService.error(
+          'No fue posible descargar el documento.',
+          'Documentos adjuntos',
+        );
+      }
+    } finally {
+      if (isCurrentRequest()) {
+        this.downloadingFileId.set(null);
+      }
+    }
+  }
+
+  canPreview(archivo: PublicSupportDocumentFile): boolean {
+    const extension =
+      (archivo.extension ?? '')
+      .replace('.', '')
+      .trim()
+      .toLowerCase();
+
+      return ['pdf', 'jpg', 'jpeg', 'png'].includes(extension);
+  }
+
+  closeFilePreview(): void {
+    this.filePreviewRequestId++;
+
+    this.filePreviewOpen.set(false);
+    this.filePreviewLoading.set(false);
+    this.filePreviewError.set(null);
+    this.filePreviewUrl.set(null);
+
+    this.revokeFilePreviewUrl();
+  }
+
+  downloadPreviewFile(): void {
+    const objectUrl = this.filePreviewObjectUrl;
+
+    if (!objectUrl || this.filePreviewLoading()) {
+      return;
+    }
+
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = this.filePreviewFileName();
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
+  private revokeFilePreviewUrl(): void {
+    if (this.filePreviewObjectUrl) {
+      URL.revokeObjectURL(this.filePreviewObjectUrl);
+      this.filePreviewObjectUrl = null;
+    }
   }
 }
