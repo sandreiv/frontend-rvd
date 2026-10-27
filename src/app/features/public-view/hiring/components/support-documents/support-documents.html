@@ -349,16 +349,12 @@
 
                               <!-- Estado registrado en Oracle -->
                               <span
-                                class="inline-flex items-center
-                                      rounded-full
-                                      bg-brand-50
-                                      px-2.5 py-1
-                                      text-xs font-medium
-                                      text-brand-600
-                                      dark:bg-brand-500/10
-                                      dark:text-brand-400"
+                                class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                                [class]="estadoDocumento === '1'
+                                  ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
+                                  : 'bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400'"
                               >
-                                Estado: {{ estadoDocumento }}
+                                Estado: {{ estadoDocumento === '1' ? 'Aprobado' : 'Rechazado' }}
                               </span>
 
                             } @else {
