@@ -92,6 +92,17 @@ export class Hiring {
   readonly selectedHiringRecord =
     signal<PublicHiringRecord | null>(null);
 
+  readonly supportDocumentsExempt = computed(() => {
+
+    const record = this.selectedHiringRecord();
+
+    return (
+      record?.onceMeses?.trim() === '1' &&
+      record?.periodoUniversidad?.trim() === '2'
+    );
+
+  });  
+
   readonly ptdDecisionPending = signal<{
     idCargaDocente: number;
     nuevoEstado: '1' | '2';
@@ -99,6 +110,9 @@ export class Hiring {
 
   readonly ptdDecisionSaving =
     signal(false);
+
+  readonly ptdDecisionValidating =
+    signal(false);  
 
   readonly ptdEstado = computed(() =>
     (
@@ -384,9 +398,9 @@ export class Hiring {
       );
   }
 
-  onRequestPtdDecision(
+  async onRequestPtdDecision(
     nuevoEstado: '1' | '2',
-  ): void {
+  ): Promise<void> {
 
     const record =
       this.selectedHiringRecord();
@@ -395,6 +409,7 @@ export class Hiring {
       !record ||
       !this.ptdCanDecide() ||
       this.ptdDecisionSaving() ||
+      this.ptdDecisionValidating() ||
       this.savingAcademicTraining() ||
       this.supportDocumentsUploading() ||
       this.supportDocumentDeletingFileId() !== null
@@ -402,12 +417,134 @@ export class Hiring {
       return;
     }
 
-    this.ptdDecisionPending.set({
-      idCargaDocente:
-        record.idCargaDocente,
+    if (this.supportDocumentsExempt()) {
 
-      nuevoEstado,
-    });
+      this.ptdDecisionPending.set({
+
+        idCargaDocente:
+          record.idCargaDocente,
+
+        nuevoEstado,
+
+      });
+
+      return;
+    }
+
+    this.ptdDecisionValidating.set(true);
+
+    try {
+
+      const [
+        categorias,
+        documentos,
+      ] = await Promise.all([
+
+        firstValueFrom(
+          this.hiringService
+            .getSupportDocumentCategories(),
+        ),
+
+        firstValueFrom(
+          this.hiringService
+            .getSupportDocuments(
+              record.idCargaDocente,
+            ),
+        ),
+
+      ]);
+
+      if (
+        this.selectedHiringRecord()
+          ?.idCargaDocente !==
+            record.idCargaDocente ||
+        !this.ptdCanDecide()
+      ) {
+        return;
+      }
+
+      const categoriasObligatorias =
+        categorias.filter(
+          categoria =>
+            categoria.obligatorio === true,
+        );
+
+      const documentosFaltantes =
+        categoriasObligatorias.filter(
+          categoriaObligatoria => {
+
+            const idTipoDocumento =
+              categoriaObligatoria.idTipoDocumento;
+
+            if (
+              idTipoDocumento == null ||
+              idTipoDocumento <= 0
+            ) {
+              return true;
+            }
+
+            const categoriaRegistrada =
+              documentos.categorias.find(
+                categoria =>
+                  categoria.idTipoDocumento ===
+                    idTipoDocumento,
+              );
+
+            return (
+              !categoriaRegistrada ||
+              categoriaRegistrada.archivos.length === 0
+            );
+
+          },
+        );
+
+      if (documentosFaltantes.length > 0) {
+
+        const nombresPendientes =
+          documentosFaltantes
+            .map(
+              categoria => categoria.nombre,
+            )
+            .join(', ');
+
+        this.notificationService.error(
+          'No es posible aprobar ni rechazar '
+            + 'el Plan de Trabajo Digital. '
+            + 'Debes adjuntar al menos un archivo '
+            + 'en cada tipo documental obligatorio. '
+            + 'Documentos pendientes: '
+            + nombresPendientes,
+
+          'Documentos obligatorios pendientes',
+        );
+
+        return;
+      }
+
+      this.ptdDecisionPending.set({
+
+        idCargaDocente:
+          record.idCargaDocente,
+
+        nuevoEstado,
+
+      });
+
+    } catch {
+
+      this.notificationService.error(
+        'No fue posible verificar los documentos '
+          + 'obligatorios de la contratación. '
+          + 'Intenta nuevamente.',
+
+        'Plan de trabajo digital',
+      );
+
+    } finally {
+
+      this.ptdDecisionValidating.set(false);
+
+    }
   }
 
   closePtdDecisionModal(): void {
@@ -1227,7 +1364,7 @@ export class Hiring {
       this.supportDocumentsRequestSequence;
 
     const {
-      codigoCategoria,
+      idTipoDocumento,
       archivos,
     } = request;
 
@@ -1267,9 +1404,9 @@ export class Hiring {
         const resultado =
           await firstValueFrom(
             this.hiringService
-              .uploadSupportDocuments(
+              .uploadSupportDocumentsByType(
                 idCargaDocente,
-                codigoCategoria,
+                idTipoDocumento,
                 lote,
               ),
           );

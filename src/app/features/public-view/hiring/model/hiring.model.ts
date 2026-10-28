@@ -19,6 +19,10 @@ export interface PublicHiringRecord {
 
   estadoCategorizacion: string | null;
   estadoPlanTrabajo: string | null;
+
+  periodoUniversidad: string | null;
+
+  onceMeses: string | null;
 }
 
 export interface PublicBasicInformation {
@@ -141,28 +145,40 @@ export interface PublicDigitalWorkPlan {
   totalPonderacion: number;
 }
 
-/**
- * Archivo registrado dentro de una
- * categoría documental del PTD.
- *
- * Corresponde a PtdiDocumentoArchivoDTO
- * del backend.
- */
 export interface PublicSupportDocumentFile {
+
   id: string;
+
   nombre: string;
+
   path: string;
+
   extension: string;
+
   tamano: number;
+
+  estado?: string | null;
+
 }
 
 export interface PublicSupportDocumentCategory {
+
   codigo: string;
+
   nombre: string;
+
   archivos: PublicSupportDocumentFile[];
+
+  idTipoDocumento?: number | null;
+
+  obligatorio?: boolean | null;
+
 }
 
 export interface PublicSupportDocuments {
+
   version: number;
+
   categorias: PublicSupportDocumentCategory[];
+
 }
