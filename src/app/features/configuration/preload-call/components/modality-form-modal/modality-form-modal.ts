@@ -7,6 +7,7 @@ import {
   inject,
   input,
   output,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -162,35 +163,42 @@ export class ModalityFormModal {
   });
 
   constructor() {
+    // El effect solo debe reaccionar a isOpen/editingItem.
+    // El cuerpo va en untracked(): de lo contrario, syncDateFieldsState() lee
+    // isSemanasBloqueadas() (computed) y las toSignal de las fechas, y al
+    // escribir una fecha que active el bloqueo el effect se re-ejecutaria
+    // haciendo form.reset(), borrando lo que el usuario ya habia llenado.
     effect(() => {
       const open = this.isOpen();
       const item = this.editingItem();
 
-      if (!open) {
-        this.form.reset();
-        this.semanasManuallyEdited = false;
-        this.syncDateFieldsState();
-        return;
-      }
+      untracked(() => {
+        if (!open) {
+          this.form.reset();
+          this.semanasManuallyEdited = false;
+          this.syncDateFieldsState();
+          return;
+        }
 
-      if (!item) {
-        this.form.reset();
-        this.semanasManuallyEdited = false;
-        this.syncDateFieldsState();
-        return;
-      }
+        if (!item) {
+          this.form.reset();
+          this.semanasManuallyEdited = false;
+          this.syncDateFieldsState();
+          return;
+        }
 
-      this.semanasManuallyEdited = true;
-      this.form.patchValue({
-        tipoModalidad: item.tipoModalidad,
-        diasVacaciones:
-          item.diasVacaciones != null ? String(item.diasVacaciones) : '',
-        fechaInicio: item.fechaInicio ?? '',
-        fechaFin: item.fechaFin ?? '',
-        semanas: item.semanas != null ? String(item.semanas) : '',
+        this.semanasManuallyEdited = true;
+        this.form.patchValue({
+          tipoModalidad: item.tipoModalidad,
+          diasVacaciones:
+            item.diasVacaciones != null ? String(item.diasVacaciones) : '',
+          fechaInicio: item.fechaInicio ?? '',
+          fechaFin: item.fechaFin ?? '',
+          semanas: item.semanas != null ? String(item.semanas) : '',
+        });
+
+        this.syncDateFieldsState();
       });
-
-      this.syncDateFieldsState();
     });
 
     this.form.controls.tipoModalidad.valueChanges
