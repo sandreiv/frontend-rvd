@@ -123,6 +123,8 @@ export class HiringContractModalityDetail {
   readonly ptdProfessorId = signal<number | null>(null);
   readonly ptdPeriodId = signal<number | null>(null);
   readonly draftContractProfessorId = signal<number | null>(null);
+  readonly draftContractCoordinationName = signal<string | null>(null);
+  readonly draftContractUnityName = signal<string | null>(null);
   readonly isDraftContractModalOpen = signal(false);
   readonly isReviewPtdModalOpen = signal(false);
 
@@ -324,6 +326,8 @@ export class HiringContractModalityDetail {
     }
     if (actionId === 'diligenciar-contrato') {
       this.draftContractProfessorId.set(professor.idCargaDocente);
+      this.draftContractCoordinationName.set(this.coordination().nombre);
+      this.draftContractUnityName.set(this.coordination().unidadRegional);
       this.isDraftContractModalOpen.set(true);
     }
     if (actionId === 'revisar-ptd') {
@@ -355,6 +359,8 @@ export class HiringContractModalityDetail {
   closeDraftContractModal(): void {
     this.isDraftContractModalOpen.set(false);
     this.draftContractProfessorId.set(null);
+    this.draftContractCoordinationName.set(null);
+    this.draftContractUnityName.set(null);
   }
 
   closeReviewPtdModal(): void {

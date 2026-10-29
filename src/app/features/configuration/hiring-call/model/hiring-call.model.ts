@@ -25,11 +25,12 @@ export interface ProfessorInformationItem {
   modalidadContratacion: string | null;
   fechaInicio: string | null;
   fechaFin: string | null;
-  categoriaDocente: string | null;
-  puntos: string | null;
-  horasTrabajo: string | null;
+  formaPago: string | null;
   estadoCategorizacion: string | null;
   asignacionSalarial: number | null;
+  horas: string | null;
+  categoriaDocente: string | null;
+  puntos: string | null;
   valorHora: number | null;
   horasActividades: ActividadPtd[];
 }

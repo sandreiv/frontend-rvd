@@ -26,6 +26,8 @@ export class DraftContract {
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
+  readonly nombreUnidad = input<string | null>(null);
+  readonly nombreCoordinacion = input<string | null>(null);
   readonly close = output<void>();
 
   readonly informationResource = rxResource({
@@ -67,33 +69,19 @@ export class DraftContract {
 
     const chips: HeaderChip[] = [];
     const candidates: Array<HeaderChip | null> = [
+      this.toChip('unidad', 'Unidad regional', this.nombreUnidad()),
+      this.toChip('coordinacion', null, this.nombreCoordinacion()),
       this.toChip('modalidad', null, information.modalidadContratacion),
-      this.toChip('horas', 'Horas', information.horasTrabajo),
       this.toChip('categoria', 'Categoría', information.categoriaDocente),
-      this.toChip(
-        'categorizacion',
-        'Categorización',
-        information.estadoCategorizacion,
-      ),
       this.toChip('puntos', 'Puntos', information.puntos),
-      this.toChip(
-        'asignacion',
-        'Asignación salarial',
-        this.displayCurrency(information.asignacionSalarial),
-      ),
-      this.toChip(
-        'valor-hora',
-        'Valor hora',
-        this.displayCurrency(information.valorHora),
-      ),
+      this.toChip('forma-pago', 'Forma de pago', information.formaPago),
+      this.toChip('categorizacion', 'Estado categorización', information.estadoCategorizacion),
+      this.toChip('asignacion', 'Asignación salarial', this.displayCurrency(information.asignacionSalarial)),
+      this.toChip('horas', 'Horas', information.horas),
       this.toDateChip(information.fechaInicio, information.fechaFin),
       this.toChip('direccion', 'Dirección', information.direccionDomicilio),
       this.toChip('correo-personal', 'Personal', information.correoPersonal),
-      this.toChip(
-        'correo-institucional',
-        'Institucional',
-        information.correoInstitucional,
-      ),
+      this.toChip('correo-institucional', 'Institucional', information.correoInstitucional),
     ];
 
     forNext(candidates, (chip) => {
