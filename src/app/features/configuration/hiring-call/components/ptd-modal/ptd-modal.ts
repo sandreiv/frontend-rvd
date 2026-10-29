@@ -90,6 +90,7 @@ export class PtdModal {
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
   readonly idPeriodoUniversitario = input<number | null>(null);
+  readonly successRequest = output<void>();
   readonly close = output<void>();
 
   readonly isSaving = signal(false);
@@ -331,7 +332,10 @@ export class PtdModal {
         finalize(() => this.isSaving.set(false))
       )
       .subscribe({
-        next: () => this.close.emit()
+        next: () => {
+          this.close.emit(),
+          this.successRequest.emit()
+        }
       });
   }
 
