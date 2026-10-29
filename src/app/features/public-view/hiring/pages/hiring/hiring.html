@@ -204,54 +204,59 @@
           />
 
           <!-- DOCUMENTOS DE SOPORTE -->
-          <app-public-support-documents
-            [categories]="supportDocumentCategories()"
-            [documents]="supportDocuments()"
-            [observation]="observationTH()"
-            [estadoPtd]="ptdEstado()"
 
-            [loading]="supportDocumentsLoading()"
-            [error]="supportDocumentsLoadError()"
+          @if (!supportDocumentsExempt()) {
 
-            [expanded]="supportDocumentsExpanded()"
+            <app-public-support-documents
+              [categories]="supportDocumentCategories()"
+              [documents]="supportDocuments()"
+              [observation]="observationTH()"
+              [estadoPtd]="ptdEstado()"
 
-            [uploading]="supportDocumentsUploading()"
-            [uploadProgress]="supportDocumentsUploadProgress()"
+              [loading]="supportDocumentsLoading()"
+              [error]="supportDocumentsLoadError()"
 
-            [downloadingFileId]="supportDocumentDownloadingFileId()"
+              [expanded]="supportDocumentsExpanded()"
 
-            [deleting]="supportDocumentDeletingFileId() !== null"
-            [readOnly]="ptdEditsBlocked()"
+              [uploading]="supportDocumentsUploading()"
+              [uploadProgress]="supportDocumentsUploadProgress()"
 
-            (expandedChange)="
-              onSupportDocumentsExpandedChange(
-                $event
-              )
-            "
+              [downloadingFileId]="supportDocumentDownloadingFileId()"
 
-            (uploadRequested)="
-              onUploadSupportDocuments(
-                $event
-              )
-            "
+              [deleting]="supportDocumentDeletingFileId() !== null"
+              [readOnly]="ptdEditsBlocked()"
 
-            (viewRequested)="
-              onViewSupportDocument(
-                $event
-              )
-            "
+              (expandedChange)="
+                onSupportDocumentsExpandedChange(
+                  $event
+                )
+              "
 
-            (downloadRequested)="
-              onDownloadSupportDocument(
-                $event
-              )
-            "
+              (uploadRequested)="
+                onUploadSupportDocuments(
+                  $event
+                )
+              "
 
-            (deleteRequested)="
-              onRequestDeleteSupportDocument($event)
-            "
+              (viewRequested)="
+                onViewSupportDocument(
+                  $event
+                )
+              "
 
-          />
+              (downloadRequested)="
+                onDownloadSupportDocument(
+                  $event
+                )
+              "
+
+              (deleteRequested)="
+                onRequestDeleteSupportDocument($event)
+              "
+
+            />
+
+          }
 
         </div>
 

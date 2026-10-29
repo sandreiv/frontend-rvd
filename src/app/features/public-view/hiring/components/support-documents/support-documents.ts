@@ -228,10 +228,6 @@ export class SupportDocuments {
     });
 
 
-    /*
-     * Cantidad total de documentos
-     * registrados en la contratación.
-     */
     readonly totalFiles = computed(
         () =>
             this.rows().reduce(
@@ -241,6 +237,31 @@ export class SupportDocuments {
                 0,
             ),
     );
+
+
+    readonly mandatoryDocumentsMissing = computed(() => {
+
+
+        if (
+            this.loading() ||
+            this.error() ||
+            this.documents() === null
+        ) {
+            return [];
+        }
+
+ 
+        return this.rows()
+            .filter(
+                categoria =>
+                    categoria.obligatorio === true &&
+                    categoria.archivos.length === 0,
+            )
+            .map(
+                categoria => categoria.nombre,
+            );
+
+    });    
 
 
 
