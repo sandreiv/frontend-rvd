@@ -132,8 +132,21 @@
     >
       Cancelar
     </app-button>
-    <app-button type="submit" size="sm" [disabled]="form.invalid || isSaving()">
-      {{ isSaving() ? 'Guardando...' : 'Guardar' }}
-    </app-button>
+    <span
+      class="inline-flex"
+      [appTooltip]="!isProjectCallPeriodOpen()
+        ? projectCallPeriodTooltip()
+        : ''
+      "
+      tooltipPlacement="top"
+    >
+      <app-button
+        type="submit"
+        size="sm"
+        [disabled]="form.invalid || isSaving() || !isProjectCallPeriodOpen()"
+      >
+        {{ isSaving() ? 'Guardando...' : 'Guardar' }}
+      </app-button>
+    </span>
   </div>
 </form>

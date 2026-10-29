@@ -7,6 +7,8 @@ export interface ProjectCallItem {
   codigo: ProjectCallCodigo | string;
   nombreConvocatoria?: string | null;
   idConvocatoria?: number | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
 }
 
 export interface ProjectCallFormData {

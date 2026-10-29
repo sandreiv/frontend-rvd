@@ -57,6 +57,8 @@ import {
   resolveProjectTypeLimits,
   toDateOnly,
 } from '../../model/projects.model';
+import { ProjectCallItem } from '../../../project-calls/model/project-calls.model';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 interface CoordinationOption {
   id: number;
@@ -85,6 +87,7 @@ type ProjectFormGroup = FormGroup<{
     Button,
     DateRangePicker,
     TypeaheadSelect,
+    Tooltip
   ],
   templateUrl: './project-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -118,9 +121,41 @@ export class ProjectForm implements OnInit, OnChanges {
   readonly convocatoriaOptions = signal<Option[]>([]);
   readonly tipoProyectoOptions = signal<Option[]>([]);
   readonly projectTypes = signal<ProjectTypeItem[]>([]);
+  readonly projectCalls = signal<ProjectCallItem[]>([]);
   readonly selectedProjectType = signal<ProjectTypeItem | null>(null);
   readonly filteredCoordinations = signal<CoordinationOption[]>([]);
+  readonly selectedProjectCallId = signal<string>('');
 
+  readonly isProjectCallPeriodOpen = computed(() => {
+    const id = this.selectedProjectCallId();
+    if (!id) {
+      return false;
+    }
+
+    const selectedCall = this.projectCalls()
+      .find((call) => String(call.id) === id);
+
+    if (!selectedCall?.fechaInicio || !selectedCall.fechaFin) {
+      return false;
+    }
+
+    const hoy = this.getTodayDateOnly();
+    return (selectedCall.fechaInicio <= hoy && hoy <= selectedCall.fechaFin);
+  });
+
+  readonly projectCallPeriodTooltip = computed(() => {
+    const id = this.selectedProjectCallId();
+
+    const selectedCall = this.projectCalls()
+      .find((call) => String(call.id) === id);
+
+    if (!selectedCall?.fechaInicio || !selectedCall.fechaFin) {
+      return 'Las fechas para gestionar proyectos no están disponibles en estos momentos';
+    }
+
+    return `Las fechas para gestionar proyectos van desde ${selectedCall.fechaInicio} hasta ${selectedCall.fechaFin}`;
+  });
+  
   readonly selectedTypeLimits = computed(() =>
     resolveProjectTypeLimits(this.selectedProjectType()),
   );
@@ -192,6 +227,12 @@ export class ProjectForm implements OnInit, OnChanges {
         this.form.controls.monto.updateValueAndValidity({
           emitEvent: false,
         });
+      });
+
+    this.form.controls.idConvocatoriaProyectos.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => {
+        this.selectedProjectCallId.set(id);
       });
   }
 
@@ -266,7 +307,7 @@ export class ProjectForm implements OnInit, OnChanges {
     this.form.markAllAsTouched();
     this.onMontoBlur();
 
-    if (this.form.invalid || this.isSaving()) {
+    if (this.form.invalid || this.isSaving() || !this.isProjectCallPeriodOpen()) {
       return;
     }
 
@@ -314,7 +355,9 @@ export class ProjectForm implements OnInit, OnChanges {
         firstValueFrom(this.projectTypesService.listProjectTypes()),
       ]);
 
+      this.projectCalls.set(calls ?? []);
       this.projectTypes.set(types ?? []);
+
       this.convocatoriaOptions.set(
         (calls ?? []).map((item) => ({
           value: String(item.id),
@@ -329,6 +372,7 @@ export class ProjectForm implements OnInit, OnChanges {
       );
     } catch (error) {
       console.error(error);
+      this.projectCalls.set([]);
       this.projectTypes.set([]);
       this.convocatoriaOptions.set([]);
       this.tipoProyectoOptions.set([]);
@@ -386,19 +430,14 @@ export class ProjectForm implements OnInit, OnChanges {
 
 
     console.log('DEBUG FECHAS PRODUCTO', {
-  productMode,
-  parentStartDate: this.parentStartDate(),
-  parentEndDate: this.parentEndDate(),
-  startDate,
-  endDate,
-  startDateNormalized: toDateOnly(startDate),
-  endDateNormalized: toDateOnly(endDate),
-});
-
-
-
-
-
+      productMode,
+      parentStartDate: this.parentStartDate(),
+      parentEndDate: this.parentEndDate(),
+      startDate,
+      endDate,
+      startDateNormalized: toDateOnly(startDate),
+      endDateNormalized: toDateOnly(endDate),
+    });
 
     const coordinationName = productMode
       ? this.parentCoordinationName()
@@ -434,6 +473,18 @@ export class ProjectForm implements OnInit, OnChanges {
           : '',
     });
 
+    this.selectedProjectCallId.set(
+      this.form.controls.idConvocatoriaProyectos.value,
+    );
     this.onTipoProyectoChange(tipoId);
+  }
+
+  private getTodayDateOnly(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 }
