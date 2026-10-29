@@ -183,12 +183,21 @@
       Cancelar
     </app-button>
     @if (!isReadOnly()) {
-      <app-button
-        type="submit"
-        [disabled]="form.invalid || isSaving()"
+      <span
+        class="inline-flex"
+        [appTooltip]="hasModalitiesForContratacion()
+          ? 'Las convocatorias de contratación no cuentan con modalidades'
+          : ''
+        "
+        tooltipPlacement="top"
       >
-        {{ submitButtonLabel() }}
-      </app-button>
+        <app-button
+          type="submit"
+          [disabled]="form.invalid || isSaving() || hasModalitiesForContratacion()"
+        >
+          {{ submitButtonLabel() }}
+        </app-button>
+      </span>
     }
     </div>
   </div>

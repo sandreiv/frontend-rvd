@@ -42,6 +42,7 @@ import {
 import { ModalityFormModal } from '../modality-form-modal/modality-form-modal';
 import { ModalityTable } from '../modality-table/modality-table';
 import { PreloadCallPersonSearchModal } from '../preload-call-person-search-modal/preload-call-person-search-modal';
+import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
 @Component({
   selector: 'app-preload-call-form',
@@ -58,6 +59,7 @@ import { PreloadCallPersonSearchModal } from '../preload-call-person-search-moda
     ModalityFormModal,
     PreloadCallPersonSearchModal,
     Select,
+    Tooltip,
   ],
   templateUrl: './preload-call-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -101,6 +103,9 @@ export class PreloadCallForm implements OnInit {
   readonly callInfoSectionExpanded = signal(false);
   readonly modalitySectionExpanded = signal(false);
   readonly isHiringCall = signal(false);
+  readonly isContratacion = signal(false);
+
+  readonly hasModalitiesForContratacion = computed(() => this.isContratacion() && (this.modalities().length > 0));
 
   readonly universityPeriodOptions = computed<SelectOption[]>(() =>
     this.universityPeriods().map((item) => ({
@@ -144,7 +149,10 @@ export class PreloadCallForm implements OnInit {
   constructor() {
     this.form.controls.esContratacion.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((checked) => this.onHiringCallChange(checked === true));
+      .subscribe((checked) => {
+        this.isContratacion.set(checked === true);
+        this.onHiringCallChange(checked === true);
+      });
 
     effect(() => {
       const isCreateMode = this.mode() === 'create';
@@ -181,6 +189,7 @@ export class PreloadCallForm implements OnInit {
 
   private resetFormState(): void {
     this.form.reset({ esContratacion: false });
+    this.isContratacion.set(false);
     this.fechasMeta.set([]);
     this.modalities.set([]);
     this.saveError.set(null);
@@ -190,6 +199,7 @@ export class PreloadCallForm implements OnInit {
 
   onHiringCallToggle(checked: boolean): void {
     this.form.controls.esContratacion.setValue(checked);
+    this.isContratacion.set(checked);
   }
 
   private onHiringCallChange(isHiring: boolean): void {
@@ -200,6 +210,7 @@ export class PreloadCallForm implements OnInit {
     const cnv = detail.fechas.find((fecha) => fecha.codigo === 'CNV');
     const CTEI = detail.fechas.find((fecha) => fecha.codigo === 'CTEI');
     const isu = detail.fechas.find((fecha) => fecha.codigo === 'ISU');
+    const esContratacion = isHiringContratacion(detail.convocatoria.contratacion);
 
     this.fechasMeta.set(this.mapDetailFechasMeta(detail));
 
@@ -218,12 +229,11 @@ export class PreloadCallForm implements OnInit {
       fechaFinCtei: this.toDateOnly(CTEI?.fechaFin),
       fechaInicioIsu: this.toDateOnly(isu?.fechaInicio),
       fechaFinIsu: this.toDateOnly(isu?.fechaFin),
-      esContratacion: isHiringContratacion(
-        detail.convocatoria.contratacion,
-      ),
+      esContratacion
     });
 
     this.modalities.set(this.mapDetailModalityRows(detail));
+    this.isContratacion.set(esContratacion);
   }
 
   private mapDetailFechasMeta(
@@ -387,12 +397,14 @@ export class PreloadCallForm implements OnInit {
   }
 
   onSubmit(event: Event): void {
+    const value = this.form.getRawValue();
+
     event.preventDefault();
     if (this.isReadOnly() || this.form.invalid || this.isSaving()) {
       this.form.markAllAsTouched();
       return;
     }
-    if (this.modalities().length === 0) {
+    if ((this.modalities().length === 0) && (!value.esContratacion)) {
       this.saveError.set('Agregue al menos una modalidad.');
       return;
     }
@@ -405,7 +417,6 @@ export class PreloadCallForm implements OnInit {
       return;
     }
 
-    const value = this.form.getRawValue();
     const periodo = this.universityPeriods().find(
       (item) => String(item.id) === value.periodoUniversidad,
     );
