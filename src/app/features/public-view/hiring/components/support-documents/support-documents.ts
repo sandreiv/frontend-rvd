@@ -69,6 +69,9 @@ export class SupportDocuments {
         input<PublicSupportDocuments | null>(
             null,
         );
+    
+    readonly observation = input<string | null>(null);
+    readonly estadoPtd = input('');
 
     readonly loading =
         input(false);

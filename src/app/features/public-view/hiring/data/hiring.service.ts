@@ -16,6 +16,7 @@ import {
   PublicSupportDocumentCategory,
   PublicSupportDocuments,
 } from '../model/hiring.model';
+import { ObservacionPtd } from '../../../configuration/hiring-call/model/hiring-call.model';
 
 @Injectable({ providedIn: 'root' })
 export class HiringService {
@@ -238,5 +239,17 @@ export class HiringService {
         `${this.endpoint}/hiring-records/${idCargaDocente}/support-documents/${encodeURIComponent(fileId)}`,
     );
     }
+
+  /**
+   * Obtiene la última observación realizada por Talento Humano en caso de rechazar el PTD
+   * 
+   * @param idCargaDocente Identificador de la carga docente
+   * @returns Observable con la observación consultada
+   */
+  getObservationPtd(idCargaDocente: number): Observable<ObservacionPtd> {
+    return this.webRequestService.get<ObservacionPtd>(
+      `${this.endpoint}/observation-by-th/${idCargaDocente}`,
+    );
+  }
 
 }

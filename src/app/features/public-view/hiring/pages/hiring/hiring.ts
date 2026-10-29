@@ -183,6 +183,19 @@ export class Hiring {
       defaultValue:
         [] as PublicCountry[],
     });
+  
+  readonly observationResource = rxResource({
+    params: () => {
+      const record = this.selectedHiringRecord();
+      if (!record) {
+        return undefined;
+      }
+
+      const idCargaDocente = record.idCargaDocente
+      return { idCargaDocente };
+    },
+    stream: ({ params }) => this.hiringService.getObservationPtd(params.idCargaDocente)
+  });
 
   readonly hiringRecords = computed(
     () =>
@@ -193,6 +206,10 @@ export class Hiring {
     () =>
       this.academicLevelsResource.value(),
   );
+
+  readonly observationTH = computed(() => {
+    return this.observationResource.value()?.descripcion ?? null;
+  });
 
   readonly digitalWorkPlan =
     signal<PublicDigitalWorkPlan | null>(
