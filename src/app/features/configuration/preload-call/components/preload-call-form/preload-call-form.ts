@@ -408,6 +408,10 @@ export class PreloadCallForm implements OnInit {
       this.saveError.set('Agregue al menos una modalidad.');
       return;
     }
+    if ((this.modalities().length > 0) && (value.esContratacion)) {
+      this.saveError.set('Esta convocatoria no permite modalidades.');
+      return;
+    }
 
     const idPersona = this.form.controls.idPersonaNaturalGeneral.value;
     if (idPersona == null) {
