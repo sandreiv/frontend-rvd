@@ -461,13 +461,13 @@
             rows="2"
             maxlength="500"
             formControlName="observacion"
-            placeholder="Escriba una observación (obligatoria para rechazar el PTD)"
+            placeholder="Escriba una observación (obligatoria para rechazar los documentos)"
             class="w-full resize-y rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm font-normal text-gray-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-white/90"
           ></textarea>
 
           @if (showPtdObservationError()) {
             <p class="text-xs font-medium text-red-600 dark:text-red-400">
-              La observación es obligatoria para rechazar el PTD.
+              La observación es obligatoria para rechazar los documentos.
             </p>
           }
         </form>
@@ -493,7 +493,7 @@
               {{
                 savingAction() === 'reject'
                   ? 'Rechazando...'
-                  : 'Rechazar PTD'
+                  : 'Rechazar documentos'
               }}
             </app-button>
           }
@@ -502,7 +502,7 @@
             <span
               class="inline-flex"
               [appTooltip]="!hasAttachmentsInRequiredCategories()
-                ? 'Todas las categorías obligatorias deben tener archivos adjuntos para aprobar el PTD'
+                ? 'Todas las categorías obligatorias deben tener archivos adjuntos para aprobar los documentos'
                 : ''
               "
               tooltipPlacement="top"
@@ -516,7 +516,7 @@
                 {{
                   savingAction() === 'approve'
                     ? 'Aprobando...'
-                    : 'Aprobar PTD'
+                    : 'Aprobar documentos'
                 }}
               </app-button>
             </span>
