@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { HiringCallService } from '../../data/hiring-call.service';
 import { Icon } from '../../../../../shared/ui/icon/icon';
-import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { ProfessorInformationItem } from '../../model/hiring-call.model';
@@ -10,6 +11,8 @@ import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { mapActivitySummaryTables, mapCostCenterRows } from '../../../professor-preload/model/professor-summary.model';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
 import { Button } from '../../../../../shared/ui/button/button';
+import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
+import { InputField } from '../../../../../shared/components/form/input/input-field';
 import { mapNoveltyContractValueRows } from '../../../professor-preload/model/novelty-summary.model';
 
 type DraftSectionId = 'informacion-cdp-valores' | 'centros-costo' | 'detalle-actividades';
@@ -62,7 +65,7 @@ function createInitialExpandedSections(): Record<DraftSectionId, boolean> {
 
 @Component({
   selector: 'app-draft-contract',
-  imports: [Modal, Icon, CollapsibleSection, Button],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, InputField, DatePicker],
   templateUrl: './draft-contract.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -70,6 +73,7 @@ export class DraftContract {
 
   private readonly hiringCallService = inject(HiringCallService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly formBuilder = inject(NonNullableFormBuilder);
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
@@ -83,6 +87,21 @@ export class DraftContract {
   readonly expandedSections = signal(createInitialExpandedSections());
 
   readonly isDownloadingContract = signal(false);
+
+  /**
+   * Panel desplegable con los datos que el usuario debe diligenciar antes de
+   * generar el anexo (número de anexo y fecha de ingreso).
+   */
+  readonly isContractPanelOpen = signal(false);
+
+  readonly contractForm = this.formBuilder.group({
+    numeroAnexo: ['', [Validators.required, Validators.maxLength(15)]],
+    fechaIngreso: ['', [Validators.required]],
+  });
+
+  private readonly contractFormStatus = toSignal(this.contractForm.statusChanges, {
+    initialValue: this.contractForm.status,
+  });
 
   readonly informationResource = rxResource({
     params: () => this.resolveInformationParams(),
@@ -159,6 +178,26 @@ export class DraftContract {
       this.hiringValuesResource.isLoading()
     ),
   );
+
+  /**
+   * El botón Diligenciar contrato solo se habilita con los dos campos llenos
+   * y sin peticiones en curso.
+   */
+  readonly canDownloadContract = computed(
+    () =>
+      this.contractFormStatus() === 'VALID' &&
+      !this.isDownloadingContract() &&
+      !this.isLoadingContract(),
+  );
+
+  constructor() {
+    effect(() => {
+      if (!this.isOpen()) {
+        this.isContractPanelOpen.set(false);
+        this.contractForm.reset();
+      }
+    });
+  }
 
   readonly summaryActivityTables = computed(() => {
     if (!this.isOpen()) {
@@ -322,7 +361,29 @@ export class DraftContract {
   }
 
   /**
-   * Descarga el anexo de contratación del docente que se está diligenciando.
+   * Abre o cierra el panel donde se diligencian los datos del anexo.
+   */
+  toggleContractPanel(): void {
+    if (this.isDownloadingContract()) {
+      return;
+    }
+    this.isContractPanelOpen.update((open) => !open);
+  }
+
+  /**
+   * Valida el formulario y, si está completo, genera el anexo.
+   */
+  submitContract(): void {
+    if (!this.canDownloadContract()) {
+      this.contractForm.markAllAsTouched();
+      return;
+    }
+    this.downloadContract();
+  }
+
+  /**
+   * Descarga el anexo de contratación con el número de anexo y la fecha de
+   * ingreso diligenciados por el usuario.
    */
   downloadContract(): void {
     const idCargaDocente = this.idCargaDocente();
@@ -331,9 +392,11 @@ export class DraftContract {
       return;
     }
 
+    const { numeroAnexo, fechaIngreso } = this.contractForm.getRawValue();
+
     this.isDownloadingContract.set(true);
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente)
+      .downloadContractPdf(idCargaDocente, { numeroAnexo, fechaIngreso })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),

@@ -394,6 +394,70 @@
       }
     }
   </div>
+  @if (isContractPanelOpen()) {
+    <section
+      class="border-t border-gray-200 bg-gray-50 px-6 py-5 sm:px-8 dark:border-white/10 dark:bg-white/[0.02]"
+    >
+      <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">
+        Datos del anexo
+      </h3>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Diligencie los dos campos para generar el contrato.
+      </p>
+
+      <form
+        [formGroup]="contractForm"
+        (ngSubmit)="submitContract()"
+        class="mt-4 flex flex-col gap-4"
+      >
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              for="numeroAnexo"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Número de Anexo <span class="text-error-500">*</span>
+            </label>
+            <app-input-field
+              id="numeroAnexo"
+              formControlName="numeroAnexo"
+              placeholder="Ej. 26"
+              [error]="
+                contractForm.controls.numeroAnexo.invalid &&
+                contractForm.controls.numeroAnexo.touched
+              "
+              hint="Número que se imprime en el anexo"
+            />
+          </div>
+
+          <div>
+            <label
+              for="fechaIngreso"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Fecha Ingreso <span class="text-error-500">*</span>
+            </label>
+            <app-date-picker
+              id="fechaIngreso"
+              formControlName="fechaIngreso"
+              placeholder="Seleccione la fecha"
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <app-button type="submit" size="sm" [disabled]="!canDownloadContract()">
+            {{
+              isDownloadingContract()
+                ? 'Generando contrato...'
+                : 'Diligenciar contrato'
+            }}
+          </app-button>
+        </div>
+      </form>
+    </section>
+  }
+
   <footer
     class="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 dark:border-white/10"
   >
@@ -409,9 +473,11 @@
     <app-button
       size="sm"
       [disabled]="isDownloadingContract() || isLoadingContract()"
-      (btnClick)="downloadContract()"
+      (btnClick)="toggleContractPanel()"
     >
-      {{ isDownloadingContract() ? 'Generando contrato...' : 'Descargar contrato' }}
+      {{
+        isContractPanelOpen() ? 'Ocultar' : 'Descargar contrato'
+      }}
     </app-button>
   </footer>
 </app-modal>

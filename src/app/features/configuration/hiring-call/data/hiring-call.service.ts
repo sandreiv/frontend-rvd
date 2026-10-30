@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
@@ -26,6 +27,14 @@ import {
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
 import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../public-view/hiring/model/hiring.model';
+
+/**
+ * Datos que el usuario diligencia en el modal antes de descargar el anexo.
+ */
+export interface ContractDownloadParams {
+  numeroAnexo?: string | null;
+  fechaIngreso?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class HiringCallService {
@@ -300,13 +309,26 @@ export class HiringCallService {
    * docente es coordinador del programa, anexo de 4 meses en caso contrario.
    *
    * @param idCargaDocente Carga docente del docente contratado.
+   * @param datos Número de anexo y fecha de ingreso diligenciados por el usuario.
    * @returns Observable con el archivo y su nombre.
    */
   downloadContractPdf(
     idCargaDocente: number,
+    datos?: ContractDownloadParams,
   ): Observable<{ blob: Blob; fileName: string }> {
+    let params = new HttpParams();
+    const numeroAnexo = datos?.numeroAnexo?.trim();
+    const fechaIngreso = datos?.fechaIngreso?.trim();
+
+    if (numeroAnexo) {
+      params = params.set('numeroAnexo', numeroAnexo);
+    }
+    if (fechaIngreso) {
+      params = params.set('fechaIngreso', fechaIngreso);
+    }
+
     return this.webRequestService
-      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}`)
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}`, params)
       .pipe(
         map((response) => ({
           blob: response.body as Blob,
