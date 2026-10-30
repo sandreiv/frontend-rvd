@@ -43,6 +43,9 @@ export interface ActividadPtdDetalle {
   materia: string | null;
   grupo: string | null;
   horas: number;
+  horasTeoricas: number,
+  horasPracticas: number,
+  ponderacionAcademica: number
 }
 
 export interface ActividadPtd {
