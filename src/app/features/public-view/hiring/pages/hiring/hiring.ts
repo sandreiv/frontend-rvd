@@ -93,15 +93,21 @@ export class Hiring {
     signal<PublicHiringRecord | null>(null);
 
   readonly supportDocumentsExempt = computed(() => {
-
     const record = this.selectedHiringRecord();
 
-    return (
-      record?.onceMeses?.trim() === '1' &&
-      record?.periodoUniversidad?.trim() === '2'
-    );
+    if (!record) {
+      return false;
+    }
 
-  });  
+    const esDocentePlanta =
+      record.esDocentePlanta?.trim() === '1';
+
+    const onceMesesSegundoSemestre =
+      record.onceMeses?.trim() === '1' &&
+      record.periodoUniversidad?.trim() === '2';
+
+    return esDocentePlanta || onceMesesSegundoSemestre;
+  }); 
 
   readonly ptdDecisionPending = signal<{
     idCargaDocente: number;
