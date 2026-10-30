@@ -97,6 +97,24 @@
 
       }
 
+      <!-- PTD APROBADO POR TALENTO HUMANO -->
+      @else if (
+        ptdEstado() === 'aprobado th' ||
+        ptdEstado() === '3'
+      ) {
+
+        <span
+          class="rounded-lg bg-green-50
+                px-4 py-2 text-sm font-semibold
+                text-green-700
+                dark:bg-green-500/10
+                dark:text-green-400"
+        >
+          PTD aprobado TH
+        </span>
+
+      }
+
       <!-- SIN PTD DISPONIBLE -->
       @else {
 

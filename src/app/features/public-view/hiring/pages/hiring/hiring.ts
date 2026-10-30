@@ -129,8 +129,14 @@ export class Hiring {
   );  
 
   readonly ptdReadOnly = computed(() =>
-    ['aceptado', 'rechazado', '1', '2']
-      .includes(this.ptdEstado()),
+    [
+      'aceptado',
+      'rechazado',
+      'aprobado th',
+      '1',
+      '2',
+      '3',
+    ].includes(this.ptdEstado()),
   );
 
   readonly ptdEditsBlocked = computed(() =>
