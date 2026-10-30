@@ -755,10 +755,10 @@ export class CoordinationService {
   */
 
   getProfessorLoadSummary(
-    idCargaDocente: number,
+    idCargaDocente: number, numeroPeriodo: string
   ): Observable<ProfessorLoadSummaryApi> {
     return this.webRequestService.get<ProfessorLoadSummaryApi>(
-      `${this.endpoint}/professor-load-summary/${idCargaDocente}`,
+      `${this.endpoint}/professor-load-summary/${idCargaDocente}/${numeroPeriodo}`,
     );
   }
 
@@ -1152,9 +1152,9 @@ export class CoordinationService {
    * @returns Observable con el resumen de la novedad de la carga docente.
   */
 
-  getProfessorNoveltySummary(idCargaDocente: number): Observable<ProfessorNoveltySummaryApi> {
+  getProfessorNoveltySummary(idCargaDocente: number, numeroPeriodo: string): Observable<ProfessorNoveltySummaryApi> {
     return this.webRequestService.get<ProfessorNoveltySummaryApi>(
-      `${this.endpoint}/professor-novelty-summary/${idCargaDocente}`,
+      `${this.endpoint}/professor-novelty-summary/${idCargaDocente}/${numeroPeriodo}`,
     );
   }
 

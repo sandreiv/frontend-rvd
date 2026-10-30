@@ -124,6 +124,7 @@ export class HiringContractModalityDetail {
   readonly ptdPeriodId = signal<number | null>(null);
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly draftContractCoordinationId = signal<number | null>(null);
+  readonly draftContractPeriodNumber = signal<string | null>(null);
   readonly draftContractCoordinationName = signal<string | null>(null);
   readonly draftContractUnityName = signal<string | null>(null);
   readonly isDraftContractModalOpen = signal(false);
@@ -331,6 +332,7 @@ export class HiringContractModalityDetail {
       this.draftContractProfessorId.set(professor.idCargaDocente);
       this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
       this.draftContractCoordinationId.set(this.coordination().id);
+      this.draftContractPeriodNumber.set(this.coordination().numeroPeriodoUniversidad);
       this.draftContractCoordinationName.set(this.coordination().nombre);
       this.draftContractUnityName.set(this.coordination().unidadRegional);
       this.isDraftContractModalOpen.set(true);
@@ -366,6 +368,7 @@ export class HiringContractModalityDetail {
     this.draftContractProfessorId.set(null);
     this.ptdPeriodId.set(null);
     this.draftContractCoordinationId.set(null);
+    this.draftContractPeriodNumber.set(null);
     this.draftContractCoordinationName.set(null);
     this.draftContractUnityName.set(null);
   }

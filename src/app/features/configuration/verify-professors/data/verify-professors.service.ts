@@ -104,10 +104,10 @@ export class VerifyProfessorsService {
   */
 
   getProfessorLoadSummary(
-    idCargaDocente: number,
+    idCargaDocente: number, numeroPeriodo: string
   ): Observable<ProfessorLoadSummaryApi> {
     return this.webRequestService.get<ProfessorLoadSummaryApi>(
-      `${this.endpoint}/professor-load-summary/${idCargaDocente}`,
+      `${this.endpoint}/professor-load-summary/${idCargaDocente}/${numeroPeriodo}`,
     );
   }
 

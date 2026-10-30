@@ -61,6 +61,7 @@ export function normalizeFacultyRequestCdpItem(item: FacultyRequestCdpApiItem): 
     periodoUniversidad: formatUniversityPeriod(item.periodoUniversidad),
     idPeriodoUniversidad: item.periodoUniversidad.id ?? null,
     anioUniversidad: item.periodoUniversidad.anio ?? null,
+    numeroPeriodoUniversidad: item.periodoUniversidad.periodo ?? '',
     idUnidadRegional: item.unidadRegional.id ?? null,
     solicitud: item.solicitud,
     cdpTesoreria: item.cdpTesoreria,

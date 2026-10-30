@@ -182,10 +182,10 @@ export class HiringCallService {
    * @param idCargaDocente Identificador de la carga docente.
    * @returns Observación con los valores de contratación para generar el contrato
    */
-  getHiringValuesInformation(idCargaDocente: number): Observable<HiringValuesInformationApi> {
+  getHiringValuesInformation(idCargaDocente: number, numeroPeriodo: string): Observable<HiringValuesInformationApi> {
     return this.webRequestService.get<HiringValuesInformationApi>(
       `${this.endpoint}/hiring-values-information`,
-      { idCargaDocente }
+      { idCargaDocente, numeroPeriodo }
     );
   }
 

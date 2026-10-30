@@ -72,6 +72,7 @@ export class DraftContract {
   readonly idCargaDocente = input<number | null>(null);
   readonly idPeriodoUniversitario = input<number | null>(null);
   readonly idCoordinacion = input<number | null>(null);
+  readonly numeroPeriodo = input<string | null>(null);
   readonly nombreUnidad = input<string | null>(null);
   readonly nombreCoordinacion = input<string | null>(null);
 
@@ -112,7 +113,7 @@ export class DraftContract {
   readonly hiringValuesResource = rxResource({
     params: () => this.resolveInformationParams(),
     stream: ({ params }) =>
-      this.hiringCallService.getHiringValuesInformation(params.idCargaDocente),
+      this.hiringCallService.getHiringValuesInformation(params.idCargaDocente, params.numeroPeriodo),
   });
 
   readonly information = computed(() => {
@@ -316,7 +317,7 @@ export class DraftContract {
     return `${match[3]}/${match[2]}/${match[1]}`;
   }
 
-  private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number } | undefined {
+  private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number, numeroPeriodo: string } | undefined {
     if (!this.isOpen()) {
       return undefined;
     }
@@ -324,10 +325,11 @@ export class DraftContract {
     const idCargaDocente = this.idCargaDocente();
     const idPeriodoUniversitario = this.idPeriodoUniversitario();
     const idCoordinacion = this.idCoordinacion();
-    if (idCargaDocente == null || idPeriodoUniversitario == null || idCoordinacion == null) {
+    const numeroPeriodo = this.numeroPeriodo();
+    if (idCargaDocente == null || idPeriodoUniversitario == null || idCoordinacion == null || numeroPeriodo == null) {
       return undefined;
     }
 
-    return { idCargaDocente, idPeriodoUniversitario, idCoordinacion };
+    return { idCargaDocente, idPeriodoUniversitario, idCoordinacion, numeroPeriodo };
   }
 }
