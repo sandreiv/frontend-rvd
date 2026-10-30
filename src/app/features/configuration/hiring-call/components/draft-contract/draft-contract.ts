@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { HiringCallService } from '../../data/hiring-call.service';
 import { Icon } from '../../../../../shared/ui/icon/icon';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { ProfessorInformationItem } from '../../model/hiring-call.model';
 import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { mapActivitySummaryTables, mapCostCenterRows } from '../../../professor-preload/model/professor-summary.model';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
+import { Button } from '../../../../../shared/ui/button/button';
 import { mapNoveltyContractValueRows } from '../../../professor-preload/model/novelty-summary.model';
 
 type DraftSectionId = 'informacion-cdp-valores' | 'centros-costo' | 'detalle-actividades';
@@ -60,13 +62,14 @@ function createInitialExpandedSections(): Record<DraftSectionId, boolean> {
 
 @Component({
   selector: 'app-draft-contract',
-  imports: [Modal, Icon, CollapsibleSection],
+  imports: [Modal, Icon, CollapsibleSection, Button],
   templateUrl: './draft-contract.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DraftContract {
 
   private readonly hiringCallService = inject(HiringCallService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
@@ -78,6 +81,8 @@ export class DraftContract {
   readonly close = output<void>();
 
   readonly expandedSections = signal(createInitialExpandedSections());
+
+  readonly isDownloadingContract = signal(false);
 
   readonly informationResource = rxResource({
     params: () => this.resolveInformationParams(),
@@ -314,6 +319,39 @@ export class DraftContract {
     }
 
     return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  /**
+   * Descarga el anexo de contratación del docente que se está diligenciando.
+   */
+  downloadContract(): void {
+    const idCargaDocente = this.idCargaDocente();
+
+    if (idCargaDocente == null || this.isDownloadingContract()) {
+      return;
+    }
+
+    this.isDownloadingContract.set(true);
+    this.hiringCallService
+      .downloadContractPdf(idCargaDocente)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isDownloadingContract.set(false)),
+      )
+      .subscribe(({ blob, fileName }) => {
+        this.triggerBrowserDownload(blob, fileName);
+      });
+  }
+
+  private triggerBrowserDownload(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 
   private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number } | undefined {

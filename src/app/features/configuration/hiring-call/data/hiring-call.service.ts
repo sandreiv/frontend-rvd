@@ -293,10 +293,64 @@ export class HiringCallService {
    * @param payload Objeto con la información para rechazar el PTD
    * @returns Observable sin contenido cuando el registro finaliza correctamente.
    */
+  /**
+   * Descarga el anexo de contratación del docente en PDF.
+   *
+   * El backend decide la plantilla: anexo con funciones administrativas si el
+   * docente es coordinador del programa, anexo de 4 meses en caso contrario.
+   *
+   * @param idCargaDocente Carga docente del docente contratado.
+   * @returns Observable con el archivo y su nombre.
+   */
+  downloadContractPdf(
+    idCargaDocente: number,
+  ): Observable<{ blob: Blob; fileName: string }> {
+    return this.webRequestService
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}`)
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `anexo-contrato-${idCargaDocente}.pdf`,
+          ),
+        })),
+      );
+  }
+
   declinePtdByTh(payload: RejectPtdRequest): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/decline-ptd-th`,
       payload
     );
   }
+}
+
+
+/**
+ * Extrae el nombre del archivo del header Content-Disposition.
+ */
+function resolveDownloadFileName(
+  contentDisposition: string | null,
+  fallback: string,
+): string {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(contentDisposition);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim().replace(/"/g, ''));
+    } catch {
+      return utf8Match[1].trim().replace(/"/g, '');
+    }
+  }
+
+  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(contentDisposition);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim();
+  }
+
+  return fallback;
 }
