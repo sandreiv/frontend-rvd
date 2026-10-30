@@ -16,6 +16,8 @@ import {
 import {
   ApprovePtdRequest,
   HiringCallItem,
+  HiringCdpInformationApi,
+  HiringValuesInformationApi,
   PdtInfoWithWeights,
   ProfessorInformationItem,
   PtdStatesProfessors,
@@ -154,6 +156,39 @@ export class HiringCallService {
       { idCargaDocente }
     );
   }
+
+  /**
+   * Obtiene la información del CDP de TESORERIAV3 para la contratación de un docente.
+   * Contiene un resumen de la información almacenada allí dependiendo del idCdp guardado
+   * en RVD.SOLICITUDCDP para la facultad a la que pertenece la coordinación
+   * 
+   * @param idPeriodoUniversitario Identificador del periodo universitario
+   * @param idCoordinacionHija Identificador de la coordinación hija
+   * @returns Observable con la información del CDP para generar el contrato
+   */
+  getHiringCdpInformation(idPeriodoUniversitario: number, idCoordinacionHija: number): Observable<HiringCdpInformationApi> {
+    return this.webRequestService.get<HiringCdpInformationApi>(
+      `${this.endpoint}/hiring-cdp-information`,
+      { idPeriodoUniversitario, idCoordinacionHija },
+    );
+  }
+
+  /**
+   * Obtiene la información de los centros de costos y calculos salariales.
+   * Esta consulta funciona bajo la misma logica del Resumen de novedades, trayendo la
+   * información relevante de la novedad o de la carga original y entregando solamente
+   * los valores de contratación
+   * 
+   * @param idCargaDocente Identificador de la carga docente.
+   * @returns Observación con los valores de contratación para generar el contrato
+   */
+  getHiringValuesInformation(idCargaDocente: number): Observable<HiringValuesInformationApi> {
+    return this.webRequestService.get<HiringValuesInformationApi>(
+      `${this.endpoint}/hiring-values-information`,
+      { idCargaDocente }
+    );
+  }
+
 
   /**
    * Registra un nuevo PTD para la persona seleccionada.

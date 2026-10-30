@@ -1,6 +1,8 @@
 import {
   PreloadCallItem,
 } from '../../preload-call/model/preload-call.model';
+import { NoveltyValorContratacionSummaryApi } from '../../professor-preload/model/novelty-summary.model';
+import { CentroCostoSummaryApi } from '../../professor-preload/model/professor-summary.model';
 
 export type HiringCallItem = PreloadCallItem;
 
@@ -115,4 +117,18 @@ export interface RejectPtdRequest {
   idCargaDocente: number;
   idsDocumentosAdjuntos: string[];
   observacion: string
+}
+
+export interface HiringCdpInformationApi {
+  idCdp: number;
+  numero: string;
+  fecha: string;
+  vigencia: string;
+  rubros: string;
+  idSolicitudRvd: number;
+}
+
+export interface HiringValuesInformationApi {
+  valorContratacion: NoveltyValorContratacionSummaryApi | null;
+  centrosCosto: CentroCostoSummaryApi[]
 }

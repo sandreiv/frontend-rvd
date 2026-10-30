@@ -111,6 +111,8 @@
 <app-draft-contract
   [isOpen]="isDraftContractModalOpen()"
   [idCargaDocente]="draftContractProfessorId()"
+  [idPeriodoUniversitario]="ptdPeriodId()"
+  [idCoordinacion]="draftContractCoordinationId()"
   [nombreUnidad]="draftContractUnityName()"
   [nombreCoordinacion]="draftContractCoordinationName()"
   (close)="closeDraftContractModal()"

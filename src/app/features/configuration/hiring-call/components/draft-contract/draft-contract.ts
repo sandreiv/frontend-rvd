@@ -26,6 +26,8 @@ export class DraftContract {
 
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
+  readonly idPeriodoUniversitario = input<number | null>(null);
+  readonly idCoordinacion = input<number | null>(null);
   readonly nombreUnidad = input<string | null>(null);
   readonly nombreCoordinacion = input<string | null>(null);
   readonly close = output<void>();
@@ -36,11 +38,39 @@ export class DraftContract {
       this.hiringCallService.getProfessorInformation(params.idCargaDocente),
   });
 
+  readonly hiringCdpResource = rxResource({
+    params: () => this.resolveInformationParams(),
+    stream: ({ params }) =>
+      this.hiringCallService.getHiringCdpInformation(params.idPeriodoUniversitario, params.idCoordinacion),
+  });
+
+  readonly hiringValuesResource = rxResource({
+    params: () => this.resolveInformationParams(),
+    stream: ({ params }) =>
+      this.hiringCallService.getHiringValuesInformation(params.idCargaDocente),
+  });
+
   readonly information = computed(() => {
     if (!this.isOpen() || !this.informationResource.hasValue()) {
       return null;
     }
     return this.informationResource.value();
+  });
+
+  readonly hiringCdpInformation = computed(() => {
+    if (!this.isOpen() || !this.hiringCdpResource.hasValue()) {
+      return null;
+    }
+
+    return this.hiringCdpResource.value();
+  });
+
+  readonly hiringValuesInformation = computed(() => {
+    if (!this.isOpen() || !this.hiringValuesResource.hasValue()) {
+      return null;
+    }
+
+    return this.hiringValuesResource.value();
   });
 
   readonly isLoading = computed(
@@ -93,17 +123,19 @@ export class DraftContract {
     return chips;
   }
 
-  private resolveInformationParams(): { idCargaDocente: number } | undefined {
+  private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number } | undefined {
     if (!this.isOpen()) {
       return undefined;
     }
 
     const idCargaDocente = this.idCargaDocente();
-    if (idCargaDocente == null) {
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+    const idCoordinacion = this.idCoordinacion();
+    if (idCargaDocente == null || idPeriodoUniversitario == null || idCoordinacion == null) {
       return undefined;
     }
 
-    return { idCargaDocente };
+    return { idCargaDocente, idPeriodoUniversitario, idCoordinacion };
   }
 
   private toChip(
