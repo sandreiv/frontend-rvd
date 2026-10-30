@@ -284,7 +284,9 @@ export class HiringContractModalityDetail {
   resolveProfessorMenuAction(professor: ModalityProfessor): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
 
-    if (!hasLoad || !this.isCargaEnAvalDesarrollo()) return [];
+    if (!hasLoad || !this.isCargaEnAvalDesarrollo() || !professor.idPersonaGeneral) return [];
+
+    const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
 
     const actions: ProfessorMenuAction[] = [];
     if (this.permissions.canSavePtd()) {
@@ -295,7 +297,7 @@ export class HiringContractModalityDetail {
       });
     }
 
-    if (this.permissions.canSaveContract()) {
+    if (this.permissions.canSaveContract() && (estadoPTD === APPROVED_PTD_STATE)) {
       actions.push({
         id: 'diligenciar-contrato',
         label: 'Diligenciar contrato',

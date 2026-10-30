@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { HiringCallService } from '../../data/hiring-call.service';
 import { Icon } from '../../../../../shared/ui/icon/icon';
@@ -6,7 +6,19 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { forNext } from '../../../../../core/utils/for-next.function';
 import { ProfessorInformationItem } from '../../model/hiring-call.model';
 import { AppIconName } from '../../../../../shared/ui/icon/icons';
+import { mapActivitySummaryTables, mapCostCenterRows } from '../../../professor-preload/model/professor-summary.model';
+import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
+import { mapNoveltyContractValueRows } from '../../../professor-preload/model/novelty-summary.model';
 
+type DraftSectionId = 'informacion-cdp-valores' | 'centros-costo' | 'detalle-actividades';
+
+interface DraftSectionConfig {
+  id: DraftSectionId;
+  title: string;
+  icon: AppIconName;
+  iconBgClass: string;
+  iconColorClass: string;
+}
 
 interface HeaderChip {
   id: string;
@@ -14,9 +26,41 @@ interface HeaderChip {
   icon?: AppIconName;
 }
 
+const DRAFT_SECTIONS: DraftSectionConfig[] = [
+  {
+    id: 'informacion-cdp-valores',
+    title: 'Información CDP - Valores de contratación',
+    icon: 'identification',
+    iconBgClass: 'bg-success-50 dark:bg-success-500/10',
+    iconColorClass: 'text-success-600 dark:text-success-400',
+  },
+  {
+    id: 'centros-costo',
+    title: 'Centros de costo',
+    icon: 'briefcase',
+    iconBgClass: 'bg-warning-50 dark:bg-warning-500/10',
+    iconColorClass: 'text-warning-600 dark:text-warning-400',
+  },
+  {
+    id: 'detalle-actividades',
+    title: 'Detalle de actividades',
+    icon: 'academicCap',
+    iconBgClass: 'bg-brand-50 dark:bg-brand-500/10',
+    iconColorClass: 'text-brand-600 dark:text-brand-400',
+  },
+];
+
+function createInitialExpandedSections(): Record<DraftSectionId, boolean> {
+  return {
+    'informacion-cdp-valores': false,
+    'centros-costo': false,
+    'detalle-actividades': false,
+  };
+}
+
 @Component({
   selector: 'app-draft-contract',
-  imports: [Modal, Icon],
+  imports: [Modal, Icon, CollapsibleSection],
   templateUrl: './draft-contract.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,12 +74,33 @@ export class DraftContract {
   readonly idCoordinacion = input<number | null>(null);
   readonly nombreUnidad = input<string | null>(null);
   readonly nombreCoordinacion = input<string | null>(null);
+
   readonly close = output<void>();
+
+  readonly expandedSections = signal(createInitialExpandedSections());
 
   readonly informationResource = rxResource({
     params: () => this.resolveInformationParams(),
     stream: ({ params }) =>
       this.hiringCallService.getProfessorInformation(params.idCargaDocente),
+  });
+
+  readonly ptdInfoWithWeightsResource = rxResource({
+    params: () => {
+      const informationParams = this.resolveInformationParams();
+      const idPersonaGeneral = this.information()?.idPersonaGeneral;
+
+      if (informationParams == null || idPersonaGeneral == null) {
+        return undefined;
+      }
+
+      return { ...informationParams, idPersonaGeneral};
+    },
+    stream: ({ params }) => this.hiringCallService.getInfoPtdWithWeights(
+      params.idPersonaGeneral,
+      params.idCargaDocente,
+      params.idPeriodoUniversitario
+    )
   });
 
   readonly hiringCdpResource = rxResource({
@@ -57,6 +122,13 @@ export class DraftContract {
     return this.informationResource.value();
   });
 
+  readonly ptdInfoWithWeights = computed(() => {
+    if (!this.isOpen() || !this.ptdInfoWithWeightsResource.hasValue()) {
+      return null;
+    }
+    return this.ptdInfoWithWeightsResource.value();
+  });
+
   readonly hiringCdpInformation = computed(() => {
     if (!this.isOpen() || !this.hiringCdpResource.hasValue()) {
       return null;
@@ -73,13 +145,35 @@ export class DraftContract {
     return this.hiringValuesResource.value();
   });
 
-  readonly isLoading = computed(
-    () => this.isOpen() && this.informationResource.isLoading(),
+
+  readonly isLoadingContract = computed(
+    () => this.isOpen() && (
+      this.informationResource.isLoading() ||
+      this.ptdInfoWithWeightsResource.isLoading() ||
+      this.hiringCdpResource.isLoading() ||
+      this.hiringValuesResource.isLoading()
+    ),
   );
 
+  readonly summaryActivityTables = computed(() => {
+    if (!this.isOpen()) {
+      return [];
+    }
+    return mapActivitySummaryTables(this.information()?.horasActividades);
+  });
+
+  readonly observacion = computed(() => this.ptdInfoWithWeights()?.observacion?.descripcion ?? '');
+
+  readonly costCenterRows = computed(() => mapCostCenterRows(this.hiringValuesInformation()?.centrosCosto));
+
+  readonly assignedCdp = computed(() => this.hiringCdpInformation() ?? null);
+
+  readonly contractValueRows = computed(() => mapNoveltyContractValueRows(this.hiringValuesInformation()?.valorContratacion));
+
+  
   readonly titleName = computed(() => {
     const name = this.information()?.nombreCompleto?.trim();
-    return name || 'Plan de trabajo';
+    return name || 'Contrato';
   });
 
   readonly titleDocument = computed(
@@ -90,6 +184,25 @@ export class DraftContract {
     this.buildHeaderChips(this.information()),
   );
 
+  readonly sections = computed(() => DRAFT_SECTIONS);
+
+
+  isSectionExpanded(sectionId: DraftSectionId): boolean {
+    return this.expandedSections()[sectionId];
+  }
+
+  onSectionExpandedChange(sectionId: DraftSectionId, expanded: boolean): void {
+    this.expandedSections.update((current) => ({
+      ...current,
+      [sectionId]: expanded,
+    }));
+  }
+
+  hoursLabel(hours: number): string {
+    return `${hours ?? 0}h`;
+  }
+
+  
   private buildHeaderChips(
     information: ProfessorInformationItem | null,
   ): HeaderChip[] {
@@ -121,21 +234,6 @@ export class DraftContract {
     });
 
     return chips;
-  }
-
-  private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number } | undefined {
-    if (!this.isOpen()) {
-      return undefined;
-    }
-
-    const idCargaDocente = this.idCargaDocente();
-    const idPeriodoUniversitario = this.idPeriodoUniversitario();
-    const idCoordinacion = this.idCoordinacion();
-    if (idCargaDocente == null || idPeriodoUniversitario == null || idCoordinacion == null) {
-      return undefined;
-    }
-
-    return { idCargaDocente, idPeriodoUniversitario, idCoordinacion };
   }
 
   private toChip(
@@ -204,7 +302,7 @@ export class DraftContract {
     return text || '-';
   }
 
-  private displayDate(value: string | null | undefined): string {
+  public displayDate(value: string | null | undefined): string {
     const text = value?.trim();
     if (!text) {
       return '-';
@@ -216,5 +314,20 @@ export class DraftContract {
     }
 
     return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  private resolveInformationParams(): { idCargaDocente: number, idPeriodoUniversitario: number, idCoordinacion: number } | undefined {
+    if (!this.isOpen()) {
+      return undefined;
+    }
+
+    const idCargaDocente = this.idCargaDocente();
+    const idPeriodoUniversitario = this.idPeriodoUniversitario();
+    const idCoordinacion = this.idCoordinacion();
+    if (idCargaDocente == null || idPeriodoUniversitario == null || idCoordinacion == null) {
+      return undefined;
+    }
+
+    return { idCargaDocente, idPeriodoUniversitario, idCoordinacion };
   }
 }
