@@ -122,6 +122,7 @@ export class HiringContractModalityDetail {
   readonly isPtdModalOpen = signal(false);
   readonly ptdProfessorId = signal<number | null>(null);
   readonly ptdPeriodId = signal<number | null>(null);
+  readonly ptdProfesorExcluidoContrato = signal(true);
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly draftContractCoordinationId = signal<number | null>(null);
   readonly draftContractPeriodNumber = signal<string | null>(null);
@@ -284,10 +285,11 @@ export class HiringContractModalityDetail {
 
   resolveProfessorMenuAction(professor: ModalityProfessor): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
-
     if (!hasLoad || !this.isCargaEnAvalDesarrollo() || !professor.idPersonaGeneral) return [];
 
     const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
+    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     const actions: ProfessorMenuAction[] = [];
     if (this.permissions.canSavePtd()) {
@@ -306,7 +308,7 @@ export class HiringContractModalityDetail {
       });
     }
 
-    if (this.permissions.canReviewPtd()) {
+    if (this.permissions.canReviewPtd() && (!esProfesorExcluidoContrato)) {
       actions.push({
         id: 'revisar-ptd',
         label: 'Revisar plan de trabajo',
@@ -322,6 +324,8 @@ export class HiringContractModalityDetail {
     professor: ModalityProfessor,
   ): void {
     this.closeProfessorMenu();
+    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     if (actionId === 'plan-trabajo') {
       this.ptdProfessorId.set(professor.idCargaDocente);
@@ -340,16 +344,21 @@ export class HiringContractModalityDetail {
     if (actionId === 'revisar-ptd') {
       this.ptdProfessorId.set(professor.idCargaDocente);
       this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
+      this.ptdProfesorExcluidoContrato.set(esProfesorExcluidoContrato);
       this.isReviewPtdModalOpen.set(true);
     }
   }
 
-  // Deshabilitar el menu. Coordinador siempre habilitado, TH cuando el PTD esta aceptado
+  // Deshabilitar el menu. Coordinador siempre habilitado
+  // TH cuando el PTD esta aceptado y no es un docente heredado ni modalidad planta
   isMenuEnabled(professor: ModalityProfessor): boolean {
     if (!this.isTH()) {
       return true;
     }
-    if (!professor.idPersonaGeneral) {
+
+    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
+    if (!professor.idPersonaGeneral || esProfesorExcluidoContrato) {
       return false;
     }
 
@@ -377,6 +386,7 @@ export class HiringContractModalityDetail {
     this.isReviewPtdModalOpen.set(false);
     this.ptdProfessorId.set(null);
     this.ptdPeriodId.set(null);
+    this.ptdProfesorExcluidoContrato.set(true);
   }
 
   async onSuccessReview(): Promise<void> {

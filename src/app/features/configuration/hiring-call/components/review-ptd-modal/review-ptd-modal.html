@@ -486,7 +486,7 @@
             <app-button
               type="button"
               variant="error"
-              [disabled]="isSavingPtd()"
+              [disabled]="isSavingPtd() || isDocenteExcluidoContrato()"
               (btnClick)="onReject()"
             >
               <app-icon name="close" size="xs" />
@@ -509,7 +509,7 @@
             >
               <app-button
                 type="button"
-                [disabled]="isSavingPtd() || !hasAttachmentsInRequiredCategories()"
+                [disabled]="isSavingPtd() || !hasAttachmentsInRequiredCategories() || isDocenteExcluidoContrato()"
                 (btnClick)="onApprove()"
               >
                 <app-icon name="check" size="xs" />
