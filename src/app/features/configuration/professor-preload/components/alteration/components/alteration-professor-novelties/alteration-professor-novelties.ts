@@ -53,6 +53,9 @@ import { NoveltyBudgetStore } from './novelty-budget.store';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { firstValueFrom } from 'rxjs';
 
+const INDICADOR_ONCE_MESES = "1";
+const NUMERO_PERIODO_SEGUNDO = "2";
+
 @Component({
   selector: 'app-alteration-professor-novelties',
   imports: [
@@ -110,7 +113,7 @@ export class AlterationProfessorNovelties {
       }
 
       // Los docentes heredados tienen novedades tipo PLanta
-      const esProfesorHeredado = professor.onceMeses === '1' && coordination.numeroPeriodoUniversidad === '2';
+      const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (coordination.numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
       if (esProfesorHeredado) {
         return { modalityId: null }
       }

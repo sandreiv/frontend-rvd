@@ -71,6 +71,9 @@ const ACCEPTED_PTD_STATE = '1';
 const REJECTED_PTD_STATE = '2';
 const APPROVED_PTD_STATE = '3';
 
+const INDICADOR_ONCE_MESES = "1";
+const NUMERO_PERIODO_SEGUNDO = "2";
+
 const BADGE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 ' +
   'text-xs font-medium';
@@ -288,7 +291,7 @@ export class HiringContractModalityDetail {
     if (!hasLoad || !this.isCargaEnAvalDesarrollo() || !professor.idPersonaGeneral) return [];
 
     const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
-    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
     const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     const actions: ProfessorMenuAction[] = [];
@@ -324,7 +327,7 @@ export class HiringContractModalityDetail {
     professor: ModalityProfessor,
   ): void {
     this.closeProfessorMenu();
-    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
     const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     if (actionId === 'plan-trabajo') {
@@ -356,7 +359,7 @@ export class HiringContractModalityDetail {
       return true;
     }
 
-    const esProfesorHeredado = professor.onceMeses === '1' && this.coordination().numeroPeriodoUniversidad === '2';
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
     const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
     if (!professor.idPersonaGeneral || esProfesorExcluidoContrato) {
       return false;
