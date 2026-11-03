@@ -102,12 +102,19 @@ export class AlterationProfessorNovelties {
 
   readonly noveltiesResource = rxResource({
     params: () => {
-      if (!this.isOpen()) {
+      const professor = this.professor();
+      const coordination = this.coordination();
+
+      if (!this.isOpen() || !professor || !coordination) {
         return undefined;
       }
-      return {
-        modalityId: this.contractModality()?.id ?? null,
-      };
+
+      // Los docentes heredados tienen novedades tipo PLanta
+      const esProfesorHeredado = professor.onceMeses === '1' && coordination.numeroPeriodoUniversidad === '2';
+      if (esProfesorHeredado) {
+        return { modalityId: null }
+      }
+      return { modalityId: this.contractModality()?.id ?? null };
     },
     stream: ({ params }) =>
       this.coordinationService.getNoveltiesTypes(params.modalityId),
