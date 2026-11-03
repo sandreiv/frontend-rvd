@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { WebRequestService } from '../../../../core/service/web-request-service';
@@ -26,6 +27,14 @@ import {
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
 import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../public-view/hiring/model/hiring.model';
+
+/**
+ * Datos que el usuario diligencia en el modal antes de descargar el anexo.
+ */
+export interface ContractDownloadParams {
+  numeroAnexo?: string | null;
+  fechaIngreso?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class HiringCallService {
@@ -293,10 +302,77 @@ export class HiringCallService {
    * @param payload Objeto con la información para rechazar el PTD
    * @returns Observable sin contenido cuando el registro finaliza correctamente.
    */
+  /**
+   * Descarga el anexo de contratación del docente en PDF.
+   *
+   * El backend decide la plantilla: anexo con funciones administrativas si el
+   * docente es coordinador del programa, anexo de 4 meses en caso contrario.
+   *
+   * @param idCargaDocente Carga docente del docente contratado.
+   * @param datos Número de anexo y fecha de ingreso diligenciados por el usuario.
+   * @returns Observable con el archivo y su nombre.
+   */
+  downloadContractPdf(
+    idCargaDocente: number,
+    datos?: ContractDownloadParams,
+  ): Observable<{ blob: Blob; fileName: string }> {
+    let params = new HttpParams();
+    const numeroAnexo = datos?.numeroAnexo?.trim();
+    const fechaIngreso = datos?.fechaIngreso?.trim();
+
+    if (numeroAnexo) {
+      params = params.set('numeroAnexo', numeroAnexo);
+    }
+    if (fechaIngreso) {
+      params = params.set('fechaIngreso', fechaIngreso);
+    }
+
+    return this.webRequestService
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}`, params)
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: resolveDownloadFileName(
+            response.headers.get('content-disposition'),
+            `anexo-contrato-${idCargaDocente}.pdf`,
+          ),
+        })),
+      );
+  }
+
   declinePtdByTh(payload: RejectPtdRequest): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/decline-ptd-th`,
       payload
     );
   }
+}
+
+
+/**
+ * Extrae el nombre del archivo del header Content-Disposition.
+ */
+function resolveDownloadFileName(
+  contentDisposition: string | null,
+  fallback: string,
+): string {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(contentDisposition);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim().replace(/"/g, ''));
+    } catch {
+      return utf8Match[1].trim().replace(/"/g, '');
+    }
+  }
+
+  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(contentDisposition);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim();
+  }
+
+  return fallback;
 }
