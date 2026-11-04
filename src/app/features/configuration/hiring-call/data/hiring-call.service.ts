@@ -309,11 +309,13 @@ export class HiringCallService {
    * docente es coordinador del programa, anexo de 4 meses en caso contrario.
    *
    * @param idCargaDocente Carga docente del docente contratado.
+   * @param numeroPeriodo Numero del periodo para la carga docente.
    * @param datos Número de anexo y fecha de ingreso diligenciados por el usuario.
    * @returns Observable con el archivo y su nombre.
    */
   downloadContractPdf(
     idCargaDocente: number,
+    numeroPeriodo: string,
     datos?: ContractDownloadParams,
   ): Observable<{ blob: Blob; fileName: string }> {
     let params = new HttpParams();
@@ -328,7 +330,7 @@ export class HiringCallService {
     }
 
     return this.webRequestService
-      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}`, params)
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}/${numeroPeriodo}`, params)
       .pipe(
         map((response) => ({
           blob: response.body as Blob,

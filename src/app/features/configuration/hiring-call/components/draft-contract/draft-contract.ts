@@ -388,8 +388,9 @@ export class DraftContract {
    */
   downloadContract(): void {
     const idCargaDocente = this.idCargaDocente();
+    const numeroPeriodo = this.numeroPeriodo();
 
-    if (idCargaDocente == null || this.isDownloadingContract()) {
+    if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
       return;
     }
 
@@ -397,7 +398,7 @@ export class DraftContract {
 
     this.isDownloadingContract.set(true);
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente, { numeroAnexo, fechaIngreso })
+      .downloadContractPdf(idCargaDocente, numeroPeriodo, { numeroAnexo, fechaIngreso })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),
