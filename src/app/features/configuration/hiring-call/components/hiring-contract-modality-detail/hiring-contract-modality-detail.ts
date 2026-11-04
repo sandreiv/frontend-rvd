@@ -71,6 +71,9 @@ const ACCEPTED_PTD_STATE = '1';
 const REJECTED_PTD_STATE = '2';
 const APPROVED_PTD_STATE = '3';
 
+const INDICADOR_ONCE_MESES = "1";
+const NUMERO_PERIODO_SEGUNDO = "2";
+
 const BADGE_BASE =
   'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 ' +
   'text-xs font-medium';
@@ -122,8 +125,10 @@ export class HiringContractModalityDetail {
   readonly isPtdModalOpen = signal(false);
   readonly ptdProfessorId = signal<number | null>(null);
   readonly ptdPeriodId = signal<number | null>(null);
+  readonly ptdProfesorExcluidoContrato = signal(true);
   readonly draftContractProfessorId = signal<number | null>(null);
   readonly draftContractCoordinationId = signal<number | null>(null);
+  readonly draftContractPeriodNumber = signal<string | null>(null);
   readonly draftContractCoordinationName = signal<string | null>(null);
   readonly draftContractUnityName = signal<string | null>(null);
   readonly isDraftContractModalOpen = signal(false);
@@ -283,10 +288,11 @@ export class HiringContractModalityDetail {
 
   resolveProfessorMenuAction(professor: ModalityProfessor): ProfessorMenuAction[] {
     const hasLoad = professor.tieneCarga === true;
-
     if (!hasLoad || !this.isCargaEnAvalDesarrollo() || !professor.idPersonaGeneral) return [];
 
     const estadoPTD = this.ptdStatesByProfessorMap()[professor.idPersonaGeneral];
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     const actions: ProfessorMenuAction[] = [];
     if (this.permissions.canSavePtd()) {
@@ -305,7 +311,7 @@ export class HiringContractModalityDetail {
       });
     }
 
-    if (this.permissions.canReviewPtd()) {
+    if (this.permissions.canReviewPtd() && (!esProfesorExcluidoContrato)) {
       actions.push({
         id: 'revisar-ptd',
         label: 'Revisar plan de trabajo',
@@ -321,6 +327,8 @@ export class HiringContractModalityDetail {
     professor: ModalityProfessor,
   ): void {
     this.closeProfessorMenu();
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
 
     if (actionId === 'plan-trabajo') {
       this.ptdProfessorId.set(professor.idCargaDocente);
@@ -331,6 +339,7 @@ export class HiringContractModalityDetail {
       this.draftContractProfessorId.set(professor.idCargaDocente);
       this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
       this.draftContractCoordinationId.set(this.coordination().id);
+      this.draftContractPeriodNumber.set(this.coordination().numeroPeriodoUniversidad);
       this.draftContractCoordinationName.set(this.coordination().nombre);
       this.draftContractUnityName.set(this.coordination().unidadRegional);
       this.isDraftContractModalOpen.set(true);
@@ -338,16 +347,21 @@ export class HiringContractModalityDetail {
     if (actionId === 'revisar-ptd') {
       this.ptdProfessorId.set(professor.idCargaDocente);
       this.ptdPeriodId.set(this.coordination().idPeriodoUniversidad);
+      this.ptdProfesorExcluidoContrato.set(esProfesorExcluidoContrato);
       this.isReviewPtdModalOpen.set(true);
     }
   }
 
-  // Deshabilitar el menu. Coordinador siempre habilitado, TH cuando el PTD esta aceptado
+  // Deshabilitar el menu. Coordinador siempre habilitado
+  // TH cuando el PTD esta aceptado y no es un docente heredado ni modalidad planta
   isMenuEnabled(professor: ModalityProfessor): boolean {
     if (!this.isTH()) {
       return true;
     }
-    if (!professor.idPersonaGeneral) {
+
+    const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.coordination().numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
+    const esProfesorExcluidoContrato = esProfesorHeredado || this.isCareerTabSelected();
+    if (!professor.idPersonaGeneral || esProfesorExcluidoContrato) {
       return false;
     }
 
@@ -366,6 +380,7 @@ export class HiringContractModalityDetail {
     this.draftContractProfessorId.set(null);
     this.ptdPeriodId.set(null);
     this.draftContractCoordinationId.set(null);
+    this.draftContractPeriodNumber.set(null);
     this.draftContractCoordinationName.set(null);
     this.draftContractUnityName.set(null);
   }
@@ -374,6 +389,7 @@ export class HiringContractModalityDetail {
     this.isReviewPtdModalOpen.set(false);
     this.ptdProfessorId.set(null);
     this.ptdPeriodId.set(null);
+    this.ptdProfesorExcluidoContrato.set(true);
   }
 
   async onSuccessReview(): Promise<void> {

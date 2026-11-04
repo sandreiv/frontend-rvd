@@ -50,7 +50,7 @@ export class ProfessorSummary {
   contractModality = input<CoordinationContractModality | null>(null);
   isCareerProfessor = input(false);
   summaryFetcher = input<
-    ((idCargaDocente: number) => Observable<ProfessorLoadSummaryApi>) | null
+    ((idCargaDocente: number, numeroPeriodo: string) => Observable<ProfessorLoadSummaryApi>) | null
   >(null);
   close = output<void>();
 
@@ -97,20 +97,21 @@ export class ProfessorSummary {
       if (!this.isOpen()) {
         return undefined;
       }
-
+      
       const idCargaDocente = this.professor()?.idCargaDocente;
-      if (idCargaDocente == null) {
+      const numeroPeriodo = this.coordination()?.numeroPeriodoUniversidad;
+      if (idCargaDocente == null || numeroPeriodo == null) {
         return undefined;
       }
 
-      return { idCargaDocente };
+      return { idCargaDocente, numeroPeriodo };
     },
     stream: ({ params }) => {
       const fetcher = this.summaryFetcher();
       const request$ = fetcher
-        ? fetcher(params.idCargaDocente)
+        ? fetcher(params.idCargaDocente, params.numeroPeriodo)
         : this.coordinationService.getProfessorLoadSummary(
-            params.idCargaDocente,
+            params.idCargaDocente, params.numeroPeriodo
           );
 
       return request$.pipe(

@@ -94,6 +94,7 @@ export class ReviewPtdModal {
   readonly isOpen = input(false);
   readonly idCargaDocente = input<number | null>(null);
   readonly idPeriodoUniversitario = input<number | null>(null);
+  readonly isDocenteExcluidoContrato = input(true);
 
   readonly successRequest = output<void>();
   readonly close = output<void>();
@@ -388,7 +389,7 @@ export class ReviewPtdModal {
     const idCargaDocente = this.idCargaDocente();
     const idPeriodoUniversitario = this.idPeriodoUniversitario();
 
-    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canApprovePtd()) {
+    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canApprovePtd() || this.isDocenteExcluidoContrato()) {
       return;
     }
 
@@ -432,7 +433,7 @@ export class ReviewPtdModal {
     const idCargaDocente = this.idCargaDocente();
     const idPeriodoUniversitario = this.idPeriodoUniversitario();
 
-    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canRejectPtd()) {
+    if (idPersonaGeneral == null || idPeriodoUniversitario == null || idCargaDocente == null || this.isSavingPtd() || !this.canRejectPtd() || this.isDocenteExcluidoContrato()) {
       return;
     }
 

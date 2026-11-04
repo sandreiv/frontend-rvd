@@ -97,7 +97,7 @@ export class NoveltySummary {
     params: () => this.resolveSummaryParams(),
     stream: ({ params }) =>
       this.coordinationService
-        .getProfessorNoveltySummary(params.idCargaDocente)
+        .getProfessorNoveltySummary(params.idCargaDocente, params.numeroPeriodo)
         .pipe(catchError(() => of(EMPTY_PROFESSOR_NOVELTY_SUMMARY))),
     defaultValue: EMPTY_PROFESSOR_NOVELTY_SUMMARY,
   });
@@ -336,16 +336,17 @@ export class NoveltySummary {
     this.observationError.set(false);
   }
 
-  private resolveSummaryParams(): { idCargaDocente: number } | undefined {
+  private resolveSummaryParams(): { idCargaDocente: number, numeroPeriodo: string } | undefined {
     if (!this.isOpen()) {
       return undefined;
     }
 
     const idCargaDocente = this.professor()?.idCargaDocente;
-    if (idCargaDocente == null) {
+    const numeroPeriodo = this.coordination()?.numeroPeriodoUniversidad;
+    if (idCargaDocente == null || numeroPeriodo == null) {
       return undefined;
     }
 
-    return { idCargaDocente };
+    return { idCargaDocente, numeroPeriodo };
   }
 }

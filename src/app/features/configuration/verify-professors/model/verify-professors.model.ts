@@ -108,6 +108,7 @@ const EMPTY_COORDINATION: Omit<
   periodoUniversidad: '',
   idPeriodoUniversidad: null,
   anioUniversidad: null,
+  numeroPeriodoUniversidad: '',
   idUnidadRegional: null,
   estadoCarga: '',
   idCarga: null,
