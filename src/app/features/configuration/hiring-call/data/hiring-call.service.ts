@@ -17,6 +17,7 @@ import {
 import {
   ApprovePtdRequest,
   HiringCallItem,
+  ContractCatalogs,
   HiringCdpInformationApi,
   HiringValuesInformationApi,
   PdtInfoWithWeights,
@@ -50,6 +51,19 @@ export class HiringCallService {
   getUniversityPeriod(): Observable<UniversityPeriodItem[]> {
     return this.webRequestService.get<UniversityPeriodItem[]>(
       `${this.endpoint}/list-university-period`,
+    );
+  }
+
+  /**
+   * Catalogos que el usuario selecciona en el panel "Datos del anexo":
+   * formas de pago (BIENESV3.FORMAPAGO) y tipos de objeto contractual
+   * (CONTRATOS.TIPOOBJETO).
+   *
+   * @returns Observable con las descripciones de ambos catalogos.
+   */
+  getContractCatalogs(): Observable<ContractCatalogs> {
+    return this.webRequestService.get<ContractCatalogs>(
+      `${this.endpoint}/contract-catalogs`,
     );
   }
 

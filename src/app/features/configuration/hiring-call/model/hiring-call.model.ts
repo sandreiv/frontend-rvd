@@ -135,3 +135,17 @@ export interface HiringValuesInformationApi {
   valorContratacion: NoveltyValorContratacionSummaryApi | null;
   centrosCosto: CentroCostoSummaryApi[]
 }
+
+/**
+ * Item de los catalogos del panel "Datos del anexo" (forma de pago y
+ * tipo de objeto contractual).
+ */
+export interface ContractCatalogItem {
+  id: number;
+  descripcion: string;
+}
+
+export interface ContractCatalogs {
+  formasPago: ContractCatalogItem[];
+  tiposObjeto: ContractCatalogItem[];
+}

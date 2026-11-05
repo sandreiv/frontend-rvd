@@ -402,7 +402,7 @@
         Datos del anexo
       </h3>
       <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        Diligencie los dos campos para generar el contrato.
+        Diligencie los cuatro campos para generar el contrato.
       </p>
 
       <form
@@ -442,6 +442,58 @@
               formControlName="fechaIngreso"
               placeholder="Seleccione la fecha"
             />
+          </div>
+
+          <div>
+            <label
+              for="formaPago"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Forma de Pago <span class="text-error-500">*</span>
+            </label>
+            <app-select
+              id="formaPago"
+              formControlName="formaPagoId"
+              [options]="formaPagoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la forma de pago"
+              searchPlaceholder="Buscar forma de pago..."
+              emptyText="No hay formas de pago registradas"
+            />
+            @if (
+              contractForm.controls.formaPagoId.touched &&
+              contractForm.controls.formaPagoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La forma de pago es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="tipoObjeto"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Tipo de Objeto <span class="text-error-500">*</span>
+            </label>
+            <app-select
+              id="tipoObjeto"
+              formControlName="tipoObjetoId"
+              [options]="tipoObjetoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione el tipo de objeto"
+              searchPlaceholder="Buscar tipo de objeto..."
+              emptyText="No hay tipos de objeto registrados"
+            />
+            @if (
+              contractForm.controls.tipoObjetoId.touched &&
+              contractForm.controls.tipoObjetoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                El tipo de objeto es obligatorio.
+              </p>
+            }
           </div>
         </div>
 

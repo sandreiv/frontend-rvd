@@ -13,6 +13,7 @@ import { CollapsibleSection } from '../../../../../shared/components/form/collap
 import { Button } from '../../../../../shared/ui/button/button';
 import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
 import { InputField } from '../../../../../shared/components/form/input/input-field';
+import { Option, Select } from '../../../../../shared/components/form/select/select';
 import { mapNoveltyContractValueRows } from '../../../professor-preload/model/novelty-summary.model';
 
 type DraftSectionId = 'informacion-cdp-valores' | 'centros-costo' | 'detalle-actividades';
@@ -65,7 +66,7 @@ function createInitialExpandedSections(): Record<DraftSectionId, boolean> {
 
 @Component({
   selector: 'app-draft-contract',
-  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, InputField, DatePicker],
+  imports: [Modal, Icon, CollapsibleSection, Button, ReactiveFormsModule, InputField, DatePicker, Select],
   templateUrl: './draft-contract.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -97,7 +98,39 @@ export class DraftContract {
   readonly contractForm = this.formBuilder.group({
     numeroAnexo: ['', [Validators.required, Validators.maxLength(15)]],
     fechaIngreso: ['', [Validators.required]],
+    formaPagoId: ['', [Validators.required]],
+    tipoObjetoId: ['', [Validators.required]],
   });
+
+  /**
+   * Catalogos de los dos selects del panel: forma de pago
+   * (BIENESV3.FORMAPAGO) y tipo de objeto contractual (CONTRATOS.TIPOOBJETO).
+   */
+  readonly contractCatalogsResource = rxResource({
+    params: () => (this.isOpen() ? { open: true } as const : undefined),
+    stream: () => this.hiringCallService.getContractCatalogs(),
+  });
+
+  readonly contractCatalogs = computed(() => {
+    if (!this.isOpen() || !this.contractCatalogsResource.hasValue()) {
+      return null;
+    }
+    return this.contractCatalogsResource.value();
+  });
+
+  readonly formaPagoOptions = computed<Option[]>(() =>
+    (this.contractCatalogs()?.formasPago ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.descripcion,
+    })),
+  );
+
+  readonly tipoObjetoOptions = computed<Option[]>(() =>
+    (this.contractCatalogs()?.tiposObjeto ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.descripcion,
+    })),
+  );
 
   private readonly contractFormStatus = toSignal(this.contractForm.statusChanges, {
     initialValue: this.contractForm.status,
