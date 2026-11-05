@@ -425,11 +425,17 @@ export class DraftContract {
       return;
     }
 
-    const { numeroAnexo, fechaIngreso } = this.contractForm.getRawValue();
+    const { numeroAnexo, fechaIngreso, formaPagoId, tipoObjetoId } =
+      this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente, { numeroAnexo, fechaIngreso })
+      .downloadContractPdf(idCargaDocente, {
+        numeroAnexo,
+        fechaIngreso,
+        formaPago: formaPagoId,
+        tipoObjeto: tipoObjetoId,
+      })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),

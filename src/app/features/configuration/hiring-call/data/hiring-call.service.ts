@@ -35,6 +35,8 @@ import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../
 export interface ContractDownloadParams {
   numeroAnexo?: string | null;
   fechaIngreso?: string | null;
+  formaPago?: string | null;
+  tipoObjeto?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -333,12 +335,20 @@ export class HiringCallService {
     let params = new HttpParams();
     const numeroAnexo = datos?.numeroAnexo?.trim();
     const fechaIngreso = datos?.fechaIngreso?.trim();
+    const formaPago = datos?.formaPago?.trim();
+    const tipoObjeto = datos?.tipoObjeto?.trim();
 
     if (numeroAnexo) {
       params = params.set('numeroAnexo', numeroAnexo);
     }
     if (fechaIngreso) {
       params = params.set('fechaIngreso', fechaIngreso);
+    }
+    if (formaPago) {
+      params = params.set('formaPago', formaPago);
+    }
+    if (tipoObjeto) {
+      params = params.set('tipoObjeto', tipoObjeto);
     }
 
     return this.webRequestService
