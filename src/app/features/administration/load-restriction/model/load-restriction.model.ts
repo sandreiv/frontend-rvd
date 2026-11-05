@@ -23,6 +23,8 @@ export interface LoadRestrictionCatalogItem {
 }
 
 export interface LoadRestrictionCatalogs {
+  dedicaciones: LoadRestrictionCatalogItem[];
+  clasificaciones: LoadRestrictionCatalogItem[];
   categorias: LoadRestrictionCatalogItem[];
   tiposActividad: LoadRestrictionCatalogItem[];
   programas: LoadRestrictionCatalogItem[];
@@ -31,6 +33,8 @@ export interface LoadRestrictionCatalogs {
 
 export interface LoadRestrictionDetail {
   idModalidadContratacion: number;
+  idDedicacionDocente: number | null;
+  idClasificacionDocente: number | null;
   minimo: string | null;
   maximo: string | null;
   investigacion: string | null;
@@ -47,6 +51,8 @@ export interface LoadRestrictionDetail {
 
 export interface LoadRestrictionFormData {
   idModalidadContratacion: number;
+  idDedicacionDocente: number | null;
+  idClasificacionDocente: number | null;
   minimo: string | null;
   maximo: string | null;
   investigacion: string;

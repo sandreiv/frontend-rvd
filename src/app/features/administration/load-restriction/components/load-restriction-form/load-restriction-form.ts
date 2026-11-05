@@ -63,6 +63,8 @@ type LoadRestrictionFormGroup = FormGroup<{
   tipoContrato: FormControl<string>;
   tipoHorasEnabled: FormControl<boolean>;
   tipoHoras: FormControl<string>;
+  idDedicacionDocente: FormControl<string>;
+  idClasificacionDocente: FormControl<string>;
   excepcionEnabled: FormControl<boolean>;
   idProgramaBusqueda: FormControl<string>;
   idPersonaBusqueda: FormControl<string>;
@@ -150,6 +152,8 @@ export class LoadRestrictionForm implements OnChanges {
     { value: '1', label: 'Sí' },
     { value: '0', label: 'No' },
   ];
+  readonly selectedDedicacion = signal<LoadRestrictionCatalogItem | null>(null);
+  readonly selectedClasificacion = signal<LoadRestrictionCatalogItem | null>(null);
   readonly filteredPrograms = signal<LoadRestrictionCatalogItem[]>([]);
   readonly filteredPeople = signal<LoadRestrictionCatalogItem[]>([]);
   readonly selectedPrograms = signal<SelectedProgramExceptionItem[]>([]);
@@ -203,6 +207,9 @@ export class LoadRestrictionForm implements OnChanges {
       tipoHorasEnabled: new FormControl(true, { nonNullable: true }),
       tipoHoras: new FormControl('', { nonNullable: true }),
 
+      idDedicacionDocente: new FormControl('', { nonNullable: true }),
+      idClasificacionDocente: new FormControl('', { nonNullable: true }),
+
       excepcionEnabled: new FormControl(true, { nonNullable: true }),
       idProgramaBusqueda: new FormControl(
         { value: '', disabled: true },
@@ -230,6 +237,20 @@ export class LoadRestrictionForm implements OnChanges {
       data: option,
     };
   };
+
+  get dedicacionOptions(): Option[] {
+    return (this.catalogs()?.dedicaciones ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.label,
+    }));
+  }
+
+  get clasificacionOptions(): Option[] {
+    return (this.catalogs()?.clasificaciones ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.label,
+    }));
+  }
 
   get categoriaOptions(): Option[] {
     const selectedIds = new Set(
@@ -589,7 +610,47 @@ export class LoadRestrictionForm implements OnChanges {
     this.closePersonExceptionHours();
   }
 
-    onCategoriaSelected(value: string): void {
+  onDedicacionSelected(value: string): void {
+    const id = Number(value);
+    if (!id) {
+      this.selectedDedicacion.set(null);
+      return;
+    }
+
+    const dedicacion = (this.catalogs()?.dedicaciones ?? [])
+      .find((item) => item.id === id);
+
+    if (!dedicacion) {
+      this.selectedDedicacion.set(null);
+      this.form.controls.idDedicacionDocente.setValue('');
+      return;
+    }
+
+    this.selectedDedicacion.set(dedicacion);
+    this.form.controls.idDedicacionDocente.setValue(String(dedicacion.id));
+  }
+
+  onClasificacionSelected(value: string): void {
+    const id = Number(value);
+    if (!id) {
+      this.selectedClasificacion.set(null);
+      return;
+    }
+
+    const clasificacion = (this.catalogs()?.clasificaciones ?? [])
+      .find((item) => item.id === id);
+
+    if (!clasificacion) {
+      this.selectedClasificacion.set(null);
+      this.form.controls.idClasificacionDocente.setValue('');
+      return;
+    }
+
+    this.selectedClasificacion.set(clasificacion);
+    this.form.controls.idClasificacionDocente.setValue(String(clasificacion.id));
+  } 
+
+  onCategoriaSelected(value: string): void {
     const id = Number(value);
 
     if (!id) {
@@ -691,6 +752,9 @@ export class LoadRestrictionForm implements OnChanges {
       tipoContrato: raw.tipoContrato,
       tipoHoras: raw.tipoHoras,
 
+      idDedicacionDocente: this.selectedDedicacion()?.id ?? null,
+      idClasificacionDocente: this.selectedClasificacion()?.id ?? null,
+
       idsProgramasExcepcion: this.selectedPrograms().map((item) => item.id),
       programasExcepcion: this.selectedPrograms().map((item) => ({
         idPrograma: item.id,
@@ -714,12 +778,12 @@ export class LoadRestrictionForm implements OnChanges {
   }
 
   private patchForm(): void {
-  const item = this.restriction();
+    const item = this.restriction();
 
-  this.submitted.set(false);
+    this.submitted.set(false);
 
-  const horasEnabled = true;
-  const excepcionEnabled = true;
+    const horasEnabled = true;
+    const excepcionEnabled = true;
 
     this.form.reset({
       horasEnabled,
@@ -734,6 +798,8 @@ export class LoadRestrictionForm implements OnChanges {
       tipoContrato: item?.tipoContrato ?? '',
       tipoHorasEnabled: true,
       tipoHoras: item?.tipoHoras ?? '',
+      idDedicacionDocente: (item?.idDedicacionDocente != null) ? String(item.idDedicacionDocente) : '',
+      idClasificacionDocente: (item?.idClasificacionDocente != null) ? String(item.idClasificacionDocente) : '',
       excepcionEnabled,
       idProgramaBusqueda: '',
       idPersonaBusqueda: '',
@@ -755,6 +821,8 @@ export class LoadRestrictionForm implements OnChanges {
       item?.idsPersonasExcepcion ?? [],
       item?.personasExcepcion ?? [],
     );
+    this.setSelectedDedicacion(item?.idDedicacionDocente ?? null);
+    this.setSelectedClasificacion(item?.idClasificacionDocente ?? null);
     this.setSelectedCategories(item?.idsCategoriasCatedratico ?? []);
     this.setSelectedActivityTypes(item?.idsTiposActividad ?? []);
     this.showCategoriaRequiredSignal.set(false);
@@ -834,6 +902,34 @@ export class LoadRestrictionForm implements OnChanges {
           maximoHoras: hoursByPersonId.get(item.id) ?? null,
         })),
     );
+  }
+
+  private setSelectedDedicacion(id: number|null): void {
+    const dedicacion = (this.catalogs()?.dedicaciones ?? [])
+      .find((item) => item.id === id);
+
+    if (!dedicacion) {
+      this.selectedDedicacion.set(null);
+      this.form.controls.idDedicacionDocente.setValue('', { emitEvent: false });
+      return;
+    }
+
+    this.selectedDedicacion.set(dedicacion);
+    this.form.controls.idDedicacionDocente.setValue(String(dedicacion.id), { emitEvent: false });
+  }
+
+  private setSelectedClasificacion(id: number|null): void {
+    const clasificacion = (this.catalogs()?.clasificaciones ?? [])
+      .find((item) => item.id === id);
+
+    if (!clasificacion) {
+      this.selectedClasificacion.set(null);
+      this.form.controls.idClasificacionDocente.setValue('', { emitEvent: false });
+      return;
+    }
+
+    this.selectedClasificacion.set(clasificacion);
+    this.form.controls.idClasificacionDocente.setValue(String(clasificacion.id), { emitEvent: false });
   }
 
   private setSelectedCategories(ids: number[]): void {
