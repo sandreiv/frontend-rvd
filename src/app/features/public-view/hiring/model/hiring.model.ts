@@ -23,6 +23,7 @@ export interface PublicHiringRecord {
   periodoUniversidad: string | null;
 
   onceMeses: string | null;
+  esDocentePlanta: string | null;
 }
 
 export interface PublicBasicInformation {

@@ -53,6 +53,9 @@ import { NoveltyBudgetStore } from './novelty-budget.store';
 import { Button } from '../../../../../../../shared/ui/button/button';
 import { firstValueFrom } from 'rxjs';
 
+const INDICADOR_ONCE_MESES = "1";
+const NUMERO_PERIODO_SEGUNDO = "2";
+
 @Component({
   selector: 'app-alteration-professor-novelties',
   imports: [
@@ -102,12 +105,19 @@ export class AlterationProfessorNovelties {
 
   readonly noveltiesResource = rxResource({
     params: () => {
-      if (!this.isOpen()) {
+      const professor = this.professor();
+      const coordination = this.coordination();
+
+      if (!this.isOpen() || !professor || !coordination) {
         return undefined;
       }
-      return {
-        modalityId: this.contractModality()?.id ?? null,
-      };
+
+      // Los docentes heredados tienen novedades tipo PLanta
+      const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (coordination.numeroPeriodoUniversidad === NUMERO_PERIODO_SEGUNDO);
+      if (esProfesorHeredado) {
+        return { modalityId: null }
+      }
+      return { modalityId: this.contractModality()?.id ?? null };
     },
     stream: ({ params }) =>
       this.coordinationService.getNoveltiesTypes(params.modalityId),

@@ -216,8 +216,8 @@ export class VerifyProfessors implements OnInit, OnDestroy {
     return item ? toContractModality(item) : null;
   });
 
-  readonly loadSummary = (idCargaDocente: number) =>
-    this.verifyProfessorsService.getProfessorLoadSummary(idCargaDocente);
+  readonly loadSummary = (idCargaDocente: number, numeroPeriodo: string) =>
+    this.verifyProfessorsService.getProfessorLoadSummary(idCargaDocente, numeroPeriodo);
 
   async ngOnInit(): Promise<void> {
     this.breadcrumbTitle.setPageTitle('Verificar docentes');
