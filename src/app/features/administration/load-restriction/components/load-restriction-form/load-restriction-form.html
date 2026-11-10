@@ -130,6 +130,30 @@
     </div>
   </div>
 
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
+      <app-label>Dedicación</app-label>
+
+      <app-select
+        formControlName="idDedicacionDocente"
+        [options]="dedicacionOptions"
+        placeholder="Seleccione la dedicación"
+        (valueChange)="onDedicacionSelected($event)"
+      />
+    </div>
+
+    <div class="rounded-lg border border-gray-100 p-3 dark:border-white/10">
+      <app-label>Clasificación</app-label>
+
+      <app-select
+        formControlName="idClasificacionDocente"
+        [options]="clasificacionOptions"
+        placeholder="Seleccione la clasificación"
+        (valueChange)="onClasificacionSelected($event)"
+      />
+    </div>
+  </div>
+
   <div class="mt-4 rounded-lg border border-gray-100 p-3 dark:border-white/10">
     <app-label>Excepción</app-label>
 
