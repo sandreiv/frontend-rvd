@@ -432,7 +432,7 @@ export class DraftContract {
 
     this.isDownloadingContract.set(true);
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente, {
+      .downloadContractPdf(idCargaDocente, numeroPeriodo, {
         numeroAnexo,
         fechaIngreso,
         formaPago: formaPagoId,
