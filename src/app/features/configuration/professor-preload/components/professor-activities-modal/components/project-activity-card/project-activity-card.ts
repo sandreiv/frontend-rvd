@@ -158,7 +158,7 @@ export class ProjectActivityCard {
   }
 
   onDisassociate(row: ProfessorProjectRow): void {
-    if (this.readOnly() || this.isRegistrationProcessed()) {
+    if (this.readOnly() || this.isRegistrationProcessed() || this.associationExpired()) {
       return;
     }
 
