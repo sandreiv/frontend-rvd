@@ -148,4 +148,5 @@ export interface ContractCatalogItem {
 export interface ContractCatalogs {
   formasPago: ContractCatalogItem[];
   tiposObjeto: ContractCatalogItem[];
+  formasInicioContrato: ContractCatalogItem[];
 }

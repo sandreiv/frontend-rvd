@@ -98,9 +98,12 @@ export class DraftContract {
 
   readonly contractForm = this.formBuilder.group({
     numeroAnexo: ['', [Validators.required, Validators.maxLength(15)]],
-    fechaIngreso: ['', [Validators.required]],
+    fechaFirma: ['', [Validators.required]],
     formaPagoId: ['', [Validators.required]],
     tipoObjetoId: ['', [Validators.required]],
+    formaInicioContratoId: ['', [Validators.required]],
+    objeto: ['', [Validators.required]],
+    descripcion: ['', [Validators.required]]
   });
 
   /**
@@ -131,6 +134,13 @@ export class DraftContract {
       value: String(item.id),
       label: item.descripcion,
     })),
+  );
+
+  readonly formaInicioContratoOptions = computed<Option[]>(() =>
+    (this.contractCatalogs()?.formasInicioContrato ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.descripcion
+    }))
   );
 
   private readonly contractFormStatus = toSignal(this.contractForm.statusChanges, {
@@ -427,16 +437,21 @@ export class DraftContract {
       return;
     }
 
-    const { numeroAnexo, fechaIngreso, formaPagoId, tipoObjetoId } =
-      this.contractForm.getRawValue();
+    const {
+      numeroAnexo, fechaFirma, formaPagoId, tipoObjetoId,
+      formaInicioContratoId, objeto, descripcion
+    } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
     this.hiringCallService
       .downloadContractPdf(idCargaDocente, numeroPeriodo, {
         numeroAnexo,
-        fechaIngreso,
+        fechaFirma,
         formaPago: formaPagoId,
         tipoObjeto: tipoObjetoId,
+        formaInicioContrato: formaInicioContratoId,
+        objeto,
+        descripcion
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),

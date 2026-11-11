@@ -395,14 +395,12 @@
     }
   </div>
   @if (isContractPanelOpen()) {
-    <section
-      class="border-t border-gray-200 bg-gray-50 px-6 py-5 sm:px-8 dark:border-white/10 dark:bg-white/[0.02]"
-    >
+    <section class="border-t border-gray-200 bg-gray-50 px-6 py-5 sm:px-8 dark:border-white/10 dark:bg-white/[0.02]">
       <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">
         Datos del anexo
       </h3>
       <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        Diligencie los cuatro campos para generar el contrato.
+        Diligencie los campos para generar el contrato.
       </p>
 
       <form
@@ -432,15 +430,15 @@
 
           <div>
             <label
-              for="fechaIngreso"
+              for="fechaFirma"
               class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
             >
-              Fecha Ingreso <span class="text-error-500">*</span>
+              Fecha Firma <span class="text-error-500">*</span>
             </label>
             <app-date-picker
-              id="fechaIngreso"
-              formControlName="fechaIngreso"
-              placeholder="Seleccione la fecha"
+              id="fechaFirma"
+              formControlName="fechaFirma"
+              placeholder="Seleccione la fecha en que se firmará el contrato"
             />
           </div>
 
@@ -495,6 +493,69 @@
               </p>
             }
           </div>
+
+          <div>
+            <label
+              for="formaInicioContrato"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Forma de Inicio del Contrato <span class="text-error-500">*</span>
+            </label>
+            <app-select
+              id="formaInicioContrato"
+              formControlName="formaInicioContratoId"
+              [options]="formaInicioContratoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la forma de inicio del contrato"
+              searchPlaceholder="Buscar forma de inicio..."
+              emptyText="No hay formas de inicio registradas"
+            />
+            @if (
+              contractForm.controls.formaInicioContratoId.touched &&
+              contractForm.controls.formaInicioContratoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La forma de inicio del contrato es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="objeto"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Objeto del contrato <span class="text-error-500">*</span>
+            </label>
+            <app-input-field
+              id="objeto"
+              formControlName="objeto"
+              placeholder="Ingrese el objeto"
+              [error]="
+                contractForm.controls.objeto.invalid &&
+                contractForm.controls.objeto.touched
+              "
+            />
+          </div>
+
+          <div>
+            <label
+              for="descripcion"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Descripción del objeto <span class="text-error-500">*</span>
+            </label>
+
+            <app-input-field
+              id="descripcion"
+              formControlName="descripcion"
+              placeholder="Ingrese la descripción"
+              [error]="
+                contractForm.controls.descripcion.invalid &&
+                contractForm.controls.descripcion.touched
+              "
+            />
+          </div>
         </div>
 
         <div class="flex justify-end">
@@ -510,9 +571,7 @@
     </section>
   }
 
-  <footer
-    class="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 dark:border-white/10"
-  >
+  <footer class="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 dark:border-white/10">
     <app-button
       variant="outline"
       size="sm"

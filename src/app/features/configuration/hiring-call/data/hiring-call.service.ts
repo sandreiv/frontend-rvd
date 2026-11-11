@@ -34,9 +34,12 @@ import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../
  */
 export interface ContractDownloadParams {
   numeroAnexo?: string | null;
-  fechaIngreso?: string | null;
+  fechaFirma?: string | null;
   formaPago?: string | null;
   tipoObjeto?: string | null;
+  formaInicioContrato?: string | null;
+  objeto?: string | null;
+  descripcion?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -312,13 +315,6 @@ export class HiringCallService {
   }
 
   /**
-   * Actualiza el estado del PTD a 'Estipulado', marca los documentos adjuntos enviados como validos y registra
-   * la observación para corregir los adjuntos invalidos
-   * 
-   * @param payload Objeto con la información para rechazar el PTD
-   * @returns Observable sin contenido cuando el registro finaliza correctamente.
-   */
-  /**
    * Descarga el anexo de contratación del docente en PDF.
    *
    * El backend decide la plantilla: anexo con funciones administrativas si el
@@ -326,7 +322,7 @@ export class HiringCallService {
    *
    * @param idCargaDocente Carga docente del docente contratado.
    * @param numeroPeriodo Numero del periodo para la carga docente.
-   * @param datos Número de anexo y fecha de ingreso diligenciados por el usuario.
+   * @param datos Datos adicionales diligenciados por el usuario.
    * @returns Observable con el archivo y su nombre.
    */
   downloadContractPdf(
@@ -335,22 +331,15 @@ export class HiringCallService {
     datos?: ContractDownloadParams,
   ): Observable<{ blob: Blob; fileName: string }> {
     let params = new HttpParams();
-    const numeroAnexo = datos?.numeroAnexo?.trim();
-    const fechaIngreso = datos?.fechaIngreso?.trim();
-    const formaPago = datos?.formaPago?.trim();
-    const tipoObjeto = datos?.tipoObjeto?.trim();
 
-    if (numeroAnexo) {
-      params = params.set('numeroAnexo', numeroAnexo);
-    }
-    if (fechaIngreso) {
-      params = params.set('fechaIngreso', fechaIngreso);
-    }
-    if (formaPago) {
-      params = params.set('formaPago', formaPago);
-    }
-    if (tipoObjeto) {
-      params = params.set('tipoObjeto', tipoObjeto);
+    if (datos) {
+      Object.entries(datos).forEach(([key, value]) => {
+        const trimmedValue = value?.trim();
+
+        if (trimmedValue) {
+          params = params.set(key, trimmedValue);
+        }
+      });
     }
 
     return this.webRequestService
@@ -366,6 +355,13 @@ export class HiringCallService {
       );
   }
 
+  /**
+   * Actualiza el estado del PTD a 'Estipulado', marca los documentos adjuntos enviados como validos y registra
+   * la observación para corregir los adjuntos invalidos
+   * 
+   * @param payload Objeto con la información para rechazar el PTD
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
   declinePtdByTh(payload: RejectPtdRequest): Observable<void> {
     return this.webRequestService.put<void>(
       `${this.endpoint}/decline-ptd-th`,
