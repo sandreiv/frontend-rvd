@@ -483,19 +483,25 @@
           </app-button>
 
           @if (canRejectPtd()) {
-            <app-button
-              type="button"
-              variant="error"
-              [disabled]="isSavingPtd() || isDocenteExcluidoContrato()"
-              (btnClick)="onReject()"
+            <span
+              class="inline-flex"
+              [appTooltip]="'Esta acción devolverá al docente los documentos no seleccionados para su corrección'"
+              tooltipPlacement="top"
             >
-              <app-icon name="close" size="xs" />
-              {{
-                savingAction() === 'reject'
-                  ? 'Rechazando...'
-                  : 'Rechazar documentos'
-              }}
-            </app-button>
+              <app-button
+                type="button"
+                variant="error"
+                [disabled]="isSavingPtd() || isDocenteExcluidoContrato()"
+                (btnClick)="onReject()"
+              >
+                <app-icon name="close" size="xs" />
+                {{
+                  savingAction() === 'reject'
+                    ? 'Rechazando...'
+                    : 'Rechazar documentos'
+                }}
+              </app-button>
+            </span>
           }
 
           @if (canApprovePtd()) {
