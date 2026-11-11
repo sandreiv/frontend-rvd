@@ -522,6 +522,32 @@
 
           <div>
             <label
+              for="labor"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Labor docente <span class="text-error-500">*</span>
+            </label>
+            <app-select
+              id="labor"
+              formControlName="laborId"
+              [options]="laborOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la labor del docente"
+              searchPlaceholder="Buscar labor..."
+              emptyText="No hay labores registradas"
+            />
+            @if (
+              contractForm.controls.laborId.touched &&
+              contractForm.controls.laborId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La labor del docente es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
               for="objeto"
               class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
             >

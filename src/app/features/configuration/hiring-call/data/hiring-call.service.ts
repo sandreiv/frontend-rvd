@@ -38,6 +38,7 @@ export interface ContractDownloadParams {
   formaPago?: string | null;
   tipoObjeto?: string | null;
   formaInicioContrato?: string | null;
+  labor?: string | null;
   objeto?: string | null;
   descripcion?: string | null;
 }

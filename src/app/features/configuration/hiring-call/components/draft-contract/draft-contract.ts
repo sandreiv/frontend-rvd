@@ -102,6 +102,7 @@ export class DraftContract {
     formaPagoId: ['', [Validators.required]],
     tipoObjetoId: ['', [Validators.required]],
     formaInicioContratoId: ['', [Validators.required]],
+    laborId: ['', [Validators.required]],
     objeto: ['', [Validators.required]],
     descripcion: ['', [Validators.required]]
   });
@@ -138,6 +139,13 @@ export class DraftContract {
 
   readonly formaInicioContratoOptions = computed<Option[]>(() =>
     (this.contractCatalogs()?.formasInicioContrato ?? []).map((item) => ({
+      value: String(item.id),
+      label: item.descripcion
+    }))
+  );
+
+  readonly laborOptions = computed<Option[]>(() =>
+    (this.contractCatalogs()?.labores ?? []).map((item) => ({
       value: String(item.id),
       label: item.descripcion
     }))
@@ -439,7 +447,7 @@ export class DraftContract {
 
     const {
       numeroAnexo, fechaFirma, formaPagoId, tipoObjetoId,
-      formaInicioContratoId, objeto, descripcion
+      formaInicioContratoId, laborId, objeto, descripcion
     } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
@@ -450,6 +458,7 @@ export class DraftContract {
         formaPago: formaPagoId,
         tipoObjeto: tipoObjetoId,
         formaInicioContrato: formaInicioContratoId,
+        labor: laborId,
         objeto,
         descripcion
       })
