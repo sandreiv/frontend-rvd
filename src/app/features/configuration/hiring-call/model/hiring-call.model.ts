@@ -34,6 +34,9 @@ export interface ProfessorInformationItem {
   categoriaDocente: string | null;
   puntos: string | null;
   valorHora: number | null;
+  contratacionVinculado: string | null;
+  contratacionSincronizado: string | null;
+  numeroContrato: string | null;
   horasActividades: ActividadPtd[];
 }
 

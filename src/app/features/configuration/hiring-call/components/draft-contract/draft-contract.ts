@@ -17,6 +17,7 @@ import { Option, Select } from '../../../../../shared/components/form/select/sel
 import { mapNoveltyContractValueRows } from '../../../professor-preload/model/novelty-summary.model';
 
 type DraftSectionId = 'informacion-cdp-valores' | 'centros-costo' | 'detalle-actividades';
+export type ContractOperation = 'GENERAR' | 'VINCULAR';
 
 interface DraftSectionConfig {
   id: DraftSectionId;
@@ -89,6 +90,7 @@ export class DraftContract {
   readonly expandedSections = signal(createInitialExpandedSections());
 
   readonly isDownloadingContract = signal(false);
+  readonly contractOperation = signal<ContractOperation>('VINCULAR');
 
   /**
    * Panel desplegable con los datos que el usuario debe diligenciar antes de
@@ -239,7 +241,8 @@ export class DraftContract {
     () =>
       this.contractFormStatus() === 'VALID' &&
       !this.isDownloadingContract() &&
-      !this.isLoadingContract(),
+      !this.isLoadingContract() &&
+      !this.isContractLinked()
   );
 
   constructor() {
@@ -282,6 +285,25 @@ export class DraftContract {
 
   readonly sections = computed(() => DRAFT_SECTIONS);
 
+  readonly isContractLinked = computed(() => this.information()?.contratacionVinculado === '1');
+  readonly hasContractNumber = computed(() => !!this.information()?.numeroContrato?.trim());
+  readonly canLinkContract = computed(
+    () =>
+      this.hasContractNumber() &&
+      !this.isContractLinked() &&
+      !this.isDownloadingContract() &&
+      !this.isLoadingContract(),
+  );
+  readonly submitContractLabel = computed(() => {
+    if (this.isDownloadingContract()) {
+      return 'Generando contrato...';
+    }
+
+    return this.contractOperation() === 'GENERAR'
+      ? 'Generar contrato'
+      : 'Vincular docente';
+  });
+
 
   isSectionExpanded(sectionId: DraftSectionId): boolean {
     return this.expandedSections()[sectionId];
@@ -298,6 +320,43 @@ export class DraftContract {
     return `${hours ?? 0}h`;
   }
 
+  
+  private configureContractFormValidation(operation: ContractOperation): void {
+    const controls = this.contractForm.controls;
+
+    controls.numeroAnexo.setValidators([Validators.required, Validators.maxLength(15)]);
+    if (operation === 'VINCULAR') {
+      controls.numeroAnexo.disable({ emitEvent: false });
+    } else {
+      controls.numeroAnexo.enable({ emitEvent: false });
+    }
+
+    const vincularControls = [
+      controls.fechaFirma,
+      controls.formaPagoId,
+      controls.tipoObjetoId,
+      controls.formaInicioContratoId,
+      controls.laborId,
+      controls.objeto,
+      controls.descripcion,
+    ];
+
+    forNext(vincularControls, (control) => {
+      if (operation === 'VINCULAR') {
+        control.setValidators([Validators.required]);
+      } else {
+        control.clearValidators();
+        control.setValue('');
+      }
+
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+
+    controls.numeroAnexo.updateValueAndValidity({ emitEvent: false });
+
+    this.contractForm.updateValueAndValidity();
+    this.contractForm.markAsUntouched();
+  }
   
   private buildHeaderChips(
     information: ProfessorInformationItem | null,
@@ -415,11 +474,23 @@ export class DraftContract {
   /**
    * Abre o cierra el panel donde se diligencian los datos del anexo.
    */
-  toggleContractPanel(): void {
+  toggleContractPanel(operation?: ContractOperation): void {
     if (this.isDownloadingContract()) {
       return;
     }
-    this.isContractPanelOpen.update((open) => !open);
+    if (!operation) {
+      this.isContractPanelOpen.set(false);
+      return;
+    }
+    if (this.isContractLinked()) {
+      return;
+    }
+
+    this.contractForm.reset();
+    this.contractForm.controls.numeroAnexo.setValue(this.information()?.numeroContrato?.trim() ?? '');
+    this.contractOperation.set(operation);
+    this.configureContractFormValidation(operation);
+    this.isContractPanelOpen.set(true);
   }
 
   /**
@@ -440,6 +511,7 @@ export class DraftContract {
   downloadContract(): void {
     const idCargaDocente = this.idCargaDocente();
     const numeroPeriodo = this.numeroPeriodo();
+    const operacion = this.contractOperation();
 
     if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
       return;
@@ -451,8 +523,12 @@ export class DraftContract {
     } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
-    this.hiringCallService
-      .downloadContractPdf(idCargaDocente, numeroPeriodo, {
+
+    const payload = operacion === 'GENERAR'
+      ? {
+        numeroAnexo
+      }
+      : {
         numeroAnexo,
         fechaFirma,
         formaPago: formaPagoId,
@@ -461,13 +537,19 @@ export class DraftContract {
         labor: laborId,
         objeto,
         descripcion
-      })
+      }
+
+    this.hiringCallService
+      .downloadContractPdf(idCargaDocente, numeroPeriodo, operacion, payload)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),
       )
-      .subscribe(({ blob, fileName }) => {
-        this.triggerBrowserDownload(blob, fileName);
+      .subscribe({
+        next: ({ blob, fileName }) => {
+          this.triggerBrowserDownload(blob, fileName);
+          this.close.emit();
+        }
       });
   }
 

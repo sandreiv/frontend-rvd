@@ -28,6 +28,7 @@ import {
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
 import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../public-view/hiring/model/hiring.model';
+import { ContractOperation } from '../components/draft-contract/draft-contract';
 
 /**
  * Datos que el usuario diligencia en el modal antes de descargar el anexo.
@@ -323,12 +324,14 @@ export class HiringCallService {
    *
    * @param idCargaDocente Carga docente del docente contratado.
    * @param numeroPeriodo Numero del periodo para la carga docente.
+   * @param operacion Operacion que indica si GENERAR o VINCULAR el contrato
    * @param datos Datos adicionales diligenciados por el usuario.
    * @returns Observable con el archivo y su nombre.
    */
   downloadContractPdf(
     idCargaDocente: number,
     numeroPeriodo: string,
+    operacion: ContractOperation,
     datos?: ContractDownloadParams,
   ): Observable<{ blob: Blob; fileName: string }> {
     let params = new HttpParams();
@@ -344,7 +347,7 @@ export class HiringCallService {
     }
 
     return this.webRequestService
-      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}/${numeroPeriodo}`, params)
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}/${numeroPeriodo}/${operacion}`, params)
       .pipe(
         map((response) => ({
           blob: response.body as Blob,

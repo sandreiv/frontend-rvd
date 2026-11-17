@@ -395,7 +395,7 @@
     }
 
     @if (isContractPanelOpen()) {
-      <section class="border-t border-gray-200 bg-white px-6 pt-6 sm:px-8 dark:border-white/10 dark:bg-gray-900">
+      <section class="border border-gray-200 rounded-lg bg-white px-6 pt-6 sm:px-8 dark:border-white/10 dark:bg-gray-900">
         <div class="mb-5 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
@@ -437,169 +437,167 @@
               />
             </div>
 
-            <div>
-              <label
-                for="fechaFirma"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Fecha Firma <span class="text-error-500">*</span>
-              </label>
-              <app-date-picker
-                id="fechaFirma"
-                formControlName="fechaFirma"
-                placeholder="Seleccione la fecha en que se firmará el contrato"
-              />
-            </div>
+            @if (contractOperation() === 'VINCULAR') {
+              <div>
+                <label
+                  for="fechaFirma"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Fecha Firma <span class="text-error-500">*</span>
+                </label>
+                <app-date-picker
+                  id="fechaFirma"
+                  formControlName="fechaFirma"
+                  placeholder="Seleccione la fecha en que se firmará el contrato"
+                />
+              </div>
 
-            <div>
-              <label
-                for="formaPago"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Forma de Pago <span class="text-error-500">*</span>
-              </label>
-              <app-select
-                id="formaPago"
-                formControlName="formaPagoId"
-                [options]="formaPagoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
-                placeholder="Seleccione la forma de pago"
-                searchPlaceholder="Buscar forma de pago..."
-                emptyText="No hay formas de pago registradas"
-              />
-              @if (
-                contractForm.controls.formaPagoId.touched &&
-                contractForm.controls.formaPagoId.invalid
-              ) {
-                <p class="mt-1 text-xs font-medium text-error-500">
-                  La forma de pago es obligatoria.
-                </p>
-              }
-            </div>
+              <div>
+                <label
+                  for="formaPago"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Forma de Pago <span class="text-error-500">*</span>
+                </label>
+                <app-select
+                  id="formaPago"
+                  formControlName="formaPagoId"
+                  [options]="formaPagoOptions()"
+                  [disabled]="contractCatalogsResource.isLoading()"
+                  placeholder="Seleccione la forma de pago"
+                  searchPlaceholder="Buscar forma de pago..."
+                  emptyText="No hay formas de pago registradas"
+                />
+                @if (
+                  contractForm.controls.formaPagoId.touched &&
+                  contractForm.controls.formaPagoId.invalid
+                ) {
+                  <p class="mt-1 text-xs font-medium text-error-500">
+                    La forma de pago es obligatoria.
+                  </p>
+                }
+              </div>
 
-            <div>
-              <label
-                for="tipoObjeto"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Tipo de Objeto <span class="text-error-500">*</span>
-              </label>
-              <app-select
-                id="tipoObjeto"
-                formControlName="tipoObjetoId"
-                [options]="tipoObjetoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
-                placeholder="Seleccione el tipo de objeto"
-                searchPlaceholder="Buscar tipo de objeto..."
-                emptyText="No hay tipos de objeto registrados"
-              />
-              @if (
-                contractForm.controls.tipoObjetoId.touched &&
-                contractForm.controls.tipoObjetoId.invalid
-              ) {
-                <p class="mt-1 text-xs font-medium text-error-500">
-                  El tipo de objeto es obligatorio.
-                </p>
-              }
-            </div>
+              <div>
+                <label
+                  for="tipoObjeto"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Tipo de Objeto <span class="text-error-500">*</span>
+                </label>
+                <app-select
+                  id="tipoObjeto"
+                  formControlName="tipoObjetoId"
+                  [options]="tipoObjetoOptions()"
+                  [disabled]="contractCatalogsResource.isLoading()"
+                  placeholder="Seleccione el tipo de objeto"
+                  searchPlaceholder="Buscar tipo de objeto..."
+                  emptyText="No hay tipos de objeto registrados"
+                />
+                @if (
+                  contractForm.controls.tipoObjetoId.touched &&
+                  contractForm.controls.tipoObjetoId.invalid
+                ) {
+                  <p class="mt-1 text-xs font-medium text-error-500">
+                    El tipo de objeto es obligatorio.
+                  </p>
+                }
+              </div>
 
-            <div>
-              <label
-                for="formaInicioContrato"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Forma de Inicio del Contrato <span class="text-error-500">*</span>
-              </label>
-              <app-select
-                id="formaInicioContrato"
-                formControlName="formaInicioContratoId"
-                [options]="formaInicioContratoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
-                placeholder="Seleccione la forma de inicio del contrato"
-                searchPlaceholder="Buscar forma de inicio..."
-                emptyText="No hay formas de inicio registradas"
-              />
-              @if (
-                contractForm.controls.formaInicioContratoId.touched &&
-                contractForm.controls.formaInicioContratoId.invalid
-              ) {
-                <p class="mt-1 text-xs font-medium text-error-500">
-                  La forma de inicio del contrato es obligatoria.
-                </p>
-              }
-            </div>
+              <div>
+                <label
+                  for="formaInicioContrato"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Forma de Inicio del Contrato <span class="text-error-500">*</span>
+                </label>
+                <app-select
+                  id="formaInicioContrato"
+                  formControlName="formaInicioContratoId"
+                  [options]="formaInicioContratoOptions()"
+                  [disabled]="contractCatalogsResource.isLoading()"
+                  placeholder="Seleccione la forma de inicio del contrato"
+                  searchPlaceholder="Buscar forma de inicio..."
+                  emptyText="No hay formas de inicio registradas"
+                />
+                @if (
+                  contractForm.controls.formaInicioContratoId.touched &&
+                  contractForm.controls.formaInicioContratoId.invalid
+                ) {
+                  <p class="mt-1 text-xs font-medium text-error-500">
+                    La forma de inicio del contrato es obligatoria.
+                  </p>
+                }
+              </div>
 
-            <div>
-              <label
-                for="labor"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Labor docente <span class="text-error-500">*</span>
-              </label>
-              <app-select
-                id="labor"
-                formControlName="laborId"
-                [options]="laborOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
-                placeholder="Seleccione la labor del docente"
-                searchPlaceholder="Buscar labor..."
-                emptyText="No hay labores registradas"
-              />
-              @if (
-                contractForm.controls.laborId.touched &&
-                contractForm.controls.laborId.invalid
-              ) {
-                <p class="mt-1 text-xs font-medium text-error-500">
-                  La labor del docente es obligatoria.
-                </p>
-              }
-            </div>
+              <div>
+                <label
+                  for="labor"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Labor docente <span class="text-error-500">*</span>
+                </label>
+                <app-select
+                  id="labor"
+                  formControlName="laborId"
+                  [options]="laborOptions()"
+                  [disabled]="contractCatalogsResource.isLoading()"
+                  placeholder="Seleccione la labor del docente"
+                  searchPlaceholder="Buscar labor..."
+                  emptyText="No hay labores registradas"
+                />
+                @if (
+                  contractForm.controls.laborId.touched &&
+                  contractForm.controls.laborId.invalid
+                ) {
+                  <p class="mt-1 text-xs font-medium text-error-500">
+                    La labor del docente es obligatoria.
+                  </p>
+                }
+              </div>
 
-            <div>
-              <label
-                for="objeto"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Objeto del contrato <span class="text-error-500">*</span>
-              </label>
-              <app-input-field
-                id="objeto"
-                formControlName="objeto"
-                placeholder="Ingrese el objeto"
-                [error]="
-                  contractForm.controls.objeto.invalid &&
-                  contractForm.controls.objeto.touched
-                "
-              />
-            </div>
+              <div>
+                <label
+                  for="objeto"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Objeto del contrato <span class="text-error-500">*</span>
+                </label>
+                <app-input-field
+                  id="objeto"
+                  formControlName="objeto"
+                  placeholder="Ingrese el objeto"
+                  [error]="
+                    contractForm.controls.objeto.invalid &&
+                    contractForm.controls.objeto.touched
+                  "
+                />
+              </div>
 
-            <div>
-              <label
-                for="descripcion"
-                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                Descripción del objeto <span class="text-error-500">*</span>
-              </label>
+              <div>
+                <label
+                  for="descripcion"
+                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Descripción del objeto <span class="text-error-500">*</span>
+                </label>
 
-              <app-input-field
-                id="descripcion"
-                formControlName="descripcion"
-                placeholder="Ingrese la descripción"
-                [error]="
-                  contractForm.controls.descripcion.invalid &&
-                  contractForm.controls.descripcion.touched
-                "
-              />
-            </div>
+                <app-input-field
+                  id="descripcion"
+                  formControlName="descripcion"
+                  placeholder="Ingrese la descripción"
+                  [error]="
+                    contractForm.controls.descripcion.invalid &&
+                    contractForm.controls.descripcion.touched
+                  "
+                />
+              </div>
+            }
           </div>
 
-          <div class="flex justify-end">
+          <div class="flex justify-end pb-4">
             <app-button type="submit" size="sm" [disabled]="!canDownloadContract()">
-              {{
-                isDownloadingContract()
-                  ? 'Generando contrato...'
-                  : 'Diligenciar contrato'
-              }}
+              {{ submitContractLabel() }}
             </app-button>
           </div>
         </form>
@@ -608,24 +606,50 @@
   </div>
 
   <footer class="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 dark:border-white/10">
-    <app-button
-      variant="outline"
-      size="sm"
-      [disabled]="isDownloadingContract()"
-      (btnClick)="close.emit()"
-    >
-      Cerrar
-    </app-button>
+    @if (!isContractPanelOpen()) {
+      <app-button
+        variant="outline"
+        size="sm"
+        [disabled]="isDownloadingContract()"
+        (btnClick)="close.emit()"
+      >
+        Cerrar
+      </app-button>
 
-    <app-button
-      size="sm"
-      [disabled]="isDownloadingContract() || isLoadingContract()"
-      (btnClick)="toggleContractPanel()"
-    >
-      {{
-        isContractPanelOpen() ? 'Ocultar' : 'Descargar contrato'
-      }}
-    </app-button>
+      <app-button
+        variant="outline"
+        size="sm"
+        [disabled]="isDownloadingContract() || isLoadingContract() || isContractLinked()"
+        (btnClick)="toggleContractPanel('GENERAR')"
+      >
+        Diligenciar número de contrato
+      </app-button>
+
+      <app-button
+        size="sm"
+        [disabled]="!canLinkContract()"
+        (btnClick)="toggleContractPanel('VINCULAR')"
+      >
+        Vincular docente
+      </app-button>
+    } @else {
+      <app-button
+        variant="outline"
+        size="sm"
+        [disabled]="isDownloadingContract()"
+        (btnClick)="close.emit()"
+      >
+        Cerrar
+      </app-button>
+
+      <app-button
+        size="sm"
+        [disabled]="isDownloadingContract()"
+        (btnClick)="toggleContractPanel()"
+      >
+        Ocultar
+      </app-button>
+    }
   </footer>
 </app-modal>
 
