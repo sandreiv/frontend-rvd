@@ -100,6 +100,20 @@
   }
 </section>
 
+@if (bulkContractProfessorIds().length > 0) {
+  <div class="mt-4 flex justify-end">
+    <app-button
+      size="sm"
+      (btnClick)="openBulkProfessorLinkingModal()"
+    >
+      <span class="inline-flex items-center gap-2">
+        <app-icon name="file" size="xs" />
+        Vinculación masiva
+      </span>
+    </app-button>
+  </div>
+}
+
 <app-ptd-modal
   [isOpen]="isPtdModalOpen()"
   [idCargaDocente]="ptdProfessorId()"
@@ -126,4 +140,11 @@
   [isDocenteExcluidoContrato]="ptdProfesorExcluidoContrato()"
   (successRequest)="onSuccessReview()"
   (close)="closeReviewPtdModal()"
+/>
+
+<app-bulk-professor-linking
+  [isOpen]="isBulkProfessorLinkingModalOpen()"
+  [idsCargaDocente]="bulkContractProfessorIds()"
+  [numeroPeriodo]="coordination().numeroPeriodoUniversidad"
+  (close)="closeBulkProfessorLinkingModal()"
 />

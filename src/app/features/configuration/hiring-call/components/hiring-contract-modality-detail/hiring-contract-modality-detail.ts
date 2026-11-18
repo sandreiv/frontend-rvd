@@ -34,6 +34,8 @@ import { DraftContract } from '../draft-contract/draft-contract';
 import { PermissionService } from '../../../../../core/service/permission-service';
 import { AuthService } from '../../../../../core/service/auth-service';
 import { ReviewPtdModal } from '../review-ptd-modal/review-ptd-modal';
+import { BulkProfessorLinking } from '../bulk-professor-linking/bulk-professor-linking';
+import { Button } from '../../../../../shared/ui/button/button';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -108,7 +110,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 
 @Component({
   selector: 'app-hiring-contract-modality-detail',
-  imports: [TabBar, Dropdown, Item, Icon, PtdModal, DraftContract, ReviewPtdModal],
+  imports: [TabBar, Dropdown, Item, Icon, Button, PtdModal, DraftContract, ReviewPtdModal, BulkProfessorLinking],
   templateUrl: './hiring-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -133,6 +135,7 @@ export class HiringContractModalityDetail {
   readonly draftContractUnityName = signal<string | null>(null);
   readonly isDraftContractModalOpen = signal(false);
   readonly isReviewPtdModalOpen = signal(false);
+  readonly isBulkProfessorLinkingModalOpen = signal(false);
 
   readonly isTH = computed(() => {
     const rolesUsuario = this.authService.getRoles();
@@ -253,6 +256,31 @@ export class HiringContractModalityDetail {
   );
 
   readonly isCargaEnAvalDesarrollo = computed(() => (this.coordination().estadoCarga === 'AVAL DESARROLLO'));
+
+  // Docentes con plan aprobado por TH (No entran heredados ni planta)
+  readonly bulkContractProfessorIds = computed(() => {
+    if (!this.permissions.canSaveContract() || !this.isCargaEnAvalDesarrollo()) {
+      return [];
+    }
+
+    const states = this.ptdStatesByProfessorMap();
+    const professorsByModality = this.modalityProfessorsMap();
+
+    const professors = [...Object.values(professorsByModality).flat()];
+    const ids = new Set<number>();
+
+    forNext(professors, (professor) => {
+      if (professor.tieneCarga === true &&
+        professor.idCargaDocente != null &&
+        professor.idPersonaGeneral != null &&
+        states[professor.idPersonaGeneral] === APPROVED_PTD_STATE
+      ) {
+        ids.add(professor.idCargaDocente);
+      }
+    });
+
+    return [...ids];
+  });
 
   constructor() {
     effect(() => {
@@ -390,6 +418,18 @@ export class HiringContractModalityDetail {
     this.ptdProfessorId.set(null);
     this.ptdPeriodId.set(null);
     this.ptdProfesorExcluidoContrato.set(true);
+  }
+
+  openBulkProfessorLinkingModal(): void {
+    if (!this.bulkContractProfessorIds().length) {
+      return;
+    }
+
+    this.isBulkProfessorLinkingModalOpen.set(true);
+  }
+
+  closeBulkProfessorLinkingModal(): void {
+    this.isBulkProfessorLinkingModalOpen.set(false);
   }
 
   async onSuccessReview(): Promise<void> {

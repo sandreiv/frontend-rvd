@@ -1,0 +1,338 @@
+<app-modal
+  [isOpen]="isOpen()"
+  className="max-w-6xl mx-4 p-0 overflow-hidden"
+  (close)="closeModal()"
+>
+  <header class="border-b border-gray-200 px-6 pb-5 pt-6 sm:px-8 sm:pt-8 dark:border-white/10">
+    <div class="flex items-start gap-3">
+      <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+        <app-icon name="file" size="sm" />
+      </span>
+
+      <div class="min-w-0">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Vinculación masiva de docentes
+        </h3>
+
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Seleccione los docentes y diligencie la información compartida
+          para realizar la vinculación de sus contratos.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex max-h-[calc(100vh-16rem)] flex-col gap-6 overflow-y-auto border-t border-gray-200 px-6 py-5 sm:px-8 dark:border-white/10">
+    <section class="flex flex-col gap-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white/90">
+              Docentes disponibles
+          </h4>
+
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Seleccione las personas que participarán en la vinculación.
+          </p>
+        </div>
+
+        <span class="inline-flex shrink-0 items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-400">
+          {{ selectedIds().length }} seleccionados
+        </span>
+      </div>
+
+      @if (isLoadingInformation()) {
+        <p class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+          Consultando información de los docentes...
+        </p>
+      } @else if (professorRows().length) {
+        <div class="max-h-64 overflow-y-auto overscroll-contain rounded-xl border border-gray-200 bg-gray-50/50 p-3 dark:border-white/10 dark:bg-white/[0.02]">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            @for (row of professorRows(); track row.idCargaDocente) {
+              @let selectable = isProfessorSelectable(row);
+              @let selected = isProfessorSelected(row.idCargaDocente);
+
+              <span
+                class="relative min-w-0"
+                [appTooltip]="!selectable ? professorUnavailableReason(row) : ''"
+                tooltipPlacement="top"
+              >
+                <button
+                  type="button"
+                  class="flex w-full min-w-0 items-start gap-3 rounded-xl border p-3 text-left transition-colors duration-150"
+                  [disabled]="!selectable || isSubmitting()"
+                  [class]="
+                    selected
+                      ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500/20 dark:border-brand-400 dark:bg-brand-500/10'
+                      : selectable
+                        ? 'border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/50 dark:border-white/10 dark:bg-gray-900 dark:hover:border-brand-400/50 dark:hover:bg-white/5'
+                        : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50 dark:border-white/10 dark:bg-white/[0.02]'
+                  "
+                  (click)="toggleProfessorSelection(row)"
+                >
+                  <span
+                    class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors"
+                    [class]="
+                      selected
+                        ? 'border-brand-600 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-500'
+                        : selectable
+                          ? 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800'
+                          : 'border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-800'
+                    "
+                  >
+                  </span>
+
+                  <span class="flex min-w-0 flex-1 flex-col gap-1">
+                    <span
+                      class="break-words text-sm font-semibold"
+                      [class]="
+                        selectable
+                          ? 'text-gray-900 dark:text-white/90'
+                          : 'text-gray-500 dark:text-gray-400'
+                      "
+                    >
+                      {{ row.information.nombreCompleto || 'Docente' }}
+                    </span>
+
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      Documento:
+                      {{ row.information.documentoIdentidad || 'Sin documento' }}
+                    </span>
+                  </span>
+                </button>
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (selectableProfessors().length === 0) {
+          <p class="rounded-lg bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
+            No hay docentes disponibles para vinculación. Verifique que
+            tengan número de contrato asignado y que no estén vinculados.
+          </p>
+        }
+      } @else {
+        <p class="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+          No se encontró información para los docentes recibidos.
+        </p>
+      }
+    </section>
+
+    <div class="border-t border-gray-200 dark:border-white/10"></div>
+
+    <section class="flex flex-col gap-5 rounded-xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-white/10 dark:bg-gray-900">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+          <app-icon name="signature" size="sm" />
+        </span>
+
+        <div>
+          <h4 class="text-sm font-semibold text-gray-900 dark:text-white/90">
+            Datos del contrato
+          </h4>
+
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Esta información se aplicará a todos los docentes seleccionados.
+          </p>
+        </div>
+      </div>
+
+      <form
+        [formGroup]="contractForm"
+        class="flex flex-col gap-4"
+      >
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label
+              for="bulkFechaFirma"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Fecha Firma <span class="text-error-500">*</span>
+            </label>
+
+            <app-date-picker
+              id="bulkFechaFirma"
+              formControlName="fechaFirma"
+              placeholder="Seleccione la fecha de firma"
+            />
+          </div>
+
+          <div>
+            <label
+              for="bulkFormaPago"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Forma de Pago <span class="text-error-500">*</span>
+            </label>
+
+            <app-select
+              id="bulkFormaPago"
+              formControlName="formaPagoId"
+              [options]="formaPagoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la forma de pago"
+              searchPlaceholder="Buscar forma de pago..."
+              emptyText="No hay formas de pago registradas"
+            />
+
+            @if (
+              contractForm.controls.formaPagoId.touched &&
+              contractForm.controls.formaPagoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La forma de pago es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="bulkTipoObjeto"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Tipo de Objeto <span class="text-error-500">*</span>
+            </label>
+
+            <app-select
+              id="bulkTipoObjeto"
+              formControlName="tipoObjetoId"
+              [options]="tipoObjetoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione el tipo de objeto"
+              searchPlaceholder="Buscar tipo de objeto..."
+              emptyText="No hay tipos de objeto registrados"
+            />
+
+            @if (
+              contractForm.controls.tipoObjetoId.touched &&
+              contractForm.controls.tipoObjetoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                El tipo de objeto es obligatorio.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="bulkFormaInicio"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Forma de Inicio del Contrato
+              <span class="text-error-500">*</span>
+            </label>
+
+            <app-select
+              id="bulkFormaInicio"
+              formControlName="formaInicioContratoId"
+              [options]="formaInicioContratoOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la forma de inicio"
+              searchPlaceholder="Buscar forma de inicio..."
+              emptyText="No hay formas de inicio registradas"
+            />
+
+            @if (
+              contractForm.controls.formaInicioContratoId.touched &&
+              contractForm.controls.formaInicioContratoId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La forma de inicio es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="bulkLabor"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Labor docente <span class="text-error-500">*</span>
+            </label>
+
+            <app-select
+              id="bulkLabor"
+              formControlName="laborId"
+              [options]="laborOptions()"
+              [disabled]="contractCatalogsResource.isLoading()"
+              placeholder="Seleccione la labor"
+              searchPlaceholder="Buscar labor..."
+              emptyText="No hay labores registradas"
+            />
+
+            @if (
+              contractForm.controls.laborId.touched &&
+              contractForm.controls.laborId.invalid
+            ) {
+              <p class="mt-1 text-xs font-medium text-error-500">
+                La labor del docente es obligatoria.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="bulkObjeto"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Objeto del contrato <span class="text-error-500">*</span>
+            </label>
+
+            <app-input-field
+              id="bulkObjeto"
+              formControlName="objeto"
+              placeholder="Ingrese el objeto"
+              [error]="
+                contractForm.controls.objeto.invalid &&
+                contractForm.controls.objeto.touched
+              "
+            />
+          </div>
+
+          <div>
+            <label
+              for="bulkDescripcion"
+              class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+            >
+              Descripción del objeto
+              <span class="text-error-500">*</span>
+            </label>
+
+            <app-input-field
+              id="bulkDescripcion"
+              formControlName="descripcion"
+              placeholder="Ingrese la descripción"
+              [error]="
+                contractForm.controls.descripcion.invalid &&
+                contractForm.controls.descripcion.touched
+              "
+            />
+          </div>
+        </div>
+      </form>
+    </section>
+
+    @if (isSubmitting()) {
+      <p class="text-center text-xs text-gray-500 dark:text-gray-400">
+        Procesando la vinculación de los docentes seleccionados...
+      </p>
+    }
+  </div>
+
+  <footer class="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 dark:border-white/10">
+    <app-button
+      variant="outline"
+      size="sm"
+      [disabled]="isSubmitting()"
+      (btnClick)="closeModal()"
+    >
+      Cancelar
+    </app-button>
+
+    <app-button
+      size="sm"
+      [disabled]="!canSubmit()"
+    >
+      Vincular {{ selectedIds().length }} docentes
+    </app-button>
+  </footer>
+</app-modal>

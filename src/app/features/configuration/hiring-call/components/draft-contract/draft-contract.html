@@ -418,7 +418,7 @@
           class="mt-4 flex flex-col gap-4"
         >
           <div class="grid gap-4 sm:grid-cols-2">
-            <div>
+            <div class="col-span-1">
               <label
                 for="numeroAnexo"
                 class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
@@ -434,6 +434,48 @@
                   contractForm.controls.numeroAnexo.touched
                 "
                 hint="Número que se imprime en el anexo"
+              />
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                for="fechaInicio"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Fecha de inicio <span class="text-error-500">*</span>
+              </label>
+
+              <app-date-picker
+                id="fechaInicio"
+                formControlName="fechaInicio"
+                placeholder="Seleccione la fecha de inicio"
+              />
+
+              @if (
+                contractForm.controls.fechaInicio.touched &&
+                contractForm.controls.fechaInicio.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  La fecha de inicio es obligatoria.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label
+                for="fechaFin"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Fecha de fin
+              </label>
+
+              <app-date-picker
+                id="fechaFin"
+                formControlName="fechaFin"
+                placeholder="Fecha de fin"
+                [disabled]="true"
               />
             </div>
 

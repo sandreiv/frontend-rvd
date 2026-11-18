@@ -101,6 +101,8 @@ export class DraftContract {
   readonly contractForm = this.formBuilder.group({
     numeroAnexo: ['', [Validators.required, Validators.maxLength(15)]],
     fechaFirma: ['', [Validators.required]],
+    fechaInicio: ['', [Validators.required]],
+    fechaFin: [{ value: '', disabled: true }],
     formaPagoId: ['', [Validators.required]],
     tipoObjetoId: ['', [Validators.required]],
     formaInicioContratoId: ['', [Validators.required]],
@@ -325,11 +327,16 @@ export class DraftContract {
     const controls = this.contractForm.controls;
 
     controls.numeroAnexo.setValidators([Validators.required, Validators.maxLength(15)]);
+    controls.fechaFin.setValidators([Validators.required]);
+
     if (operation === 'VINCULAR') {
       controls.numeroAnexo.disable({ emitEvent: false });
+      controls.fechaInicio.disable({ emitEvent: false });
     } else {
       controls.numeroAnexo.enable({ emitEvent: false });
+      controls.fechaInicio.enable({ emitEvent: false });
     }
+    controls.fechaFin.disable({ emitEvent: false });
 
     const vincularControls = [
       controls.fechaFirma,
@@ -353,6 +360,8 @@ export class DraftContract {
     });
 
     controls.numeroAnexo.updateValueAndValidity({ emitEvent: false });
+    controls.fechaInicio.updateValueAndValidity({ emitEvent: false });
+    controls.fechaFin.updateValueAndValidity({ emitEvent: false });
 
     this.contractForm.updateValueAndValidity();
     this.contractForm.markAsUntouched();
@@ -488,6 +497,8 @@ export class DraftContract {
 
     this.contractForm.reset();
     this.contractForm.controls.numeroAnexo.setValue(this.information()?.numeroContrato?.trim() ?? '');
+    this.contractForm.controls.fechaInicio.setValue(this.information()?.fechaInicio ?? '');
+    this.contractForm.controls.fechaFin.setValue(this.information()?.fechaFin ?? '');
     this.contractOperation.set(operation);
     this.configureContractFormValidation(operation);
     this.isContractPanelOpen.set(true);
@@ -518,19 +529,23 @@ export class DraftContract {
     }
 
     const {
-      numeroAnexo, fechaFirma, formaPagoId, tipoObjetoId,
-      formaInicioContratoId, laborId, objeto, descripcion
+      numeroAnexo, fechaFirma, fechaInicio, fechaFin, formaPagoId,
+      tipoObjetoId, formaInicioContratoId, laborId, objeto, descripcion
     } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
 
     const payload = operacion === 'GENERAR'
       ? {
-        numeroAnexo
+        numeroAnexo,
+        fechaInicio,
+        fechaFin
       }
       : {
         numeroAnexo,
         fechaFirma,
+        fechaInicio,
+        fechaFin,
         formaPago: formaPagoId,
         tipoObjeto: tipoObjetoId,
         formaInicioContrato: formaInicioContratoId,
