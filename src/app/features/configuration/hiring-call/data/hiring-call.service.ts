@@ -263,6 +263,22 @@ export class HiringCallService {
   }
 
   /**
+   * Datos del anexo de los contratos ya generados de varias cargas docentes.
+   * Es la consulta de la vinculación masiva: devuelve un elemento por carga
+   * docente que ya tiene contrato generado. Las cargas docentes sin contrato
+   * generado no aparecen en la lista.
+   *
+   * @param idsCargaDocente Cargas docentes consultadas.
+   * @returns Observable con la lista de datos del anexo.
+   */
+  getContractAnexos(idsCargaDocente: number[]): Observable<ContractAnexo[]> {
+    return this.webRequestService.get<ContractAnexo[]>(
+      `${this.endpoint}/contract-anexo/listar`,
+      { idsCargaDocente: idsCargaDocente.map((id) => String(id)) },
+    );
+  }
+
+  /**
    * Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado
    *
    * @param idPeriodoUniversitario Identificador del periodo universitario.

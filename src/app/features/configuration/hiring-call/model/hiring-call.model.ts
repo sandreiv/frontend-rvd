@@ -160,6 +160,7 @@ export interface ContractCatalogs {
  * diligenciar la vinculación docente para no volver a capturarlos.
  */
 export interface ContractAnexo {
+  idCargaDocente: number | null;
   numeroAnexo: string | null;
   fechaFirma: string | null;
   idFormaPago: number | null;
