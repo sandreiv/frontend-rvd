@@ -17,8 +17,6 @@ import { catchError, EMPTY, finalize, forkJoin, map } from 'rxjs';
 import { Modal } from '../../../../../shared/ui/modal/modal';
 import { Icon } from '../../../../../shared/ui/icon/icon';
 import { Button } from '../../../../../shared/ui/button/button';
-import { InputField } from '../../../../../shared/components/form/input/input-field';
-import { DatePicker } from '../../../../../shared/components/form/date-picker/date-picker';
 import { Option, Select } from '../../../../../shared/components/form/select/select';
 
 import { HiringCallService } from '../../data/hiring-call.service';
@@ -26,8 +24,8 @@ import { ProfessorInformationItem } from '../../model/hiring-call.model';
 import { forNext } from '../../../../../core/utils/for-next.function';
 
 import { ContractOperation } from '../draft-contract/draft-contract';
-import { Tooltip } from '../../../../../shared/ui/tooltip/tooltip';
 
+const SELECT_ALL_PROFESSORS = '__SELECT_ALL_PROFESSORS__';
 interface BulkProfessorInformation {
   idCargaDocente: number;
   information: ProfessorInformationItem;
@@ -35,7 +33,7 @@ interface BulkProfessorInformation {
 
 @Component({
   selector: 'app-bulk-professor-linking',
-  imports: [Modal, Icon, DatePicker, Select, InputField, Button, Tooltip, ReactiveFormsModule],
+  imports: [Modal, Icon, Select, Button, ReactiveFormsModule],
   templateUrl: './bulk-professor-linking.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -52,16 +50,13 @@ export class BulkProfessorLinking {
   readonly success = output<void>();
 
   readonly selectedIds = signal<number[]>([]);
+
+  readonly professorPicker = this.formBuilder.control('');
+
   readonly isSubmitting = signal(false);
 
   readonly contractForm = this.formBuilder.group({
-    fechaFirma: ['', [Validators.required]],
-    formaPagoId: ['', [Validators.required]],
-    tipoObjetoId: ['', [Validators.required]],
-    formaInicioContratoId: ['', [Validators.required]],
     laborId: ['', [Validators.required]],
-    objeto: ['', [Validators.required]],
-    descripcion: ['', [Validators.required]],
   });
 
   private readonly contractFormStatus = toSignal(this.contractForm.statusChanges, {
@@ -81,34 +76,12 @@ export class BulkProfessorLinking {
     return this.contractCatalogsResource.value();
   });
 
-  readonly formaPagoOptions = computed<Option[]>(() =>
-    (this.contractCatalogs()?.formasPago ?? []).map((item) => ({
-      value: String(item.id),
-      label: item.descripcion,
-    })),
-  );
-
-  readonly tipoObjetoOptions = computed<Option[]>(() =>
-    (this.contractCatalogs()?.tiposObjeto ?? []).map((item) => ({
-      value: String(item.id),
-      label: item.descripcion,
-    })),
-  );
-
-  readonly formaInicioContratoOptions = computed<Option[]>(() =>
-    (this.contractCatalogs()?.formasInicioContrato ?? []).map((item) => ({
-      value: String(item.id),
-      label: item.descripcion
-    }))
-  );
-
   readonly laborOptions = computed<Option[]>(() =>
     (this.contractCatalogs()?.labores ?? []).map((item) => ({
       value: String(item.id),
-      label: item.descripcion
-    }))
+      label: item.descripcion,
+    })),
   );
-
 
   readonly informationResource = rxResource({
     params: () => {
@@ -155,6 +128,30 @@ export class BulkProfessorLinking {
     );
   });
 
+  readonly availableProfessorOptions = computed<Option[]>(() => {
+    const selected = new Set(this.selectedIds());
+
+    const available = this.selectableProfessors()
+      .filter((row) => !selected.has(row.idCargaDocente));
+
+    if (available.length === 0) {
+      return [];
+    }
+
+    const professorOptions: Option[] = available.map((row) => ({
+      value: String(row.idCargaDocente),
+      label: `${row.information.nombreCompleto || 'Docente'} - Documento: ${row.information.documentoIdentidad || 'Sin documento'}`,
+    }));
+
+    return [
+      {
+        value: SELECT_ALL_PROFESSORS,
+        label: `Seleccionar todos (${available.length} disponibles)`,
+      },
+      ...professorOptions,
+    ];
+  });
+
   readonly isLoadingInformation = computed(() =>
     this.isOpen() && this.informationResource.isLoading(),
   );
@@ -173,11 +170,15 @@ export class BulkProfessorLinking {
     effect(() => {
       if (!this.isOpen()) {
         this.selectedIds.set([]);
+
+        this.professorPicker.setValue('', {
+          emitEvent: false,
+        });
+
         this.contractForm.reset();
       }
     });
   }
-
 
   // Solo permite seleccionar profesores con numero de contrato asignado y no vinculados
   isProfessorSelectable(row: BulkProfessorInformation): boolean {
@@ -189,34 +190,50 @@ export class BulkProfessorLinking {
     );
   }
 
-  professorUnavailableReason(row: BulkProfessorInformation,): string {
-    if (!row.information.numeroContrato?.trim()) {
-      return 'Sin número de contrato asignado';
-    }
+  onProfessorSelected(value: string): void {
 
-    if (row.information.contratacionVinculado === '1') {
-      return 'Contrato ya vinculado';
-    }
-
-    return '';
-  }
-
-  isProfessorSelected(idCargaDocente: number): boolean {
-    return this.selectedIds().includes(idCargaDocente);
-  }
-
-  toggleProfessorSelection(row: BulkProfessorInformation): void {
-    if (!this.isProfessorSelectable(row) || this.isSubmitting()) {
+    if (this.isSubmitting()) {
       return;
     }
 
-    this.selectedIds.update((current) => {
-      if (current.includes(row.idCargaDocente)) {
-        return current.filter((id) => id !== row.idCargaDocente);
-      }
+    if (value === SELECT_ALL_PROFESSORS) {
 
-      return [...current, row.idCargaDocente];
+      const allIds = this.selectableProfessors()
+        .map((row) => row.idCargaDocente);
+
+      this.selectedIds.update((current) => [
+        ...new Set([...current, ...allIds]),
+      ]);
+
+    } else {
+
+      const id = Number(value);
+
+      const professor = this.selectableProfessors().find(
+        (row) => row.idCargaDocente === id,
+      );
+
+      if (professor && !this.selectedIds().includes(id)) {
+        this.selectedIds.update((current) => [
+          ...current,
+          id,
+        ]);
+      }
+    }
+
+    this.professorPicker.setValue('', {
+      emitEvent: false,
     });
+  }
+
+  removeSelectedProfessor(idCargaDocente: number): void {
+    if (this.isSubmitting()) {
+      return;
+    }
+
+    this.selectedIds.update((current) =>
+      current.filter((id) => id !== idCargaDocente),
+    );
   }
 
 
