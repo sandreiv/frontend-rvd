@@ -112,12 +112,29 @@ export class DraftContract {
   });
 
   /**
-   * Catalogos de los dos selects del panel: forma de pago
+   * Catálogos de los dos selects del panel: forma de pago
    * (BIENESV3.FORMAPAGO) y tipo de objeto contractual (CONTRATOS.TIPOOBJETO).
    */
   readonly contractCatalogsResource = rxResource({
     params: () => (this.isOpen() ? { open: true } as const : undefined),
     stream: () => this.hiringCallService.getContractCatalogs(),
+  });
+
+  /**
+   * Datos del anexo del contrato ya generado. Se cargan al abrir el panel de
+   * vinculación para diligenciar solo la labor docente y no volver a capturar
+   * los datos que ya se diligenciaron al generar el contrato.
+   */
+  readonly contractAnexoResource = rxResource({
+    params: () => {
+      const idCargaDocente = this.idCargaDocente();
+      if (!this.isContractPanelOpen() || this.contractOperation() !== 'VINCULAR' || idCargaDocente == null) {
+        return undefined;
+      }
+
+      return { idCargaDocente };
+    },
+    stream: ({ params }) => this.hiringCallService.getContractAnexo(params.idCargaDocente),
   });
 
   readonly contractCatalogs = computed(() => {
@@ -254,6 +271,37 @@ export class DraftContract {
         this.contractForm.reset();
       }
     });
+
+    // Al vincular, los datos del anexo ya diligenciados al generar el contrato
+    // se precargan: solo queda por diligenciar la labor docente.
+    effect(() => {
+      const anexo = this.contractAnexoResource.value();
+
+      if (!anexo) {
+        return;
+      }
+
+      const controls = this.contractForm.controls;
+
+      if (!controls.fechaFirma.value) {
+        controls.fechaFirma.setValue(anexo.fechaFirma ?? '');
+      }
+      if (!controls.formaPagoId.value && anexo.idFormaPago != null) {
+        controls.formaPagoId.setValue(String(anexo.idFormaPago));
+      }
+      if (!controls.tipoObjetoId.value && anexo.idTipoObjeto != null) {
+        controls.tipoObjetoId.setValue(String(anexo.idTipoObjeto));
+      }
+      if (!controls.formaInicioContratoId.value && anexo.idFormaInicioContrato != null) {
+        controls.formaInicioContratoId.setValue(String(anexo.idFormaInicioContrato));
+      }
+      if (!controls.objeto.value) {
+        controls.objeto.setValue(anexo.objeto ?? '');
+      }
+      if (!controls.descripcion.value) {
+        controls.descripcion.setValue(anexo.descripcion ?? '');
+      }
+    });
   }
 
   readonly summaryActivityTables = computed(() => {
@@ -338,26 +386,30 @@ export class DraftContract {
     }
     controls.fechaFin.disable({ emitEvent: false });
 
-    const vincularControls = [
+    // Los datos del anexo son obligatorios en las dos operaciones: al generar
+    // el contrato y al vincular al docente.
+    const anexoControls = [
       controls.fechaFirma,
       controls.formaPagoId,
       controls.tipoObjetoId,
       controls.formaInicioContratoId,
-      controls.laborId,
       controls.objeto,
       controls.descripcion,
     ];
 
-    forNext(vincularControls, (control) => {
-      if (operation === 'VINCULAR') {
-        control.setValidators([Validators.required]);
-      } else {
-        control.clearValidators();
-        control.setValue('');
-      }
-
+    forNext(anexoControls, (control) => {
+      control.setValidators([Validators.required]);
       control.updateValueAndValidity({ emitEvent: false });
     });
+
+    // La labor docente solo aplica cuando se vincula al docente.
+    if (operation === 'VINCULAR') {
+      controls.laborId.setValidators([Validators.required]);
+    } else {
+      controls.laborId.clearValidators();
+      controls.laborId.setValue('');
+    }
+    controls.laborId.updateValueAndValidity({ emitEvent: false });
 
     controls.numeroAnexo.updateValueAndValidity({ emitEvent: false });
     controls.fechaInicio.updateValueAndValidity({ emitEvent: false });
@@ -538,8 +590,14 @@ export class DraftContract {
     const payload = operacion === 'GENERAR'
       ? {
         numeroAnexo,
+        fechaFirma,
         fechaInicio,
-        fechaFin
+        fechaFin,
+        formaPago: formaPagoId,
+        tipoObjeto: tipoObjetoId,
+        formaInicioContrato: formaInicioContratoId,
+        objeto,
+        descripcion
       }
       : {
         numeroAnexo,
