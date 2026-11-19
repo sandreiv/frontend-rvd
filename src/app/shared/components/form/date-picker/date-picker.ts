@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, Output, signal, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
@@ -24,13 +24,19 @@ export class DatePicker implements ControlValueAccessor {
   @Input() label?: string;
   @Input() placeholder?: string;
   @Input() minDate?: string | Date;
+
+  /**
+   * Muestra el campo en gris cuando está deshabilitado. Es opcional para
+   * no cambiar el aspecto por defecto de los date picker del proyecto.
+   */
+  @Input() disabledStyle = false;
   @Output() dateChange = new EventEmitter<any>();
 
   @ViewChild('dateInput', { static: false }) dateInput!: ElementRef<HTMLInputElement>;
 
   private flatpickrInstance: flatpickr.Instance | undefined;
   private value = '';
-  disabled = false;
+  readonly disabled = signal(false);
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -56,7 +62,7 @@ export class DatePicker implements ControlValueAccessor {
 
     this.flatpickrInstance.calendarContainer.classList.add('app-date-picker-calendar');
 
-    if (this.disabled) {
+    if (this.disabled()) {
       this.flatpickrInstance.input.disabled = true;
     }
   }
@@ -91,7 +97,7 @@ export class DatePicker implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (this.flatpickrInstance) {
       this.flatpickrInstance.input.disabled = isDisabled;
     }
