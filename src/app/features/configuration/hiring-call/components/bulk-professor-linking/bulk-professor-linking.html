@@ -228,10 +228,15 @@
     </app-button>
 
     <app-button
-      size="sm"
-      [disabled]="!canSubmit()"
-    >
+    size="sm"
+    [disabled]="!canSubmit()"
+    (btnClick)="submitBulkLinking()"
+  >
+    @if (isSubmitting()) {
+      Vinculando docentes...
+    } @else {
       Vincular {{ selectedIds().length }} docentes
-    </app-button>
+    }
+  </app-button>
   </footer>
 </app-modal>

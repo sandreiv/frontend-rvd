@@ -236,6 +236,60 @@ export class BulkProfessorLinking {
     );
   }
 
+  /**
+   * Ejecuta la vinculación masiva de docentes.
+   */
+  submitBulkLinking(): void {
+
+    if (!this.canSubmit()) {
+      this.contractForm.markAllAsTouched();
+      return;
+    }
+
+    const idsCargaDocente = [...this.selectedIds()];
+
+    const idLabor = Number(
+      this.contractForm.controls.laborId.value
+    );
+
+    if (!Number.isSafeInteger(idLabor) || idLabor <= 0) {
+      this.contractForm.controls.laborId.markAsTouched();
+      return;
+    }
+
+    this.isSubmitting.set(true);
+
+    this.hiringCallService
+      .vincularDocentesMasivamente(
+        idsCargaDocente,
+        idLabor
+      )
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSubmitting.set(false)),
+      )
+      .subscribe({
+
+        next: (response) => {
+
+          if (response.totalVinculados !== idsCargaDocente.length) {
+            console.error(
+              'El total vinculado no coincide con el solicitado:',
+              response
+            );
+            return;
+          }
+
+          this.success.emit();
+        },
+
+        error: () => {
+          
+        },
+
+      });
+  }
+
 
   closeModal(): void {
     if (this.isSubmitting()) {
