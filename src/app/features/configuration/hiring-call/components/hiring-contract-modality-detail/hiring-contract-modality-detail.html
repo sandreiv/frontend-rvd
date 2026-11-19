@@ -147,4 +147,5 @@
   [idsCargaDocente]="bulkContractProfessorIds()"
   [numeroPeriodo]="coordination().numeroPeriodoUniversidad"
   (close)="closeBulkProfessorLinkingModal()"
+  (success)="closeBulkProfessorLinkingModal(); modalityProfessorsResource.reload()"
 />

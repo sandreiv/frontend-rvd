@@ -279,6 +279,23 @@ export class HiringCallService {
   }
 
   /**
+   * Vincula masivamente docentes con una labor compartida.
+   */
+  vincularDocentesMasivamente(
+    idsCargaDocente: number[],
+    idLabor: number,
+  ): Observable<{ totalVinculados: number }> {
+
+    return this.webRequestService.post<{ totalVinculados: number }>(
+      `${this.endpoint}/vincular-masivo`,
+      {
+        idsCargaDocente,
+        idLabor,
+      },
+    );
+  }
+
+  /**
    * Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado
    *
    * @param idPeriodoUniversitario Identificador del periodo universitario.
