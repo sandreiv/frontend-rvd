@@ -177,14 +177,15 @@ export class HiringContractModalityDetail {
   readonly ptdStatesProfessorsResource = rxResource({
     params: () => {
       const idPeriodoUniversitario = this.coordination().idPeriodoUniversidad;
+      const idCarga = this.coordination().idCarga;
 
-      if (idPeriodoUniversitario == null) {
+      if (idPeriodoUniversitario == null || idCarga == null) {
         return undefined;
       }
 
-      return { idPeriodoUniversitario };
+      return { idPeriodoUniversitario, idCarga };
     },
-    stream: ({ params }) => this.hiringCallService.getPtdStatesProfessors(params.idPeriodoUniversitario),
+    stream: ({ params }) => this.hiringCallService.getPtdStatesProfessors(params.idPeriodoUniversitario, params.idCarga),
     defaultValue: []
   });
 
