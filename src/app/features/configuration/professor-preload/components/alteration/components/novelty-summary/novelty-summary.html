@@ -423,7 +423,13 @@
                             {{ item.estadoLabel }}
                           </td>
                           <td class="px-4 py-3">
-                            @if (item.vigente) {
+                            @if (item.vigente === null) {
+                              <span
+                                class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                              >
+                                -
+                              </span>
+                            } @else if (item.vigente) {
                               <span
                                 class="inline-flex rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-medium text-success-700 dark:bg-success-500/15 dark:text-success-400"
                               >
