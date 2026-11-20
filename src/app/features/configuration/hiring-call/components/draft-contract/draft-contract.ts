@@ -6,7 +6,7 @@ import { Icon } from '../../../../../shared/ui/icon/icon';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { forNext } from '../../../../../core/utils/for-next.function';
-import { ProfessorInformationItem } from '../../model/hiring-call.model';
+import { ContractAnexo, ProfessorInformationItem } from '../../model/hiring-call.model';
 import { AppIconName } from '../../../../../shared/ui/icon/icons';
 import { mapActivitySummaryTables, mapCostCenterRows } from '../../../professor-preload/model/professor-summary.model';
 import { CollapsibleSection } from '../../../../../shared/components/form/collapsible-section/collapsible-section';
@@ -121,14 +121,14 @@ export class DraftContract {
   });
 
   /**
-   * Datos del anexo del contrato ya generado. Se cargan al abrir el panel de
-   * vinculación para diligenciar solo la labor docente y no volver a capturar
-   * los datos que ya se diligenciaron al generar el contrato.
+   * Datos del anexo del contrato ya generado. Se cargan al abrir el panel del
+   * anexo para que el usuario vea lo que ya fue diligenciado y pueda
+   * modificarlo (en generar) o solo la labor docente (en vincular).
    */
   readonly contractAnexoResource = rxResource({
     params: () => {
       const idCargaDocente = this.idCargaDocente();
-      if (!this.isContractPanelOpen() || this.contractOperation() !== 'VINCULAR' || idCargaDocente == null) {
+      if (!this.isContractPanelOpen() || idCargaDocente == null) {
         return undefined;
       }
 
@@ -136,6 +136,47 @@ export class DraftContract {
     },
     stream: ({ params }) => this.hiringCallService.getContractAnexo(params.idCargaDocente),
   });
+
+  /**
+   * Datos del anexo ya guardados del contrato del docente (null si todavía
+   * no se generó el contrato).
+   */
+  readonly anexoGenerado = computed(() => {
+    const resource = this.contractAnexoResource;
+
+    if (!resource.hasValue()) {
+      return null;
+    }
+
+    return resource.value() ?? null;
+  });
+
+  /**
+   * En la vinculación los datos del anexo ya vienen diligenciados: se
+   * muestran bloqueados y en gris para que solo se diligencie la labor.
+   *
+   * <p>Mientras se consultan los datos ya guardados se mantienen bloqueados
+   * por seguridad. Si el docente no tiene contrato generado (carga antigua)
+   * los campos quedan editables para que la vinculación no quede a medias.</p>
+   */
+  readonly isAnexoReadonly = computed(() => {
+    if (this.contractOperation() !== 'VINCULAR') {
+      return false;
+    }
+
+    const status = this.contractAnexoResource.status();
+    if (status === 'loading' || status === 'reloading') {
+      return true;
+    }
+
+    return this.anexoGenerado() !== null;
+  });
+
+  /**
+   * En la vinculación los datos que ya traíos del contrato quedan
+   * bloqueados: solo se diligencia la labor docente.
+   */
+  readonly isVinculacionBloqueada = computed(() => this.contractOperation() === 'VINCULAR');
 
   readonly contractCatalogs = computed(() => {
     if (!this.isOpen() || !this.contractCatalogsResource.hasValue()) {
@@ -272,35 +313,18 @@ export class DraftContract {
       }
     });
 
-    // Al vincular, los datos del anexo ya diligenciados al generar el contrato
-    // se precargan: solo queda por diligenciar la labor docente.
+    // Los datos del anexo ya diligenciados al generar el contrato se
+    // precargan: al generar el contrato el usuario los ve y los puede
+    // modificar; al vincular el docente solo queda por diligenciar la labor.
     effect(() => {
-      const anexo = this.contractAnexoResource.value();
+      this.precargarAnexo(this.anexoGenerado());
+    });
 
-      if (!anexo) {
-        return;
-      }
-
-      const controls = this.contractForm.controls;
-
-      if (!controls.fechaFirma.value) {
-        controls.fechaFirma.setValue(anexo.fechaFirma ?? '');
-      }
-      if (!controls.formaPagoId.value && anexo.idFormaPago != null) {
-        controls.formaPagoId.setValue(String(anexo.idFormaPago));
-      }
-      if (!controls.tipoObjetoId.value && anexo.idTipoObjeto != null) {
-        controls.tipoObjetoId.setValue(String(anexo.idTipoObjeto));
-      }
-      if (!controls.formaInicioContratoId.value && anexo.idFormaInicioContrato != null) {
-        controls.formaInicioContratoId.setValue(String(anexo.idFormaInicioContrato));
-      }
-      if (!controls.objeto.value) {
-        controls.objeto.setValue(anexo.objeto ?? '');
-      }
-      if (!controls.descripcion.value) {
-        controls.descripcion.setValue(anexo.descripcion ?? '');
-      }
+    // Al vincular, los datos del anexo que ya traídos del contrato quedan
+    // bloqueados: solo se diligencia la labor docente.
+    effect(() => {
+      this.isAnexoReadonly();
+      this.syncAnexoDisabledState();
     });
   }
 
@@ -346,7 +370,9 @@ export class DraftContract {
   );
   readonly submitContractLabel = computed(() => {
     if (this.isDownloadingContract()) {
-      return 'Generando contrato...';
+      return this.contractOperation() === 'GENERAR'
+        ? 'Generando contrato...'
+        : 'Vinculando docente...';
     }
 
     return this.contractOperation() === 'GENERAR'
@@ -419,6 +445,72 @@ export class DraftContract {
     this.contractForm.markAsUntouched();
   }
   
+  /**
+   * Precarga los datos del anexo ya diligenciados.
+   *
+   * <p>Solo se llenan los campos que están vacíos: así el usuario ve lo que
+   * ya había registrado y lo puede modificar, sin que se pise lo que acaba
+   * de escribir en la misma sesión.</p>
+   */
+  private precargarAnexo(anexo: ContractAnexo | null): void {
+    if (!anexo) {
+      return;
+    }
+
+    const controls = this.contractForm.controls;
+
+    if (!controls.numeroAnexo.value && anexo.numeroAnexo) {
+      controls.numeroAnexo.setValue(anexo.numeroAnexo);
+    }
+    if (!controls.fechaFirma.value && anexo.fechaFirma) {
+      controls.fechaFirma.setValue(anexo.fechaFirma);
+    }
+    if (!controls.formaPagoId.value && anexo.idFormaPago != null) {
+      controls.formaPagoId.setValue(String(anexo.idFormaPago));
+    }
+    if (!controls.tipoObjetoId.value && anexo.idTipoObjeto != null) {
+      controls.tipoObjetoId.setValue(String(anexo.idTipoObjeto));
+    }
+    if (!controls.formaInicioContratoId.value && anexo.idFormaInicioContrato != null) {
+      controls.formaInicioContratoId.setValue(String(anexo.idFormaInicioContrato));
+    }
+    if (!controls.objeto.value && anexo.objeto) {
+      controls.objeto.setValue(anexo.objeto);
+    }
+    if (!controls.descripcion.value && anexo.descripcion) {
+      controls.descripcion.setValue(anexo.descripcion);
+    }
+  }
+
+  /**
+   * Bloquea los datos del anexo que ya quedaron diligenciados al generar el
+   * contrato. Al vincular el docente solo queda editable la labor docente.
+   */
+  private syncAnexoDisabledState(): void {
+    const controls = this.contractForm.controls;
+    const readonly = this.isAnexoReadonly();
+
+    const anexoControls = [
+      controls.fechaFirma,
+      controls.formaPagoId,
+      controls.tipoObjetoId,
+      controls.formaInicioContratoId,
+      controls.objeto,
+      controls.descripcion,
+    ];
+
+    forNext(anexoControls, (control) => {
+      if (readonly) {
+        control.disable({ emitEvent: false });
+      } else {
+        control.enable({ emitEvent: false });
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+
+    this.contractForm.updateValueAndValidity();
+  }
+
   private buildHeaderChips(
     information: ProfessorInformationItem | null,
   ): HeaderChip[] {
@@ -553,6 +645,7 @@ export class DraftContract {
     this.contractForm.controls.fechaFin.setValue(this.information()?.fechaFin ?? '');
     this.contractOperation.set(operation);
     this.configureContractFormValidation(operation);
+    this.syncAnexoDisabledState();
     this.isContractPanelOpen.set(true);
   }
 
@@ -564,7 +657,45 @@ export class DraftContract {
       this.contractForm.markAllAsTouched();
       return;
     }
+
+    if (this.contractOperation() === 'VINCULAR') {
+      this.vincularDocente();
+      return;
+    }
+
     this.downloadContract();
+  }
+
+  /**
+   * Vincula al docente con el contrato ya generado.
+   *
+   * <p>La vinculacion no genera el anexo en PDF: solo completa las tablas de
+   * vinculacion del docente. El PDF se descargo en el paso de generacion del
+   * contrato.</p>
+   */
+  vincularDocente(): void {
+    const idCargaDocente = this.idCargaDocente();
+    const numeroPeriodo = this.numeroPeriodo();
+
+    if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
+      return;
+    }
+
+    const { laborId } = this.contractForm.getRawValue();
+
+    this.isDownloadingContract.set(true);
+
+    this.hiringCallService
+      .vincularDocente(idCargaDocente, numeroPeriodo, laborId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isDownloadingContract.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.close.emit();
+        }
+      });
   }
 
   /**
@@ -574,46 +705,31 @@ export class DraftContract {
   downloadContract(): void {
     const idCargaDocente = this.idCargaDocente();
     const numeroPeriodo = this.numeroPeriodo();
-    const operacion = this.contractOperation();
-
     if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
       return;
     }
 
     const {
       numeroAnexo, fechaFirma, fechaInicio, fechaFin, formaPagoId,
-      tipoObjetoId, formaInicioContratoId, laborId, objeto, descripcion
+      tipoObjetoId, formaInicioContratoId, objeto, descripcion
     } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
 
-    const payload = operacion === 'GENERAR'
-      ? {
-        numeroAnexo,
-        fechaFirma,
-        fechaInicio,
-        fechaFin,
-        formaPago: formaPagoId,
-        tipoObjeto: tipoObjetoId,
-        formaInicioContrato: formaInicioContratoId,
-        objeto,
-        descripcion
-      }
-      : {
-        numeroAnexo,
-        fechaFirma,
-        fechaInicio,
-        fechaFin,
-        formaPago: formaPagoId,
-        tipoObjeto: tipoObjetoId,
-        formaInicioContrato: formaInicioContratoId,
-        labor: laborId,
-        objeto,
-        descripcion
-      }
+    const payload = {
+      numeroAnexo,
+      fechaFirma,
+      fechaInicio,
+      fechaFin,
+      formaPago: formaPagoId,
+      tipoObjeto: tipoObjetoId,
+      formaInicioContrato: formaInicioContratoId,
+      objeto,
+      descripcion
+    }
 
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente, numeroPeriodo, operacion, payload)
+      .downloadContractPdf(idCargaDocente, numeroPeriodo, payload)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),

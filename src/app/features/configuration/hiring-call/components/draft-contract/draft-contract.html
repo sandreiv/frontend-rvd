@@ -451,6 +451,7 @@
                 id="fechaInicio"
                 formControlName="fechaInicio"
                 placeholder="Seleccione la fecha de inicio"
+                [disabledStyle]="isVinculacionBloqueada()"
               />
 
               @if (
@@ -475,7 +476,7 @@
                 id="fechaFin"
                 formControlName="fechaFin"
                 placeholder="Fecha de fin"
-                [disabled]="true"
+                [disabledStyle]="true"
               />
             </div>
           </div>
@@ -492,6 +493,7 @@
                 id="fechaFirma"
                 formControlName="fechaFirma"
                 placeholder="Seleccione la fecha en que se firmará el contrato"
+                [disabledStyle]="isAnexoReadonly()"
               />
               @if (
                 contractForm.controls.fechaFirma.touched &&
@@ -514,7 +516,7 @@
                 id="formaPago"
                 formControlName="formaPagoId"
                 [options]="formaPagoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
                 placeholder="Seleccione la forma de pago"
                 searchPlaceholder="Buscar forma de pago..."
                 emptyText="No hay formas de pago registradas"
@@ -540,7 +542,7 @@
                 id="tipoObjeto"
                 formControlName="tipoObjetoId"
                 [options]="tipoObjetoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
                 placeholder="Seleccione el tipo de objeto"
                 searchPlaceholder="Buscar tipo de objeto..."
                 emptyText="No hay tipos de objeto registrados"
@@ -566,7 +568,7 @@
                 id="formaInicioContrato"
                 formControlName="formaInicioContratoId"
                 [options]="formaInicioContratoOptions()"
-                [disabled]="contractCatalogsResource.isLoading()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
                 placeholder="Seleccione la forma de inicio del contrato"
                 searchPlaceholder="Buscar forma de inicio..."
                 emptyText="No hay formas de inicio registradas"

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, forwardRef, inject, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -45,6 +45,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   styleUrl: './input-field.css',
 })
 export class InputField implements ControlValueAccessor {
+  /**
+   * El componente es un ControlValueAccessor: cuando el valor o el estado
+   * deshabilitado llegan desde el formulario, hay que marcar la vista para
+   * revisión. Sin esto, si el padre es OnPush y el control está deshabilitado
+   * (Angular no emite valueChanges ni statusChanges en ese estado), el
+   * binding [value] no se re-evalúa y el input queda vacío aunque el
+   * componente ya tenga el dato.
+   */
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
   @Input() type: string = 'text';
   @Input() id?: string = '';
   @Input() name?: string = '';
@@ -68,6 +78,7 @@ export class InputField implements ControlValueAccessor {
 
   writeValue(value: any): void {
     this.value = value || '';
+    this.changeDetectorRef.markForCheck();
   }
 
   registerOnChange(fn: (value: any) => void): void {
@@ -80,6 +91,7 @@ export class InputField implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+    this.changeDetectorRef.markForCheck();
   }
 
   get inputClasses(): string {
