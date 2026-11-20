@@ -451,6 +451,7 @@
                 id="fechaInicio"
                 formControlName="fechaInicio"
                 placeholder="Seleccione la fecha de inicio"
+                [disabledStyle]="isVinculacionBloqueada()"
               />
 
               @if (
@@ -475,103 +476,114 @@
                 id="fechaFin"
                 formControlName="fechaFin"
                 placeholder="Fecha de fin"
-                [disabled]="true"
+                [disabledStyle]="true"
               />
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                for="fechaFirma"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Fecha Firma <span class="text-error-500">*</span>
+              </label>
+              <app-date-picker
+                id="fechaFirma"
+                formControlName="fechaFirma"
+                placeholder="Seleccione la fecha en que se firmará el contrato"
+                [disabledStyle]="isAnexoReadonly()"
+              />
+              @if (
+                contractForm.controls.fechaFirma.touched &&
+                contractForm.controls.fechaFirma.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  La fecha de firma es obligatoria.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label
+                for="formaPago"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Forma de Pago <span class="text-error-500">*</span>
+              </label>
+              <app-select
+                id="formaPago"
+                formControlName="formaPagoId"
+                [options]="formaPagoOptions()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
+                placeholder="Seleccione la forma de pago"
+                searchPlaceholder="Buscar forma de pago..."
+                emptyText="No hay formas de pago registradas"
+              />
+              @if (
+                contractForm.controls.formaPagoId.touched &&
+                contractForm.controls.formaPagoId.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  La forma de pago es obligatoria.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label
+                for="tipoObjeto"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Tipo de Objeto <span class="text-error-500">*</span>
+              </label>
+              <app-select
+                id="tipoObjeto"
+                formControlName="tipoObjetoId"
+                [options]="tipoObjetoOptions()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
+                placeholder="Seleccione el tipo de objeto"
+                searchPlaceholder="Buscar tipo de objeto..."
+                emptyText="No hay tipos de objeto registrados"
+              />
+              @if (
+                contractForm.controls.tipoObjetoId.touched &&
+                contractForm.controls.tipoObjetoId.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  El tipo de objeto es obligatorio.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label
+                for="formaInicioContrato"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Forma de Inicio del Contrato <span class="text-error-500">*</span>
+              </label>
+              <app-select
+                id="formaInicioContrato"
+                formControlName="formaInicioContratoId"
+                [options]="formaInicioContratoOptions()"
+                [disabled]="contractCatalogsResource.isLoading() || isAnexoReadonly()"
+                placeholder="Seleccione la forma de inicio del contrato"
+                searchPlaceholder="Buscar forma de inicio..."
+                emptyText="No hay formas de inicio registradas"
+              />
+              @if (
+                contractForm.controls.formaInicioContratoId.touched &&
+                contractForm.controls.formaInicioContratoId.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  La forma de inicio del contrato es obligatoria.
+                </p>
+              }
             </div>
 
             @if (contractOperation() === 'VINCULAR') {
-              <div>
-                <label
-                  for="fechaFirma"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Fecha Firma <span class="text-error-500">*</span>
-                </label>
-                <app-date-picker
-                  id="fechaFirma"
-                  formControlName="fechaFirma"
-                  placeholder="Seleccione la fecha en que se firmará el contrato"
-                />
-              </div>
-
-              <div>
-                <label
-                  for="formaPago"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Forma de Pago <span class="text-error-500">*</span>
-                </label>
-                <app-select
-                  id="formaPago"
-                  formControlName="formaPagoId"
-                  [options]="formaPagoOptions()"
-                  [disabled]="contractCatalogsResource.isLoading()"
-                  placeholder="Seleccione la forma de pago"
-                  searchPlaceholder="Buscar forma de pago..."
-                  emptyText="No hay formas de pago registradas"
-                />
-                @if (
-                  contractForm.controls.formaPagoId.touched &&
-                  contractForm.controls.formaPagoId.invalid
-                ) {
-                  <p class="mt-1 text-xs font-medium text-error-500">
-                    La forma de pago es obligatoria.
-                  </p>
-                }
-              </div>
-
-              <div>
-                <label
-                  for="tipoObjeto"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Tipo de Objeto <span class="text-error-500">*</span>
-                </label>
-                <app-select
-                  id="tipoObjeto"
-                  formControlName="tipoObjetoId"
-                  [options]="tipoObjetoOptions()"
-                  [disabled]="contractCatalogsResource.isLoading()"
-                  placeholder="Seleccione el tipo de objeto"
-                  searchPlaceholder="Buscar tipo de objeto..."
-                  emptyText="No hay tipos de objeto registrados"
-                />
-                @if (
-                  contractForm.controls.tipoObjetoId.touched &&
-                  contractForm.controls.tipoObjetoId.invalid
-                ) {
-                  <p class="mt-1 text-xs font-medium text-error-500">
-                    El tipo de objeto es obligatorio.
-                  </p>
-                }
-              </div>
-
-              <div>
-                <label
-                  for="formaInicioContrato"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Forma de Inicio del Contrato <span class="text-error-500">*</span>
-                </label>
-                <app-select
-                  id="formaInicioContrato"
-                  formControlName="formaInicioContratoId"
-                  [options]="formaInicioContratoOptions()"
-                  [disabled]="contractCatalogsResource.isLoading()"
-                  placeholder="Seleccione la forma de inicio del contrato"
-                  searchPlaceholder="Buscar forma de inicio..."
-                  emptyText="No hay formas de inicio registradas"
-                />
-                @if (
-                  contractForm.controls.formaInicioContratoId.touched &&
-                  contractForm.controls.formaInicioContratoId.invalid
-                ) {
-                  <p class="mt-1 text-xs font-medium text-error-500">
-                    La forma de inicio del contrato es obligatoria.
-                  </p>
-                }
-              </div>
-
               <div>
                 <label
                   for="labor"
@@ -597,44 +609,60 @@
                   </p>
                 }
               </div>
-
-              <div>
-                <label
-                  for="objeto"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Objeto del contrato <span class="text-error-500">*</span>
-                </label>
-                <app-input-field
-                  id="objeto"
-                  formControlName="objeto"
-                  placeholder="Ingrese el objeto"
-                  [error]="
-                    contractForm.controls.objeto.invalid &&
-                    contractForm.controls.objeto.touched
-                  "
-                />
-              </div>
-
-              <div>
-                <label
-                  for="descripcion"
-                  class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Descripción del objeto <span class="text-error-500">*</span>
-                </label>
-
-                <app-input-field
-                  id="descripcion"
-                  formControlName="descripcion"
-                  placeholder="Ingrese la descripción"
-                  [error]="
-                    contractForm.controls.descripcion.invalid &&
-                    contractForm.controls.descripcion.touched
-                  "
-                />
-              </div>
             }
+
+            <div>
+              <label
+                for="objeto"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Objeto del contrato <span class="text-error-500">*</span>
+              </label>
+              <app-input-field
+                id="objeto"
+                formControlName="objeto"
+                placeholder="Ingrese el objeto"
+                [error]="
+                  contractForm.controls.objeto.invalid &&
+                  contractForm.controls.objeto.touched
+                "
+              />
+              @if (
+                contractForm.controls.objeto.touched &&
+                contractForm.controls.objeto.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  El objeto del contrato es obligatorio.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label
+                for="descripcion"
+                class="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300"
+              >
+                Descripción del objeto <span class="text-error-500">*</span>
+              </label>
+
+              <app-input-field
+                id="descripcion"
+                formControlName="descripcion"
+                placeholder="Ingrese la descripción"
+                [error]="
+                  contractForm.controls.descripcion.invalid &&
+                  contractForm.controls.descripcion.touched
+                "
+              />
+              @if (
+                contractForm.controls.descripcion.touched &&
+                contractForm.controls.descripcion.invalid
+              ) {
+                <p class="mt-1 text-xs font-medium text-error-500">
+                  La descripción del objeto es obligatoria.
+                </p>
+              }
+            </div>
           </div>
 
           <div class="flex justify-end pb-4">

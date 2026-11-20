@@ -154,3 +154,18 @@ export interface ContractCatalogs {
   formasInicioContrato: ContractCatalogItem[];
   labores: ContractCatalogItem[];
 }
+
+/**
+ * Datos del anexo del contrato ya generado por el docente. Se muestran al
+ * diligenciar la vinculación docente para no volver a capturarlos.
+ */
+export interface ContractAnexo {
+  idCargaDocente: number | null;
+  numeroAnexo: string | null;
+  fechaFirma: string | null;
+  idFormaPago: number | null;
+  idTipoObjeto: number | null;
+  idFormaInicioContrato: number | null;
+  objeto: string | null;
+  descripcion: string | null;
+}

@@ -17,6 +17,7 @@ import {
 import {
   ApprovePtdRequest,
   HiringCallItem,
+  ContractAnexo,
   ContractCatalogs,
   HiringCdpInformationApi,
   HiringValuesInformationApi,
@@ -249,11 +250,57 @@ export class HiringCallService {
   }
 
   /**
+   * Datos del anexo del contrato ya generado por el docente. Se muestran al
+   * diligenciar la vinculación docente para no volver a capturarlos.
+   *
+   * @param idCargaDocente Carga docente del docente.
+   * @returns Observable con los datos del anexo, o null si no hay contrato generado.
+   */
+  getContractAnexo(idCargaDocente: number): Observable<ContractAnexo | null> {
+    return this.webRequestService
+      .get<ContractAnexo | null>(`${this.endpoint}/contract-anexo/${idCargaDocente}`)
+      .pipe(map((anexo) => anexo ?? null));
+  }
+
+  /**
+   * Datos del anexo de los contratos ya generados de varias cargas docentes.
+   * Es la consulta de la vinculación masiva: devuelve un elemento por carga
+   * docente que ya tiene contrato generado. Las cargas docentes sin contrato
+   * generado no aparecen en la lista.
+   *
+   * @param idsCargaDocente Cargas docentes consultadas.
+   * @returns Observable con la lista de datos del anexo.
+   */
+  getContractAnexos(idsCargaDocente: number[]): Observable<ContractAnexo[]> {
+    return this.webRequestService.get<ContractAnexo[]>(
+      `${this.endpoint}/contract-anexo/listar`,
+      { idsCargaDocente: idsCargaDocente.map((id) => String(id)) },
+    );
+  }
+
+  /**
+   * Vincula masivamente docentes con una labor compartida.
+   */
+  vincularDocentesMasivamente(
+    idsCargaDocente: number[],
+    idLabor: number,
+  ): Observable<{ totalVinculados: number }> {
+
+    return this.webRequestService.post<{ totalVinculados: number }>(
+      `${this.endpoint}/vincular-masivo`,
+      {
+        idsCargaDocente,
+        idLabor,
+      },
+    );
+  }
+
+  /**
    * Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado
-   * 
+   *
    * @param idPeriodoUniversitario Identificador del periodo universitario.
    * @param idCarga Identificador de la carga.
-   * @returns Observable con los estados del ptd por persona
+   * @returns Observable con los estados del ptd por persona.
    */
   getPtdStatesProfessors(idPeriodoUniversitario: number, idCarga: number): Observable<PtdStatesProfessors[]> {
     return this.webRequestService.get<PtdStatesProfessors[]>(

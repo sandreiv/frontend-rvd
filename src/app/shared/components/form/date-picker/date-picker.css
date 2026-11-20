@@ -1,0 +1,19 @@
+
+
+/* Estilo gris para los date picker bloqueados. Es opt-in: se activa con
+   [disabledStyle]="true" desde el formulario que lo necesita. */
+input.app-date-picker--disabled {
+  background-color: #f9fafb !important;
+  color: #9ca3af !important;
+  cursor: default !important;
+}
+
+input.app-date-picker--disabled::placeholder {
+  color: #d1d5db !important;
+}
+
+:host-context(.dark) input.app-date-picker--disabled {
+  background-color: #111827 !important;
+  color: #6b7280 !important;
+  cursor: default !important;
+}
