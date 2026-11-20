@@ -6,6 +6,9 @@ import { DraftContract } from './draft-contract';
 import { HiringCallService } from '../../data/hiring-call.service';
 
 class HiringCallServiceStub {
+  vincularDocenteCalls: Array<{ idCargaDocente: number; numeroPeriodo: string; labor: string | null }> = [];
+  downloadContractPdfCalls: Array<{ idCargaDocente: number; numeroPeriodo: string }> = [];
+
   getContractCatalogs() {
     return of({ formasPago: [], tiposObjeto: [], formasInicioContrato: [], labores: [] });
   }
@@ -59,17 +62,31 @@ class HiringCallServiceStub {
   getHiringValuesInformation() {
     return of({});
   }
+
+  vincularDocente(idCargaDocente: number, numeroPeriodo: string, labor: string | null) {
+    this.vincularDocenteCalls.push({ idCargaDocente, numeroPeriodo, labor });
+    return of({ idContrato: 55, idCargaDocente });
+  }
+
+  downloadContractPdf(idCargaDocente: number, numeroPeriodo: string) {
+    this.downloadContractPdfCalls.push({ idCargaDocente, numeroPeriodo });
+    return of({ blob: new Blob([]), fileName: 'anexo.pdf' });
+  }
 }
 
 describe('DraftContract', () => {
   let component: DraftContract;
   let fixture: ComponentFixture<DraftContract>;
 
+  let serviceStub: HiringCallServiceStub;
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DraftContract],
       providers: [{ provide: HiringCallService, useClass: HiringCallServiceStub }],
     }).compileComponents();
+
+    serviceStub = TestBed.inject(HiringCallService) as unknown as HiringCallServiceStub;
 
     fixture = TestBed.createComponent(DraftContract);
     component = fixture.componentInstance;
@@ -152,6 +169,39 @@ describe('DraftContract', () => {
 
     expect(objetoInput.value).toBe('OBJETO DE PRUEBA');
     expect(descripcionInput.value).toBe('DESCRIPCION DE PRUEBA');
+  });
+
+
+  it('debe vincular al docente sin generar ni descargar el PDF', async () => {
+    await abrirPanel('VINCULAR');
+
+    component.contractForm.controls.laborId.setValue('7');
+    component.contractForm.controls.laborId.updateValueAndValidity();
+
+    component.submitContract();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(serviceStub.vincularDocenteCalls.length).toBe(1);
+    expect(serviceStub.vincularDocenteCalls[0].idCargaDocente).toBe(523);
+    expect(serviceStub.vincularDocenteCalls[0].labor).toBe('7');
+
+    // La vinculacion no debe pedir el PDF: ese paso es el de generacion.
+    expect(serviceStub.downloadContractPdfCalls.length).toBe(0);
+  });
+
+  it('debe generar y descargar el PDF al generar el contrato', async () => {
+    await abrirPanel('GENERAR');
+
+    component.submitContract();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(serviceStub.downloadContractPdfCalls.length).toBe(1);
+    expect(serviceStub.downloadContractPdfCalls[0].idCargaDocente).toBe(523);
+
+    // Generar el contrato no vincula al docente.
+    expect(serviceStub.vincularDocenteCalls.length).toBe(0);
   });
 
   it('debe pintar el objeto y la descripcion en los inputs al generar el contrato', async () => {
