@@ -370,7 +370,9 @@ export class DraftContract {
   );
   readonly submitContractLabel = computed(() => {
     if (this.isDownloadingContract()) {
-      return 'Generando contrato...';
+      return this.contractOperation() === 'GENERAR'
+        ? 'Generando contrato...'
+        : 'Vinculando docente...';
     }
 
     return this.contractOperation() === 'GENERAR'
@@ -655,7 +657,45 @@ export class DraftContract {
       this.contractForm.markAllAsTouched();
       return;
     }
+
+    if (this.contractOperation() === 'VINCULAR') {
+      this.vincularDocente();
+      return;
+    }
+
     this.downloadContract();
+  }
+
+  /**
+   * Vincula al docente con el contrato ya generado.
+   *
+   * <p>La vinculacion no genera el anexo en PDF: solo completa las tablas de
+   * vinculacion del docente. El PDF se descargo en el paso de generacion del
+   * contrato.</p>
+   */
+  vincularDocente(): void {
+    const idCargaDocente = this.idCargaDocente();
+    const numeroPeriodo = this.numeroPeriodo();
+
+    if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
+      return;
+    }
+
+    const { laborId } = this.contractForm.getRawValue();
+
+    this.isDownloadingContract.set(true);
+
+    this.hiringCallService
+      .vincularDocente(idCargaDocente, numeroPeriodo, laborId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isDownloadingContract.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.close.emit();
+        }
+      });
   }
 
   /**
@@ -665,46 +705,31 @@ export class DraftContract {
   downloadContract(): void {
     const idCargaDocente = this.idCargaDocente();
     const numeroPeriodo = this.numeroPeriodo();
-    const operacion = this.contractOperation();
-
     if (idCargaDocente == null || numeroPeriodo == null || this.isDownloadingContract()) {
       return;
     }
 
     const {
       numeroAnexo, fechaFirma, fechaInicio, fechaFin, formaPagoId,
-      tipoObjetoId, formaInicioContratoId, laborId, objeto, descripcion
+      tipoObjetoId, formaInicioContratoId, objeto, descripcion
     } = this.contractForm.getRawValue();
 
     this.isDownloadingContract.set(true);
 
-    const payload = operacion === 'GENERAR'
-      ? {
-        numeroAnexo,
-        fechaFirma,
-        fechaInicio,
-        fechaFin,
-        formaPago: formaPagoId,
-        tipoObjeto: tipoObjetoId,
-        formaInicioContrato: formaInicioContratoId,
-        objeto,
-        descripcion
-      }
-      : {
-        numeroAnexo,
-        fechaFirma,
-        fechaInicio,
-        fechaFin,
-        formaPago: formaPagoId,
-        tipoObjeto: tipoObjetoId,
-        formaInicioContrato: formaInicioContratoId,
-        labor: laborId,
-        objeto,
-        descripcion
-      }
+    const payload = {
+      numeroAnexo,
+      fechaFirma,
+      fechaInicio,
+      fechaFin,
+      formaPago: formaPagoId,
+      tipoObjeto: tipoObjetoId,
+      formaInicioContrato: formaInicioContratoId,
+      objeto,
+      descripcion
+    }
 
     this.hiringCallService
-      .downloadContractPdf(idCargaDocente, numeroPeriodo, operacion, payload)
+      .downloadContractPdf(idCargaDocente, numeroPeriodo, payload)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isDownloadingContract.set(false)),

@@ -29,7 +29,6 @@ import {
   SummaryPtdActivity,
 } from '../model/hiring-call.model';
 import { PublicSupportDocumentCategory, PublicSupportDocuments } from '../../../public-view/hiring/model/hiring.model';
-import { ContractOperation } from '../components/draft-contract/draft-contract';
 
 /**
  * Datos que el usuario diligencia en el modal antes de descargar el anexo.
@@ -365,21 +364,20 @@ export class HiringCallService {
   }
 
   /**
-   * Descarga el anexo de contratación del docente en PDF.
+   * Descarga el anexo de contratación del docente en PDF y registra el
+   * contrato con los datos diligenciados.
    *
    * El backend decide la plantilla: anexo con funciones administrativas si el
    * docente es coordinador del programa, anexo de 4 meses en caso contrario.
    *
    * @param idCargaDocente Carga docente del docente contratado.
    * @param numeroPeriodo Numero del periodo para la carga docente.
-   * @param operacion Operacion que indica si GENERAR o VINCULAR el contrato
    * @param datos Datos adicionales diligenciados por el usuario.
    * @returns Observable con el archivo y su nombre.
    */
   downloadContractPdf(
     idCargaDocente: number,
     numeroPeriodo: string,
-    operacion: ContractOperation,
     datos?: ContractDownloadParams,
   ): Observable<{ blob: Blob; fileName: string }> {
     let params = new HttpParams();
@@ -395,7 +393,7 @@ export class HiringCallService {
     }
 
     return this.webRequestService
-      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}/${numeroPeriodo}/${operacion}`, params)
+      .getBlobResponse(`${this.endpoint}/contract-pdf-report/${idCargaDocente}/${numeroPeriodo}`, params)
       .pipe(
         map((response) => ({
           blob: response.body as Blob,
@@ -405,6 +403,32 @@ export class HiringCallService {
           ),
         })),
       );
+  }
+
+  /**
+   * Vincula un docente con su contrato ya generado.
+   *
+   * A diferencia de la generacion del contrato, la vinculacion no produce el
+   * anexo en PDF: solo completa las tablas de vinculacion del docente.
+   *
+   * @param idCargaDocente Carga docente del docente a vincular.
+   * @param numeroPeriodo Numero del periodo de la carga docente.
+   * @param labor Labor docente a asignar.
+   * @returns Observable con el id del contrato vinculado.
+   */
+  vincularDocente(
+    idCargaDocente: number,
+    numeroPeriodo: string,
+    labor: string | null,
+  ): Observable<{ idContrato: number; idCargaDocente: number }> {
+    return this.webRequestService.post<{ idContrato: number; idCargaDocente: number }>(
+      `${this.endpoint}/vincular-docente/${idCargaDocente}`,
+      {
+        idCargaDocente,
+        numeroPeriodo,
+        anexo: { idLabor: labor ? Number(labor) : null },
+      }
+    );
   }
 
   /**
