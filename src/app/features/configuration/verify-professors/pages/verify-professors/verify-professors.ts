@@ -200,7 +200,9 @@ export class VerifyProfessors implements OnInit, OnDestroy {
 
   readonly summaryCoordination = computed(() => {
     const idCoordinacion = this.appliedFilter()?.idCoordinacion;
-    if (idCoordinacion == null) {
+    const idPeriodo = this.parseId(this.selectedPeriodId());
+
+    if (idCoordinacion == null || idPeriodo == null) {
       return null;
     }
 
@@ -208,7 +210,15 @@ export class VerifyProfessors implements OnInit, OnDestroy {
       (item) => item.id === idCoordinacion,
     );
 
-    return coordination ? toSummaryCoordination(coordination) : null;
+    const period = this.universityPeriods().find(
+      (item) => item.id === idPeriodo,
+    );
+
+    if (!coordination || !period) {
+      return null;
+    }
+
+    return { ...toSummaryCoordination(coordination), numeroPeriodoUniversidad: period.periodo };
   });
 
   readonly summaryModality = computed(() => {
