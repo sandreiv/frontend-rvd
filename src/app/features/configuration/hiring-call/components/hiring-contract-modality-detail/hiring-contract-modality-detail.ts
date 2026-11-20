@@ -36,6 +36,7 @@ import { AuthService } from '../../../../../core/service/auth-service';
 import { ReviewPtdModal } from '../review-ptd-modal/review-ptd-modal';
 import { BulkProfessorLinking } from '../bulk-professor-linking/bulk-professor-linking';
 import { Button } from '../../../../../shared/ui/button/button';
+import { BulkProfessorSyncing } from '../bulk-professor-syncing/bulk-professor-syncing';
 
 type BadgeTone = 'success' | 'brand' | 'warning' | 'error' | 'gray';
 
@@ -110,7 +111,7 @@ const BADGE_TONES: Record<BadgeTone, { badge: string; dot: string }> = {
 
 @Component({
   selector: 'app-hiring-contract-modality-detail',
-  imports: [TabBar, Dropdown, Item, Icon, Button, PtdModal, DraftContract, ReviewPtdModal, BulkProfessorLinking],
+  imports: [TabBar, Dropdown, Item, Icon, Button, PtdModal, DraftContract, ReviewPtdModal, BulkProfessorLinking, BulkProfessorSyncing],
   templateUrl: './hiring-contract-modality-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -136,6 +137,7 @@ export class HiringContractModalityDetail {
   readonly isDraftContractModalOpen = signal(false);
   readonly isReviewPtdModalOpen = signal(false);
   readonly isBulkProfessorLinkingModalOpen = signal(false);
+  readonly isBulkProfessorSyncingModalOpen = signal(false);
 
   readonly isTH = computed(() => {
     const rolesUsuario = this.authService.getRoles();
@@ -282,6 +284,31 @@ export class HiringContractModalityDetail {
 
     return [...ids];
   });
+
+  // Docentes con carga valida
+  readonly bulkSyncProfessorIds = computed(() => {
+    if (!this.permissions.canSaveContract() || !this.isCargaEnAvalDesarrollo()) {
+      return [];
+    }
+
+    const professorsByModality = this.modalityProfessorsMap();
+    const professors = [
+      ...Object.values(professorsByModality).flat(),
+      ...this.careerProfessors()
+    ];
+    const ids = new Set<number>();
+
+    forNext(professors, (professor) => {
+      if (professor.tieneCarga === true &&
+        professor.idCargaDocente != null &&
+        professor.idPersonaGeneral != null
+      ) {
+        ids.add(professor.idCargaDocente);
+      }
+    });
+    
+    return [...ids];
+  })
 
   constructor() {
     effect(() => {
@@ -431,6 +458,18 @@ export class HiringContractModalityDetail {
 
   closeBulkProfessorLinkingModal(): void {
     this.isBulkProfessorLinkingModalOpen.set(false);
+  }
+
+  openBulkProfessorSyncingModal(): void {
+    if (!this.bulkSyncProfessorIds().length) {
+      return;
+    }
+
+    this.isBulkProfessorSyncingModalOpen.set(true);
+  }
+
+  closeBulkProfessorSyncingModal(): void {
+    this.isBulkProfessorSyncingModalOpen.set(false);
   }
 
   async onSuccessReview(): Promise<void> {

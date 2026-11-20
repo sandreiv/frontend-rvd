@@ -100,8 +100,8 @@
   }
 </section>
 
-@if (bulkContractProfessorIds().length > 0) {
-  <div class="mt-4 flex justify-end">
+<div class="mt-4 flex flex-wrap justify-end gap-2">
+  @if (bulkContractProfessorIds().length > 0) {
     <app-button
       size="sm"
       (btnClick)="openBulkProfessorLinkingModal()"
@@ -111,8 +111,20 @@
         Vinculación masiva
       </span>
     </app-button>
-  </div>
-}
+  }
+
+  @if (bulkSyncProfessorIds().length > 0) {
+    <app-button
+      size="sm"
+      (btnClick)="openBulkProfessorSyncingModal()"
+    >
+      <span class="inline-flex items-center gap-2">
+        <app-icon name="rotateCwClock" size="xs" />
+        Sincronización masiva
+      </span>
+    </app-button>
+  }
+</div>
 
 <app-ptd-modal
   [isOpen]="isPtdModalOpen()"
@@ -145,7 +157,15 @@
 <app-bulk-professor-linking
   [isOpen]="isBulkProfessorLinkingModalOpen()"
   [idsCargaDocente]="bulkContractProfessorIds()"
-  [numeroPeriodo]="coordination().numeroPeriodoUniversidad"
   (close)="closeBulkProfessorLinkingModal()"
   (success)="closeBulkProfessorLinkingModal(); modalityProfessorsResource.reload()"
+/>
+
+<app-bulk-professor-syncing
+  [isOpen]="isBulkProfessorSyncingModalOpen()"
+  [idCarga]="coordination().idCarga"
+  [idsCargaDocente]="bulkSyncProfessorIds()"
+  [numeroPeriodo]="coordination().numeroPeriodoUniversidad"
+  (close)="closeBulkProfessorSyncingModal()"
+  (success)="closeBulkProfessorSyncingModal(); modalityProfessorsResource.reload()"
 />

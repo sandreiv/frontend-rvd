@@ -24,6 +24,7 @@ export interface ProfessorInformationItem {
   direccionDomicilio: string | null;
   correoPersonal: string | null;
   correoInstitucional: string | null;
+  idModalidadContratacion: number | null;
   modalidadContratacion: string | null;
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -34,6 +35,7 @@ export interface ProfessorInformationItem {
   categoriaDocente: string | null;
   puntos: string | null;
   valorHora: number | null;
+  onceMeses: string | null;
   contratacionVinculado: string | null;
   contratacionSincronizado: string | null;
   numeroContrato: string | null;

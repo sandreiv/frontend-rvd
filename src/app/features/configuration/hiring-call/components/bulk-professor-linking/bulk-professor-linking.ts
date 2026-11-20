@@ -44,7 +44,6 @@ export class BulkProfessorLinking {
 
   readonly isOpen = input(false);
   readonly idsCargaDocente = input<number[]>([]);
-  readonly numeroPeriodo = input<string | null>(null);
 
   readonly close = output<void>();
   readonly success = output<void>();
@@ -162,8 +161,7 @@ export class BulkProfessorLinking {
     this.selectedProfessors().length === this.selectedIds().length &&
     !this.isLoadingInformation() &&
     !this.contractCatalogsResource.isLoading() &&
-    !this.isSubmitting() &&
-    this.numeroPeriodo() != null
+    !this.isSubmitting()
   );
 
   constructor() {

@@ -295,6 +295,20 @@ export class HiringCallService {
   }
 
   /**
+   * Sincroniza masivamente docentes dentro de una carga
+   * 
+   * @param idsCargaDocente Identificadores de los docentes a sincronizar.
+   * @param idCarga Identificador de la carga.
+   * @returns Observable sin contenido cuando el registro finaliza correctamente.
+   */
+  sincronizarDocentesMasivamente(idsCargaDocente: number[], idCarga: number): Observable<{ totalSincronizados: number }> {
+    return this.webRequestService.put<{ totalSincronizados: number }>(
+      `${this.endpoint}/sync-professors/${idCarga}`,
+      idsCargaDocente,
+    );
+  }
+
+  /**
    * Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado
    *
    * @param idPeriodoUniversitario Identificador del periodo universitario.
