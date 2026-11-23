@@ -55,7 +55,7 @@ export interface NoveltyHistoryRow {
   descripcion: string;
   fecha: string | null;
   estadoLabel: string;
-  vigente: boolean;
+  vigente: boolean | null;
 }
 
 export const NOVELTY_SUMMARY_SECTIONS: NoveltySummarySectionConfig[] = [
@@ -126,7 +126,10 @@ export function mapNoveltyHistoryRows(
       descripcion: item.descripcion?.trim() || '-',
       fecha: item.fecha,
       estadoLabel: noveltyStateLabel(item.estadoNovedad),
-      vigente: isNoveltyCurrent(item.vigente),
+      vigente:
+        String(item.estadoNovedad ?? '').trim() === NOVELTY_PENDING_REVIEW_STATE
+          ? null
+          : isNoveltyCurrent(item.vigente),
     });
   });
   return rows;
