@@ -152,7 +152,6 @@ export class BulkProfessorSyncing {
     const tieneVinculacion = professor.contratacionVinculado === '1';
     const tieneModalidad = !!professor.idModalidadContratacion;
     const esProfesorHeredado = (professor.onceMeses === INDICADOR_ONCE_MESES) && (this.numeroPeriodo() === NUMERO_PERIODO_SEGUNDO);
-    console.log(professor)
 
     return (
       tieneVinculacion ||
